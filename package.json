@@ -7,16 +7,21 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "db:types": "supabase gen types typescript --project-id kgikcglaxylxonlkqpsi > src/types/database.ts"
+    "db:types": "supabase gen types typescript --project-id kgikcglaxylxonlkqpsi > src/types/database.ts",
+    "deploy": "npm run build && vercel --prod",
+    "deploy:preview": "npm run build && vercel"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.988.0",
     "@aws-sdk/s3-request-presigner": "^3.988.0",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.95.3",
+    "clsx": "^2.1.1",
     "next": "^15.0.0",
     "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "react-dom": "19.2.3",
+    "sonner": "^2.0.7",
+    "tailwind-merge": "^3.4.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
