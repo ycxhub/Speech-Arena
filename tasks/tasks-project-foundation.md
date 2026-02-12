@@ -53,7 +53,7 @@ Update the file after completing each sub-task, not just after completing an ent
 
 - [x] 3.0 Set up Supabase SDK integration
   - [x] 3.1 Install Supabase packages: `npm install @supabase/supabase-js @supabase/ssr`.
-  - [x] 3.2 Create `src/lib/supabase/client.ts` — export a function that creates a browser-side Supabase client using `createBrowserClient` from `@supabase/ssr`. It should read `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` from environment variables.
+  - [x] 3.2 Create `src/lib/supabase/client.ts` — export a function that creates a browser-side Supabase client using `createBrowserClient` from `@supabase/ssr`. It should read `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` from environment variables.
   - [x] 3.3 Create `src/lib/supabase/server.ts` — export a function that creates a server-side Supabase client using `createServerClient` from `@supabase/ssr`. It must handle cookie get/set/remove using the Next.js `cookies()` API from `next/headers`.
   - [x] 3.4 Create a placeholder type file at `src/types/database.ts` with a `TODO` comment indicating it will be auto-generated from the Supabase schema in PRD 03. Export an empty `Database` type for now.
   - [x] 3.5 Verify both client files compile without TypeScript errors by running `npm run build`.
@@ -84,18 +84,18 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 5.4 Create `src/middleware.ts` with a minimal stub that exports a `middleware` function and a `config` matcher. Add a `TODO` comment indicating auth/RBAC logic will be added in PRD 04.
   - [x] 5.5 Verify the folder structure matches the specification in the PRD by reviewing the `src/` directory tree.
 
-- [ ] 6.0 Initialize GitHub repository and Supabase CLI
+- [x] 6.0 Initialize GitHub repository and Supabase CLI
   - [x] 6.1 Verify `.gitignore` includes Node/Next.js defaults, `.env.local`, and any OS-specific files (`.DS_Store`, etc.). Add missing entries if needed.
   - [x] 6.2 Install the Supabase CLI as a dev dependency: `npm install -D supabase`.
   - [x] 6.3 Run `npx supabase init` at the project root to create the `supabase/` config directory with `config.toml`.
   - [x] 6.4 Add a `db:types` script to `package.json`: `"db:types": "supabase gen types typescript --project-id <project-id> > src/types/database.ts"`. Include a comment or README note that `<project-id>` needs to be replaced with the actual Supabase project ID.
-  - [ ] 6.5 Stage all files and create an initial commit: `git add . && git commit -m "feat: project foundation and tech stack setup (PRD 01)"`.
+  - [x] 6.5 Stage all files and create an initial commit: `git add . && git commit -m "feat: project foundation and tech stack setup (PRD 01)"`.
 
-- [ ] 7.0 Verify end-to-end setup and create placeholder page
-  - [ ] 7.1 Update `src/app/page.tsx` to display a minimal placeholder page with: the app name "TTS Arena" as a heading, a dark background, and the Inter font applied — confirming Tailwind and font are wired correctly.
-  - [ ] 7.2 Optionally apply the `.glass` utility class to a card element on the placeholder page to visually verify the glassmorphism theme is working.
-  - [ ] 7.3 Run `npm run dev` and confirm the placeholder page renders correctly on `localhost:3000` with the dark background, Inter font, and styled elements.
-  - [ ] 7.4 Run `npm run build` and confirm zero errors.
-  - [ ] 7.5 (Manual) If Supabase credentials are configured in `.env.local`, verify the Supabase client can connect by adding a temporary health-check query in a Server Component or API route.
-  - [ ] 7.6 (Manual) If R2 credentials are configured in `.env.local`, verify the R2 client can upload a test file and generate a signed URL via a temporary dev-only API route.
-  - [ ] 7.7 (Manual) Push the branch to GitHub and confirm Vercel picks up the deployment and builds successfully.
+- [x] 7.0 Verify end-to-end setup and create placeholder page
+  - [x] 7.1 Update `src/app/page.tsx` to display a minimal placeholder page with: the app name "TTS Arena" as a heading, a dark background, and the Inter font applied — confirming Tailwind and font are wired correctly.
+  - [x] 7.2 Optionally apply the `.glass` utility class to a card element on the placeholder page to visually verify the glassmorphism theme is working.
+  - [x] 7.3 Run `npm run dev` and confirm the placeholder page renders correctly on `localhost:3000` with the dark background, Inter font, and styled elements.
+  - [x] 7.4 Run `npm run build` and confirm zero errors.
+  - [x] 7.5 Supabase client connectivity verified via `/api/health` route — both local and Vercel production return `status: "ok"`.
+  - [x] 7.6 R2 client connectivity verified via `/api/health` route — both local and Vercel production return `status: "ok"`, bucket `speech-arena` accessible with 0 objects.
+  - [x] 7.7 Pushed to GitHub (`feature/01-project-foundation`) and Vercel production deploy succeeded at `https://speech-arena.vercel.app`.
