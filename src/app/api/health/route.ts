@@ -16,8 +16,8 @@ export async function GET() {
   // --- Supabase check ---
   try {
     const supabase = await createClient();
-    // A lightweight query against a non-existent table — any response means we connected
-    const { error } = await supabase.from("_health_check_dummy_").select("*").limit(1);
+    // Lightweight query to validate connection (profiles exists and is small)
+    const { error } = await supabase.from("profiles").select("id").limit(1);
     if (error) {
       // Any Postgres error code means the connection itself succeeded
       results.supabase = { status: "ok", detail: `connected (pg code: ${error.code})` };

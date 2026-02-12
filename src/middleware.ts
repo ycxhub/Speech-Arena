@@ -5,7 +5,7 @@ import type { NextRequest } from "next/server";
  * TODO: Auth and RBAC logic will be added in PRD 04.
  * This middleware will handle session refresh and route protection.
  */
-export function middleware(request: NextRequest) {
+export function middleware(_request: NextRequest) {
   return NextResponse.next();
 }
 

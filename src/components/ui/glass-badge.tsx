@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 
-const ACCENT_COLORS = [
+const _ACCENT_COLORS = [
   "blue",
   "green",
   "yellow",
@@ -9,7 +9,7 @@ const ACCENT_COLORS = [
   "red",
 ] as const;
 
-export type AccentColor = (typeof ACCENT_COLORS)[number];
+export type AccentColor = (typeof _ACCENT_COLORS)[number];
 
 const accentStyles: Record<AccentColor, string> = {
   blue: "bg-accent-blue/10 text-accent-blue",
