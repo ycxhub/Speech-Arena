@@ -2,13 +2,6 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-// #region agent log
-const DEBUG_ENDPOINT = 'http://127.0.0.1:7243/ingest/f4ab0884-c40f-42d9-8400-21a6b7719960';
-function debugLog(location: string, message: string, data: Record<string, unknown>) {
-  fetch(DEBUG_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location, message, data, timestamp: Date.now() }) }).catch(() => {});
-}
-// #endregion
-
 /**
  * Middleware: refreshes auth session and protects routes.
  * Uses getClaims() for server-side JWT validation (do not use getSession/getUser).
@@ -17,14 +10,6 @@ export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
   });
-
-  // #region agent log
-  const allRequestCookies = request.cookies.getAll();
-  const authCookieNames = allRequestCookies.map(c => c.name).filter(n => n.includes('auth') || n.includes('sb-'));
-  debugLog('middleware.ts:entry', 'Middleware invoked', { pathname: request.nextUrl.pathname, authCookieNames, totalCookies: allRequestCookies.length, hypothesisId: 'H1-H4' });
-  // #endregion
-
-  let setAllCalled = false;
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -35,10 +20,6 @@ export async function middleware(request: NextRequest) {
           return request.cookies.getAll();
         },
         setAll(cookiesToSet) {
-          // #region agent log
-          setAllCalled = true;
-          debugLog('middleware.ts:setAll', 'setAll called by Supabase SSR', { cookieNames: cookiesToSet.map(c => c.name), cookieOptionsKeys: cookiesToSet.map(c => Object.keys(c.options || {})), hypothesisId: 'H2-H5' });
-          // #endregion
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value)
           );
@@ -54,12 +35,8 @@ export async function middleware(request: NextRequest) {
   );
 
   // Refresh session - getClaims() validates JWT server-side
-  const { data, error: claimsError } = await supabase.auth.getClaims();
+  const { data } = await supabase.auth.getClaims();
   const isAuthenticated = !!data?.claims?.sub;
-
-  // #region agent log
-  debugLog('middleware.ts:afterGetClaims', 'getClaims() result', { isAuthenticated, hasClaims: !!data?.claims, claimsSub: data?.claims?.sub ?? null, claimsError: claimsError?.message ?? null, setAllCalled, hypothesisId: 'H1-H3' });
-  // #endregion
 
   const pathname = request.nextUrl.pathname;
   // Leaderboard is public; admin, blind-test, my-results require auth
