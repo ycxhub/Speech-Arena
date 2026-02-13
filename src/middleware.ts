@@ -4,7 +4,8 @@ import type { NextRequest } from "next/server";
 
 /**
  * Middleware: refreshes auth session and protects routes.
- * Uses getClaims() for server-side JWT validation (do not use getSession/getUser).
+ * Uses getUser() which contacts the Supabase Auth server to validate the session
+ * and triggers token refresh when needed (via setAll cookie callback).
  */
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
@@ -34,9 +35,14 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  // Refresh session - getClaims() validates JWT server-side
-  const { data } = await supabase.auth.getClaims();
-  const isAuthenticated = !!data?.claims?.sub;
+  // FIX: Use getUser() instead of getClaims().
+  // getClaims() only does local JWT validation and does NOT refresh expired sessions.
+  // getUser() contacts the Supabase Auth server, validates the token, and triggers
+  // session refresh (via setAll) when the access token is expired.
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const isAuthenticated = !!user;
 
   const pathname = request.nextUrl.pathname;
   // Leaderboard is public; admin, blind-test, my-results require auth
@@ -48,9 +54,11 @@ export async function middleware(request: NextRequest) {
   if (isProtectedRoute && !isAuthenticated) {
     const redirectUrl = new URL("/auth/sign-in", request.url);
     const redirectResponse = NextResponse.redirect(redirectUrl);
-    supabaseResponse.cookies.getAll().forEach((cookie) =>
-      redirectResponse.cookies.set(cookie.name, cookie.value)
-    );
+    // FIX: Copy cookies WITH their options (path, httpOnly, secure, sameSite, maxAge)
+    // so refreshed session cookies are properly set on the redirect response.
+    supabaseResponse.cookies.getAll().forEach((cookie) => {
+      redirectResponse.cookies.set(cookie);
+    });
     return redirectResponse;
   }
 
@@ -63,9 +71,9 @@ export async function middleware(request: NextRequest) {
   if (isAuthRoute && isAuthenticated) {
     const redirectUrl = new URL("/blind-test", request.url);
     const redirectResponse = NextResponse.redirect(redirectUrl);
-    supabaseResponse.cookies.getAll().forEach((cookie) =>
-      redirectResponse.cookies.set(cookie.name, cookie.value)
-    );
+    supabaseResponse.cookies.getAll().forEach((cookie) => {
+      redirectResponse.cookies.set(cookie);
+    });
     return redirectResponse;
   }
 
@@ -73,28 +81,27 @@ export async function middleware(request: NextRequest) {
   if (pathname === "/" && isAuthenticated) {
     const redirectUrl = new URL("/blind-test", request.url);
     const redirectResponse = NextResponse.redirect(redirectUrl);
-    supabaseResponse.cookies.getAll().forEach((cookie) =>
-      redirectResponse.cookies.set(cookie.name, cookie.value)
-    );
+    supabaseResponse.cookies.getAll().forEach((cookie) => {
+      redirectResponse.cookies.set(cookie);
+    });
     return redirectResponse;
   }
 
   // Admin routes: only query profiles when path is /admin/* to avoid DB calls on other routes
   if (pathname.startsWith("/admin") && isAuthenticated) {
-    const userId = data?.claims?.sub as string | undefined;
-    if (userId) {
+    if (user.id) {
       const { data: profile } = await supabase
         .from("profiles")
         .select("role")
-        .eq("id", userId)
+        .eq("id", user.id)
         .single();
 
       if (profile?.role !== "admin") {
         const redirectUrl = new URL("/blind-test", request.url);
         const redirectResponse = NextResponse.redirect(redirectUrl);
-        supabaseResponse.cookies.getAll().forEach((cookie) =>
-          redirectResponse.cookies.set(cookie.name, cookie.value)
-        );
+        supabaseResponse.cookies.getAll().forEach((cookie) => {
+          redirectResponse.cookies.set(cookie);
+        });
         return redirectResponse;
       }
     }
