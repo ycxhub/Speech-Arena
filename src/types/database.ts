@@ -629,6 +629,17 @@ export type Database = {
         }
         Returns: { id: string; text: string }[]
       }
+      process_vote: {
+        Args: {
+          p_test_event_id: string
+          p_winner_id: string
+          p_loser_id: string
+          p_language_id: string
+          p_listen_time_a_ms: number
+          p_listen_time_b_ms: number
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
