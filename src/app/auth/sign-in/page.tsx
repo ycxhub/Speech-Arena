@@ -77,7 +77,7 @@ export default function SignInPage() {
   return (
     <GlassCard className="w-full max-w-md">
         <h1 className="mb-6 text-center text-xl font-semibold text-white">
-          TTS Arena
+          Speech Arena
         </h1>
 
         <form onSubmit={handleSubmit} className="space-y-4">

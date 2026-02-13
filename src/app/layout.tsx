@@ -12,8 +12,9 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "TTS Arena",
-  description: "TTS Arena - Compare TTS voices in blind tests",
+  title: "Speech Arena",
+  description:
+    "Speech Arena - Rank speech models through crowd-sourced blind tests",
 };
 
 export default function RootLayout({

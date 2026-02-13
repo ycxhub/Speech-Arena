@@ -48,7 +48,7 @@ export default function ResetPasswordPage() {
   return (
     <GlassCard className="w-full max-w-md">
         <h1 className="mb-2 text-center text-xl font-semibold text-white">
-          TTS Arena
+          Speech Arena
         </h1>
         <p className="mb-6 text-center text-sm text-white/60">
           Enter your new password below.

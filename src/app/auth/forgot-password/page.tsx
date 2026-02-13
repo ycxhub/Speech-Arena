@@ -29,7 +29,7 @@ export default function ForgotPasswordPage() {
     return (
       <GlassCard className="w-full max-w-md">
           <h1 className="mb-2 text-center text-xl font-semibold text-white">
-            TTS Arena
+            Speech Arena
           </h1>
           <p className="text-center text-white/80">
             If an account exists with that email, we&apos;ve sent you a
@@ -48,7 +48,7 @@ export default function ForgotPasswordPage() {
   return (
     <GlassCard className="w-full max-w-md">
         <h1 className="mb-2 text-center text-xl font-semibold text-white">
-          TTS Arena
+          Speech Arena
         </h1>
         <p className="mb-6 text-center text-sm text-white/60">
           Enter your email and we&apos;ll send you a link to reset your password.

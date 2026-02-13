@@ -88,7 +88,7 @@ export default function SignUpPage() {
     return (
       <GlassCard className="w-full max-w-md">
           <h1 className="mb-2 text-center text-xl font-semibold text-white">
-            TTS Arena
+            Speech Arena
           </h1>
           <p className="text-center text-white/80">
             Check your email for a confirmation link. Click it to verify your
@@ -107,7 +107,7 @@ export default function SignUpPage() {
   return (
     <GlassCard className="w-full max-w-md">
         <h1 className="mb-6 text-center text-xl font-semibold text-white">
-          TTS Arena
+          Speech Arena
         </h1>
 
         <form onSubmit={handleSubmit} className="space-y-4">
