@@ -612,7 +612,23 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_matchmaking_candidates: {
+        Args: { p_language_id: string }
+        Returns: {
+          model_id: string
+          gender: string
+          rating: number
+          matches_played: number
+        }[]
+      }
+      get_random_sentence: {
+        Args: {
+          p_language_id: string
+          p_user_id: string
+          p_exclude_window?: number
+        }
+        Returns: { id: string; text: string }[]
+      }
     }
     Enums: {
       [_ in never]: never
