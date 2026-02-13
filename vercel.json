@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/pre-generate",
       "schedule": "0 2 * * *"
+    },
+    {
+      "path": "/api/cron/elo-verify",
+      "schedule": "0 3 * * *"
     }
   ]
 }

@@ -101,6 +101,16 @@ export async function createModel(
   if (error) return { error: error.message };
 
   const modelUuid = inserted?.id;
+  if (modelUuid) {
+    const { error: eloError } = await supabase.from("elo_ratings_global").insert({
+      model_id: modelUuid,
+      rating: 1500,
+      matches_played: 0,
+      wins: 0,
+      losses: 0,
+    });
+    if (eloError) return { error: eloError.message };
+  }
   if (modelUuid && languageIds.length > 0) {
     await supabase.from("model_languages").insert(
       languageIds.map((lid) => ({ model_id: modelUuid, language_id: lid }))

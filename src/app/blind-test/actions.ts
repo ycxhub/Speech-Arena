@@ -52,7 +52,7 @@ export async function submitVote(
   const admin = getAdminClient();
   const { data: testEvent, error: fetchError } = await admin
     .from("test_events")
-    .select("id, user_id, model_a_id, model_b_id, status")
+    .select("id, user_id, model_a_id, model_b_id, language_id, status")
     .eq("id", testEventId)
     .single();
 
@@ -66,21 +66,16 @@ export async function submitVote(
   const winnerId = winner === "A" ? testEvent.model_a_id : testEvent.model_b_id;
   const loserId = winner === "A" ? testEvent.model_b_id : testEvent.model_a_id;
 
-  const { error: updateError } = await admin
-    .from("test_events")
-    .update({
-      winner_id: winnerId,
-      loser_id: loserId,
-      listen_time_a_ms: listenTimeAMs,
-      listen_time_b_ms: listenTimeBMs,
-      status: "completed",
-      voted_at: new Date().toISOString(),
-    })
-    .eq("id", testEventId);
+  const { error: rpcError } = await admin.rpc("process_vote", {
+    p_test_event_id: testEventId,
+    p_winner_id: winnerId,
+    p_loser_id: loserId,
+    p_language_id: testEvent.language_id,
+    p_listen_time_a_ms: listenTimeAMs,
+    p_listen_time_b_ms: listenTimeBMs,
+  });
 
-  if (updateError) return { error: updateError.message };
-
-  // TODO PRD 10: Trigger ELO rating update
+  if (rpcError) return { error: rpcError.message };
   return {};
 }
 
