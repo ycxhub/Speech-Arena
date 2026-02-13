@@ -39,11 +39,11 @@ export async function middleware(request: NextRequest) {
   const isAuthenticated = !!data?.claims?.sub;
 
   const pathname = request.nextUrl.pathname;
+  // Leaderboard is public; admin, blind-test, my-results require auth
   const isProtectedRoute =
     pathname.startsWith("/admin") ||
     pathname.startsWith("/blind-test") ||
-    pathname.startsWith("/my-results") ||
-    pathname.startsWith("/leaderboard");
+    pathname.startsWith("/my-results");
 
   if (isProtectedRoute && !isAuthenticated) {
     const redirectUrl = new URL("/auth/sign-in", request.url);

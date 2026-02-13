@@ -1,12 +1,7 @@
 {
   "crons": [
-    {
-      "path": "/api/cron/pre-generate",
-      "schedule": "0 2 * * *"
-    },
-    {
-      "path": "/api/cron/elo-verify",
-      "schedule": "0 3 * * *"
-    }
+    {"path":"/api/cron/pre-generate","schedule":"0 2 * * *"},
+    {"path":"/api/cron/elo-verify","schedule":"0 3 * * *"},
+    {"path":"/api/cron/abuse-check","schedule":"0 4 * * *"}
   ]
 }

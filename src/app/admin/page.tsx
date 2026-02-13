@@ -65,7 +65,7 @@ export default async function AdminPage() {
     <div className="space-y-8">
       <h1 className="text-page-title">Admin Dashboard</h1>
 
-      <nav className="flex gap-4 mb-6">
+      <nav className="flex flex-wrap gap-4 mb-6">
         <Link
           href="/admin/languages"
           className="text-sm font-medium text-accent-blue hover:text-accent-blue/80"
@@ -83,6 +83,24 @@ export default async function AdminPage() {
           className="text-sm font-medium text-accent-blue hover:text-accent-blue/80"
         >
           Providers
+        </Link>
+        <Link
+          href="/admin/logs"
+          className="text-sm font-medium text-accent-blue hover:text-accent-blue/80"
+        >
+          Test Logs
+        </Link>
+        <Link
+          href="/admin/analytics"
+          className="text-sm font-medium text-accent-blue hover:text-accent-blue/80"
+        >
+          Analytics
+        </Link>
+        <Link
+          href="/admin/audit-log"
+          className="text-sm font-medium text-accent-blue hover:text-accent-blue/80"
+        >
+          Audit Log
         </Link>
       </nav>
 

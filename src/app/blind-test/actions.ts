@@ -5,6 +5,7 @@ import { getAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
 import { prepareNextRound } from "@/lib/matchmaking/engine";
 import type { PrepareNextRoundResult } from "@/lib/matchmaking/engine";
+import { logger } from "@/lib/logger";
 
 export type LanguageOption = { id: string; name: string; code: string };
 
@@ -37,6 +38,10 @@ export async function prepareNextRoundAction(
   }
 }
 
+const VOTE_RATE_LIMIT = 10;
+const VOTE_RATE_WINDOW_SEC = 60;
+const MIN_LISTEN_MS = 3000;
+
 export async function submitVote(
   testEventId: string,
   winner: "A" | "B",
@@ -49,7 +54,33 @@ export async function submitVote(
   } = await supabase.auth.getUser();
   if (!user) return { error: "Not authenticated" };
 
+  if (listenTimeAMs <= 0 || listenTimeBMs <= 0) {
+    return { error: "Invalid listen times" };
+  }
+  if (listenTimeAMs < MIN_LISTEN_MS || listenTimeBMs < MIN_LISTEN_MS) {
+    logger.warn("Short listen time", {
+      testEventId,
+      userId: user.id,
+      listenTimeAMs,
+      listenTimeBMs,
+    });
+  }
+
   const admin = getAdminClient();
+
+  const windowStart = new Date(Date.now() - VOTE_RATE_WINDOW_SEC * 1000).toISOString();
+  const { count, error: countError } = await admin
+    .from("test_events")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", user.id)
+    .eq("status", "completed")
+    .gte("voted_at", windowStart);
+
+  if (countError) return { error: "Rate limit check failed" };
+  if ((count ?? 0) >= VOTE_RATE_LIMIT) {
+    logger.warn("Vote rate limit exceeded", { userId: user.id, count });
+    return { error: "Too many votes. Please slow down." };
+  }
   const { data: testEvent, error: fetchError } = await admin
     .from("test_events")
     .select("id, user_id, model_a_id, model_b_id, language_id, status")
@@ -76,6 +107,13 @@ export async function submitVote(
   });
 
   if (rpcError) return { error: rpcError.message };
+  logger.info("Vote submitted", {
+    testEventId,
+    userId: user.id,
+    winner,
+    listenTimeAMs,
+    listenTimeBMs,
+  });
   return {};
 }
 
@@ -106,6 +144,6 @@ export async function markRoundInvalid(
     .eq("id", testEventId);
 
   if (updateError) return { error: updateError.message };
-  console.warn("[BlindTest] Round marked invalid:", { testEventId, userId: user.id });
+  logger.warn("Round marked invalid", { testEventId, userId: user.id });
   return {};
 }
