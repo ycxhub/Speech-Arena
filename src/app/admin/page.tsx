@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { GlassCard } from "@/components/ui/glass-card";
 import { GlassTable } from "@/components/ui/glass-table";
 import { UserRoleSelect } from "./user-role-select";
@@ -63,6 +64,27 @@ export default async function AdminPage() {
   return (
     <div className="space-y-8">
       <h1 className="text-page-title">Admin Dashboard</h1>
+
+      <nav className="flex gap-4 mb-6">
+        <Link
+          href="/admin/languages"
+          className="text-sm font-medium text-accent-blue hover:text-accent-blue/80"
+        >
+          Languages
+        </Link>
+        <Link
+          href="/admin/sentences"
+          className="text-sm font-medium text-accent-blue hover:text-accent-blue/80"
+        >
+          Sentences
+        </Link>
+        <Link
+          href="/admin/providers"
+          className="text-sm font-medium text-accent-blue hover:text-accent-blue/80"
+        >
+          Providers
+        </Link>
+      </nav>
 
       <GlassCard>
         <h2 className="mb-4 text-section-heading">User Management</h2>

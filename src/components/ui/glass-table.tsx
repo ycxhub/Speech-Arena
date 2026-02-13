@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 
 export interface GlassTableColumn<T = Record<string, unknown>> {
   key: string;
-  header: string;
+  header: React.ReactNode;
   sortable?: boolean;
   render?: (row: T) => React.ReactNode;
 }
@@ -13,6 +13,7 @@ export interface GlassTableProps<T = Record<string, unknown>> {
   columns: GlassTableColumn<T>[];
   data: T[];
   onSort?: (key: string) => void;
+  onRowClick?: (row: T) => void;
   loading?: boolean;
   className?: string;
 }
@@ -21,6 +22,7 @@ export function GlassTable<T extends Record<string, unknown>>({
   columns,
   data,
   onSort,
+  onRowClick,
   loading = false,
   className,
 }: GlassTableProps<T>) {
@@ -75,8 +77,17 @@ export function GlassTable<T extends Record<string, unknown>>({
                 key={rowIndex}
                 className={cn(
                   "border-b border-white/5 transition-colors hover:bg-white/5",
-                  rowIndex % 2 === 0 ? "bg-white/[0.02]" : "bg-white/[0.05]"
+                  rowIndex % 2 === 0 ? "bg-white/[0.02]" : "bg-white/[0.05]",
+                  onRowClick && "cursor-pointer"
                 )}
+                onClick={
+                  onRowClick
+                    ? (e) => {
+                        if ((e.target as HTMLElement).closest("button, [role='switch']")) return;
+                        onRowClick(row);
+                      }
+                    : undefined
+                }
               >
                 {columns.map((col) => (
                   <td key={col.key} className="px-4 py-3 text-sm text-white">

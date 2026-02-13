@@ -58,6 +58,7 @@ export type Database = {
           encrypted_key: string
           id: string
           key_name: string
+          masked_preview: string | null
           provider_id: string
           status: string
           updated_at: string
@@ -67,6 +68,7 @@ export type Database = {
           encrypted_key: string
           id?: string
           key_name: string
+          masked_preview?: string | null
           provider_id: string
           status?: string
           updated_at?: string
@@ -76,6 +78,7 @@ export type Database = {
           encrypted_key?: string
           id?: string
           key_name?: string
+          masked_preview?: string | null
           provider_id?: string
           status?: string
           updated_at?: string
@@ -295,6 +298,7 @@ export type Database = {
           provider_id: string
           tags: string[] | null
           updated_at: string
+          voice_id: string | null
         }
         Insert: {
           created_at?: string
@@ -306,6 +310,7 @@ export type Database = {
           provider_id: string
           tags?: string[] | null
           updated_at?: string
+          voice_id?: string | null
         }
         Update: {
           created_at?: string
@@ -317,6 +322,7 @@ export type Database = {
           provider_id?: string
           tags?: string[] | null
           updated_at?: string
+          voice_id?: string | null
         }
         Relationships: [
           {

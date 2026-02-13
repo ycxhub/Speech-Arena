@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { GlassTabs } from "@/components/ui/glass-tabs";
@@ -37,9 +38,17 @@ export function NavBar({ isAdmin = false, user = null }: NavBarProps) {
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-4">
         <Link
           href="/"
-          className="text-xl font-semibold text-white hover:text-white/90"
+          className="flex items-center gap-2 transition-opacity hover:opacity-90"
+          aria-label="Speech Arena - Home"
         >
-          TTS Arena
+          <Image
+            src="/speech-arena-logo.png"
+            alt="Speech Arena"
+            width={140}
+            height={48}
+            className="h-10 w-auto object-contain"
+            priority
+          />
         </Link>
 
         <GlassTabs tabs={tabs} activeTab={activeTab} />
