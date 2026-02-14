@@ -22,8 +22,6 @@ export default async function AdminAuditLogPage({
   const pageSize = 50;
   const from = (page - 1) * pageSize;
 
-  const admin = getAdminClient();
-
   let query = admin
     .from("admin_audit_log")
     .select(
