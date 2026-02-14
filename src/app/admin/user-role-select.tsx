@@ -16,7 +16,8 @@ interface UserRoleSelectProps {
 }
 
 export function UserRoleSelect({ userId, currentRole }: UserRoleSelectProps) {
-  const [role, setRole] = useState(currentRole);
+  const safeRole = currentRole === "admin" ? "admin" : "user";
+  const [role, setRole] = useState(safeRole);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
