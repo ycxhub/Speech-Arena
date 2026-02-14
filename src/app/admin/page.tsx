@@ -5,11 +5,6 @@ import Link from "next/link";
 import { GlassCard } from "@/components/ui/glass-card";
 import { GlassTable } from "@/components/ui/glass-table";
 import { UserRoleSelect } from "./user-role-select";
-// #region agent log
-import { appendFileSync } from "fs";
-const DBG_LOG = process.cwd() + "/.cursor/debug.log";
-function dbgLog(loc: string, data: Record<string, unknown>) { try { appendFileSync(DBG_LOG, JSON.stringify({location:loc,data,timestamp:Date.now()}) + "\n"); } catch {} }
-// #endregion
 
 type ProfileRow = {
   id: string;
@@ -28,17 +23,19 @@ function formatDate(isoString: string): string {
 }
 
 export default async function AdminPage() {
+  // #region agent log - step tracker for production debugging
+  let step = "init";
   try {
+  step = "createClient";
+  // #endregion
   const supabase = await createClient();
 
+  // #region agent log
+  step = "getUser";
+  // #endregion
   const {
     data: { user },
   } = await supabase.auth.getUser();
-
-  // #region agent log
-  console.log('[DEBUG ADMIN_PAGE:GET_USER]', JSON.stringify({hasUser:!!user,userId:user?.id||null}));
-  dbgLog('admin/page.tsx:GET_USER', {hasUser:!!user,userId:user?.id||null});
-  // #endregion
 
   if (!user) redirect("/auth/sign-in");
 
@@ -46,18 +43,19 @@ export default async function AdminPage() {
   // The "Admins can select all profiles" RLS policy causes infinite recursion
   // because it queries the profiles table from within a policy on profiles.
   // The user's identity is already verified via getUser() above, so this is safe.
+  // #region agent log
+  step = "getAdminClient";
+  // #endregion
   const adminClient = getAdminClient();
 
+  // #region agent log
+  step = "profileRoleCheck";
+  // #endregion
   const { data: currentProfile, error: profileError } = await adminClient
     .from("profiles")
     .select("role")
     .eq("id", user.id)
     .single();
-
-  // #region agent log
-  console.log('[DEBUG ADMIN_PAGE:PROFILE_CHECK]', JSON.stringify({userId:user.id,currentProfile,profileError:profileError?.message||null,isAdmin:currentProfile?.role==='admin'}));
-  dbgLog('admin/page.tsx:PROFILE_CHECK', {userId:user.id,currentProfile,profileError:profileError?.message||null,isAdmin:currentProfile?.role==='admin'});
-  // #endregion
 
   if (currentProfile?.role !== "admin") {
     return (
@@ -75,11 +73,17 @@ export default async function AdminPage() {
   }
 
   // FIX: Also use admin client for fetching all profiles to avoid the same RLS recursion.
-  const { data: profiles } = await adminClient
+  // #region agent log
+  step = "fetchAllProfiles";
+  // #endregion
+  const { data: profiles, error: profilesError } = await adminClient
     .from("profiles")
     .select("id, email, role, created_at")
     .order("created_at", { ascending: false });
 
+  // #region agent log
+  step = "mapTableData";
+  // #endregion
   const tableData: ProfileRow[] = (profiles ?? []).map((p) => ({
     id: p.id,
     email: p.email,
@@ -99,6 +103,9 @@ export default async function AdminPage() {
     { key: "created_at", header: "Joined" },
   ];
 
+  // #region agent log
+  step = "render";
+  // #endregion
   return (
     <div className="space-y-8">
       <h1 className="text-page-title">Admin Dashboard</h1>
@@ -154,18 +161,14 @@ export default async function AdminPage() {
       </GlassCard>
     </div>
   );
-  // #region agent log - try-catch to show error directly on page
+  // #region agent log
   } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    console.error('[DEBUG ADMIN_PAGE:ERROR]', msg, err);
     return (
       <div className="mx-auto max-w-6xl px-6 py-8">
         <GlassCard className="flex flex-col items-start gap-4">
-          <h2 className="text-xl font-semibold text-white">Admin Page Debug Error</h2>
-          <pre className="w-full overflow-auto rounded-lg bg-black/50 p-4 text-sm text-accent-red whitespace-pre-wrap break-all">
-            {msg}
-          </pre>
-          <p className="text-xs text-white/40">Stack: {err instanceof Error ? err.stack?.slice(0, 500) : "N/A"}</p>
+          <h2 className="text-xl font-semibold text-white">Admin Debug: Error at step &quot;{step}&quot;</h2>
+          <p className="text-white/60">The page failed during the &quot;{step}&quot; phase.</p>
+          <p className="text-xs text-white/40">Error type: {err instanceof Error ? err.constructor.name : typeof err}</p>
         </GlassCard>
       </div>
     );
