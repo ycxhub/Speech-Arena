@@ -4,7 +4,11 @@ import { createClient } from "@/lib/supabase/server";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
 
-async function ensureAdmin() {
+type AdminClient = ReturnType<typeof getAdminClient>;
+
+async function ensureAdmin(): Promise<
+  { error: string; admin: null; userId: null } | { error: null; admin: AdminClient; userId: string }
+> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -12,11 +16,12 @@ async function ensureAdmin() {
   if (!user)
     return {
       error: "Not authenticated",
-      supabase: null as unknown as Awaited<ReturnType<typeof createClient>>,
+      admin: null,
+      userId: null,
     };
 
-  // Use admin client to bypass RLS infinite recursion on profiles table
-  const { data: profile } = await getAdminClient()
+  const admin = getAdminClient();
+  const { data: profile } = await admin
     .from("profiles")
     .select("role")
     .eq("id", user.id)
@@ -25,21 +30,22 @@ async function ensureAdmin() {
   if (profile?.role !== "admin") {
     return {
       error: "Forbidden: admin access required",
-      supabase: null as unknown as Awaited<ReturnType<typeof createClient>>,
+      admin: null,
+      userId: null,
     };
   }
-  return { error: null, supabase };
+  return { error: null, admin, userId: user.id };
 }
 
 async function logAudit(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+  admin: AdminClient,
   adminId: string,
   action: string,
   entityType: string,
   entityId?: string,
   details?: Record<string, unknown>
 ) {
-  await supabase.from("admin_audit_log").insert({
+  await admin.from("admin_audit_log").insert({
     admin_id: adminId,
     action,
     entity_type: entityType,
@@ -59,8 +65,8 @@ export async function createModel(
   languageIds: string[],
   tagsStr: string
 ): Promise<{ error?: string }> {
-  const { error: authError, supabase } = await ensureAdmin();
-  if (authError || !supabase) return { error: authError ?? "Not authenticated" };
+  const { error: authError, admin, userId } = await ensureAdmin();
+  if (authError || !admin) return { error: authError ?? "Not authenticated" };
 
   const trimmedName = name?.trim();
   const trimmedModelId = modelId?.trim();
@@ -79,7 +85,7 @@ export async function createModel(
     .map((t) => t.trim())
     .filter(Boolean) ?? [];
 
-  const { data: existing } = await supabase
+  const { data: existing } = await admin
     .from("models")
     .select("id")
     .eq("provider_id", providerId)
@@ -87,7 +93,7 @@ export async function createModel(
     .single();
   if (existing) return { error: "Model ID already exists for this provider" };
 
-  const { data: inserted, error } = await supabase
+  const { data: inserted, error } = await admin
     .from("models")
     .insert({
       provider_id: providerId,
@@ -104,7 +110,7 @@ export async function createModel(
 
   const modelUuid = inserted?.id;
   if (modelUuid) {
-    const { error: eloError } = await supabase.from("elo_ratings_global").insert({
+    const { error: eloError } = await admin.from("elo_ratings_global").insert({
       model_id: modelUuid,
       rating: 1500,
       matches_played: 0,
@@ -114,23 +120,19 @@ export async function createModel(
     if (eloError) return { error: eloError.message };
   }
   if (modelUuid && languageIds.length > 0) {
-    await supabase.from("model_languages").insert(
+    await admin.from("model_languages").insert(
       languageIds.map((lid) => ({ model_id: modelUuid, language_id: lid }))
     );
   }
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (user)
-    await logAudit(supabase, user.id, "create_model", "models", modelUuid, {
-      provider_id: providerId,
-      name: trimmedName,
-      model_id: trimmedModelId,
-      gender: trimmedGender,
-      language_ids: languageIds,
-      tags,
-    });
+  await logAudit(admin, userId, "create_model", "models", modelUuid, {
+    provider_id: providerId,
+    name: trimmedName,
+    model_id: trimmedModelId,
+    gender: trimmedGender,
+    language_ids: languageIds,
+    tags,
+  });
 
   revalidatePath(`/admin/providers/${providerId}/models`);
   revalidatePath("/admin/providers");
@@ -147,8 +149,8 @@ export async function updateModel(
   languageIds: string[],
   tagsStr: string
 ): Promise<{ error?: string }> {
-  const { error: authError, supabase } = await ensureAdmin();
-  if (authError || !supabase) return { error: authError ?? "Not authenticated" };
+  const { error: authError, admin, userId } = await ensureAdmin();
+  if (authError || !admin) return { error: authError ?? "Not authenticated" };
 
   const trimmedName = name?.trim();
   const trimmedModelId = modelId?.trim();
@@ -167,7 +169,7 @@ export async function updateModel(
     .map((t) => t.trim())
     .filter(Boolean) ?? [];
 
-  const { data: existing } = await supabase
+  const { data: existing } = await admin
     .from("models")
     .select("id")
     .eq("provider_id", providerId)
@@ -176,7 +178,7 @@ export async function updateModel(
     .single();
   if (existing) return { error: "Model ID already exists for this provider" };
 
-  const { error } = await supabase
+  const { error } = await admin
     .from("models")
     .update({
       name: trimmedName,
@@ -190,25 +192,20 @@ export async function updateModel(
 
   if (error) return { error: error.message };
 
-  // Sync model_languages: delete old, insert new
-  await supabase.from("model_languages").delete().eq("model_id", modelUuid);
+  await admin.from("model_languages").delete().eq("model_id", modelUuid);
   if (languageIds.length > 0) {
-    await supabase.from("model_languages").insert(
+    await admin.from("model_languages").insert(
       languageIds.map((lid) => ({ model_id: modelUuid, language_id: lid }))
     );
   }
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (user)
-    await logAudit(supabase, user.id, "update_model", "models", modelUuid, {
-      name: trimmedName,
-      model_id: trimmedModelId,
-      gender: trimmedGender,
-      language_ids: languageIds,
-      tags,
-    });
+  await logAudit(admin, userId, "update_model", "models", modelUuid, {
+    name: trimmedName,
+    model_id: trimmedModelId,
+    gender: trimmedGender,
+    language_ids: languageIds,
+    tags,
+  });
 
   revalidatePath(`/admin/providers/${providerId}/models`);
   revalidatePath("/admin/providers");
@@ -219,10 +216,10 @@ export async function toggleModelActive(
   modelUuid: string,
   providerId: string
 ): Promise<{ error?: string }> {
-  const { error: authError, supabase } = await ensureAdmin();
-  if (authError || !supabase) return { error: authError ?? "Not authenticated" };
+  const { error: authError, admin, userId } = await ensureAdmin();
+  if (authError || !admin) return { error: authError ?? "Not authenticated" };
 
-  const { data: model } = await supabase
+  const { data: model } = await admin
     .from("models")
     .select("is_active")
     .eq("id", modelUuid)
@@ -230,20 +227,16 @@ export async function toggleModelActive(
   if (!model) return { error: "Model not found" };
 
   const newActive = !model.is_active;
-  const { error } = await supabase
+  const { error } = await admin
     .from("models")
     .update({ is_active: newActive, updated_at: new Date().toISOString() })
     .eq("id", modelUuid);
 
   if (error) return { error: error.message };
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (user)
-    await logAudit(supabase, user.id, "toggle_model_active", "models", modelUuid, {
-      is_active: newActive,
-    });
+  await logAudit(admin, userId, "toggle_model_active", "models", modelUuid, {
+    is_active: newActive,
+  });
 
   revalidatePath(`/admin/providers/${providerId}/models`);
   revalidatePath("/admin/providers");
@@ -255,11 +248,11 @@ export async function bulkUpdateModelStatus(
   providerId: string,
   active: boolean
 ): Promise<{ error?: string }> {
-  const { error: authError, supabase } = await ensureAdmin();
-  if (authError || !supabase) return { error: authError ?? "Not authenticated" };
+  const { error: authError, admin, userId } = await ensureAdmin();
+  if (authError || !admin) return { error: authError ?? "Not authenticated" };
   if (!modelIds?.length) return { error: "No models selected" };
 
-  const { error } = await supabase
+  const { error } = await admin
     .from("models")
     .update({ is_active: active, updated_at: new Date().toISOString() })
     .eq("provider_id", providerId)
@@ -267,14 +260,10 @@ export async function bulkUpdateModelStatus(
 
   if (error) return { error: error.message };
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (user)
-    await logAudit(supabase, user.id, "bulk_update_model_status", "models", undefined, {
-      model_ids: modelIds,
-      is_active: active,
-    });
+  await logAudit(admin, userId, "bulk_update_model_status", "models", undefined, {
+    model_ids: modelIds,
+    is_active: active,
+  });
 
   revalidatePath(`/admin/providers/${providerId}/models`);
   revalidatePath("/admin/providers");

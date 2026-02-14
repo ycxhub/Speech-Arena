@@ -5,7 +5,11 @@ import { getAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
 import { encryptApiKey, maskApiKey } from "@/lib/crypto/keys";
 
-async function ensureAdmin() {
+type AdminClient = ReturnType<typeof getAdminClient>;
+
+async function ensureAdmin(): Promise<
+  { error: string; admin: null; userId: null } | { error: null; admin: AdminClient; userId: string }
+> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -13,11 +17,12 @@ async function ensureAdmin() {
   if (!user)
     return {
       error: "Not authenticated",
-      supabase: null as unknown as Awaited<ReturnType<typeof createClient>>,
+      admin: null,
+      userId: null,
     };
 
-  // Use admin client to bypass RLS infinite recursion on profiles table
-  const { data: profile } = await getAdminClient()
+  const admin = getAdminClient();
+  const { data: profile } = await admin
     .from("profiles")
     .select("role")
     .eq("id", user.id)
@@ -26,21 +31,22 @@ async function ensureAdmin() {
   if (profile?.role !== "admin") {
     return {
       error: "Forbidden: admin access required",
-      supabase: null as unknown as Awaited<ReturnType<typeof createClient>>,
+      admin: null,
+      userId: null,
     };
   }
-  return { error: null, supabase };
+  return { error: null, admin, userId: user.id };
 }
 
 async function logAudit(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+  admin: AdminClient,
   adminId: string,
   action: string,
   entityType: string,
   entityId?: string,
   details?: Record<string, unknown>
 ) {
-  await supabase.from("admin_audit_log").insert({
+  await admin.from("admin_audit_log").insert({
     admin_id: adminId,
     action,
     entity_type: entityType,
@@ -54,8 +60,8 @@ export async function addApiKey(
   keyName: string,
   keyValue: string
 ): Promise<{ error?: string }> {
-  const { error: authError, supabase } = await ensureAdmin();
-  if (authError || !supabase) return { error: authError ?? "Not authenticated" };
+  const { error: authError, admin, userId } = await ensureAdmin();
+  if (authError || !admin) return { error: authError ?? "Not authenticated" };
 
   const trimmedName = keyName?.trim();
   const trimmedValue = keyValue?.trim();
@@ -73,7 +79,7 @@ export async function addApiKey(
     return { error: msg };
   }
 
-  const { data: inserted, error } = await supabase
+  const { data: inserted, error } = await admin
     .from("api_keys")
     .insert({
       provider_id: providerId,
@@ -87,15 +93,10 @@ export async function addApiKey(
 
   if (error) return { error: error.message };
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (user)
-    await logAudit(supabase, user.id, "add_api_key", "api_keys", inserted?.id, {
-      provider_id: providerId,
-      key_name: trimmedName,
-      // never log key value
-    });
+  await logAudit(admin, userId, "add_api_key", "api_keys", inserted?.id, {
+    provider_id: providerId,
+    key_name: trimmedName,
+  });
 
   revalidatePath(`/admin/providers/${providerId}/keys`);
   revalidatePath("/admin/providers");
@@ -107,10 +108,10 @@ export async function updateKeyStatus(
   providerId: string,
   status: "active" | "deprecated" | "revoked"
 ): Promise<{ error?: string }> {
-  const { error: authError, supabase } = await ensureAdmin();
-  if (authError || !supabase) return { error: authError ?? "Not authenticated" };
+  const { error: authError, admin, userId } = await ensureAdmin();
+  if (authError || !admin) return { error: authError ?? "Not authenticated" };
 
-  const { error } = await supabase
+  const { error } = await admin
     .from("api_keys")
     .update({ status, updated_at: new Date().toISOString() })
     .eq("id", keyId)
@@ -118,13 +119,9 @@ export async function updateKeyStatus(
 
   if (error) return { error: error.message };
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (user)
-    await logAudit(supabase, user.id, "update_key_status", "api_keys", keyId, {
-      status,
-    });
+  await logAudit(admin, userId, "update_key_status", "api_keys", keyId, {
+    status,
+  });
 
   revalidatePath(`/admin/providers/${providerId}/keys`);
   revalidatePath("/admin/providers");

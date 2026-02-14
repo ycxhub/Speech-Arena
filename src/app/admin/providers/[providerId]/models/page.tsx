@@ -34,21 +34,22 @@ export default async function ModelsPage({
   } = await supabase.auth.getUser();
   if (!user) redirect("/auth/sign-in");
 
-  const { data: profile } = await getAdminClient()
+  const admin = getAdminClient();
+  const { data: profile } = await admin
     .from("profiles")
     .select("role")
     .eq("id", user.id)
     .single();
   if (profile?.role !== "admin") redirect("/blind-test");
 
-  const { data: provider } = await supabase
+  const { data: provider } = await admin
     .from("providers")
     .select("id")
     .eq("id", providerId)
     .single();
   if (!provider) notFound();
 
-  let query = supabase
+  let query = admin
     .from("models")
     .select(
       `
@@ -107,7 +108,7 @@ export default async function ModelsPage({
     };
   });
 
-  const { data: languages } = await supabase
+  const { data: languages } = await admin
     .from("languages")
     .select("id, code, name")
     .eq("is_active", true)

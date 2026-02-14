@@ -33,21 +33,22 @@ export default async function KeysPage({
   } = await supabase.auth.getUser();
   if (!user) redirect("/auth/sign-in");
 
-  const { data: profile } = await getAdminClient()
+  const admin = getAdminClient();
+  const { data: profile } = await admin
     .from("profiles")
     .select("role")
     .eq("id", user.id)
     .single();
   if (profile?.role !== "admin") redirect("/blind-test");
 
-  const { data: provider } = await supabase
+  const { data: provider } = await admin
     .from("providers")
     .select("id")
     .eq("id", providerId)
     .single();
   if (!provider) notFound();
 
-  const { data: keys } = await supabase
+  const { data: keys } = await admin
     .from("api_keys")
     .select("id, key_name, status, masked_preview, created_at, updated_at")
     .eq("provider_id", providerId)
