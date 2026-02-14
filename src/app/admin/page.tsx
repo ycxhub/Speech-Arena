@@ -4,6 +4,11 @@ import Link from "next/link";
 import { GlassCard } from "@/components/ui/glass-card";
 import { GlassTable } from "@/components/ui/glass-table";
 import { UserRoleSelect } from "./user-role-select";
+// #region agent log
+import { appendFileSync } from "fs";
+const DBG_LOG = process.cwd() + "/.cursor/debug.log";
+function dbgLog(loc: string, data: Record<string, unknown>) { try { appendFileSync(DBG_LOG, JSON.stringify({location:loc,data,timestamp:Date.now()}) + "\n"); } catch {} }
+// #endregion
 
 type ProfileRow = {
   id: string;
@@ -27,15 +32,28 @@ export default async function AdminPage() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  // #region agent log
+  console.log('[DEBUG ADMIN_PAGE:GET_USER]', JSON.stringify({hasUser:!!user,userId:user?.id||null}));
+  dbgLog('admin/page.tsx:GET_USER', {hasUser:!!user,userId:user?.id||null});
+  // #endregion
+
   if (!user) redirect("/auth/sign-in");
 
-  const { data: currentProfile } = await supabase
+  const { data: currentProfile, error: profileError } = await supabase
     .from("profiles")
     .select("role")
     .eq("id", user.id)
     .single();
 
-  if (currentProfile?.role !== "admin") redirect("/blind-test");
+  // #region agent log
+  console.log('[DEBUG ADMIN_PAGE:PROFILE_CHECK]', JSON.stringify({userId:user.id,currentProfile,profileError:profileError?.message||null,willRedirect:currentProfile?.role!=='admin'}));
+  dbgLog('admin/page.tsx:PROFILE_CHECK', {userId:user.id,currentProfile,profileError:profileError?.message||null,willRedirect:currentProfile?.role!=='admin'});
+  // #endregion
+
+  // #region agent log - URL-visible diagnostics for production debugging
+  if (currentProfile?.role !== "admin") redirect(`/blind-test?_dbg_src=adminpage&_dbg_role=${currentProfile?.role || "null"}&_dbg_err=${profileError?.message || "none"}`);
+  // #endregion
 
   const { data: profiles } = await supabase
     .from("profiles")
