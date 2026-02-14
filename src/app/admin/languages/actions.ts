@@ -4,35 +4,39 @@ import { createClient } from "@/lib/supabase/server";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
 
-async function ensureAdmin() {
+type AdminClient = ReturnType<typeof getAdminClient>;
+
+async function ensureAdmin(): Promise<
+  { error: string; admin: null; userId: null } | { error: null; admin: AdminClient; userId: string }
+> {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "Not authenticated", supabase: null as unknown as Awaited<ReturnType<typeof createClient>> };
+  if (!user) return { error: "Not authenticated", admin: null, userId: null };
 
-  // Use admin client to bypass RLS infinite recursion on profiles table
-  const { data: profile } = await getAdminClient()
+  const admin = getAdminClient();
+  const { data: profile } = await admin
     .from("profiles")
     .select("role")
     .eq("id", user.id)
     .single();
 
   if (profile?.role !== "admin") {
-    return { error: "Forbidden: admin access required", supabase: null as unknown as Awaited<ReturnType<typeof createClient>> };
+    return { error: "Forbidden: admin access required", admin: null, userId: null };
   }
-  return { error: null, supabase };
+  return { error: null, admin, userId: user.id };
 }
 
 async function logAudit(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+  admin: AdminClient,
   adminId: string,
   action: string,
   entityType: string,
   entityId?: string,
   details?: Record<string, unknown>
 ) {
-  await supabase.from("admin_audit_log").insert({
+  await admin.from("admin_audit_log").insert({
     admin_id: adminId,
     action,
     entity_type: entityType,
@@ -45,8 +49,8 @@ export async function createLanguage(
   name: string,
   code: string
 ): Promise<{ error?: string }> {
-  const { error: authError, supabase } = await ensureAdmin();
-  if (authError || !supabase) return { error: authError ?? "Not authenticated" };
+  const { error: authError, admin, userId } = await ensureAdmin();
+  if (authError || !admin) return { error: authError ?? "Not authenticated" };
 
   const trimmedName = name?.trim();
   const trimmedCode = code?.trim().toLowerCase();
@@ -60,14 +64,14 @@ export async function createLanguage(
     return { error: "Language code must be alphanumeric" };
   }
 
-  const { data: existing } = await supabase
+  const { data: existing } = await admin
     .from("languages")
     .select("id")
     .eq("code", trimmedCode)
     .single();
   if (existing) return { error: "Language code already exists" };
 
-  const { data: inserted, error } = await supabase
+  const { data: inserted, error } = await admin
     .from("languages")
     .insert({ name: trimmedName, code: trimmedCode })
     .select("id")
@@ -75,14 +79,10 @@ export async function createLanguage(
 
   if (error) return { error: error.message };
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (user)
-    await logAudit(supabase, user.id, "create_language", "languages", inserted?.id, {
-      name: trimmedName,
-      code: trimmedCode,
-    });
+  await logAudit(admin, userId, "create_language", "languages", inserted?.id, {
+    name: trimmedName,
+    code: trimmedCode,
+  });
 
   revalidatePath("/admin/languages");
   return {};
@@ -93,8 +93,8 @@ export async function updateLanguage(
   name: string,
   code: string
 ): Promise<{ error?: string }> {
-  const { error: authError, supabase } = await ensureAdmin();
-  if (authError || !supabase) return { error: authError ?? "Not authenticated" };
+  const { error: authError, admin, userId } = await ensureAdmin();
+  if (authError || !admin) return { error: authError ?? "Not authenticated" };
 
   const trimmedName = name?.trim();
   const trimmedCode = code?.trim().toLowerCase();
@@ -108,7 +108,7 @@ export async function updateLanguage(
     return { error: "Language code must be alphanumeric" };
   }
 
-  const { data: existing } = await supabase
+  const { data: existing } = await admin
     .from("languages")
     .select("id")
     .eq("code", trimmedCode)
@@ -116,31 +116,27 @@ export async function updateLanguage(
     .single();
   if (existing) return { error: "Language code already exists" };
 
-  const { error } = await supabase
+  const { error } = await admin
     .from("languages")
     .update({ name: trimmedName, code: trimmedCode, updated_at: new Date().toISOString() })
     .eq("id", id);
 
   if (error) return { error: error.message };
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (user)
-    await logAudit(supabase, user.id, "update_language", "languages", id, {
-      name: trimmedName,
-      code: trimmedCode,
-    });
+  await logAudit(admin, userId, "update_language", "languages", id, {
+    name: trimmedName,
+    code: trimmedCode,
+  });
 
   revalidatePath("/admin/languages");
   return {};
 }
 
 export async function toggleLanguageActive(id: string): Promise<{ error?: string }> {
-  const { error: authError, supabase } = await ensureAdmin();
-  if (authError || !supabase) return { error: authError ?? "Not authenticated" };
+  const { error: authError, admin, userId } = await ensureAdmin();
+  if (authError || !admin) return { error: authError ?? "Not authenticated" };
 
-  const { data: lang } = await supabase
+  const { data: lang } = await admin
     .from("languages")
     .select("is_active")
     .eq("id", id)
@@ -148,20 +144,16 @@ export async function toggleLanguageActive(id: string): Promise<{ error?: string
   if (!lang) return { error: "Language not found" };
 
   const newActive = !lang.is_active;
-  const { error } = await supabase
+  const { error } = await admin
     .from("languages")
     .update({ is_active: newActive, updated_at: new Date().toISOString() })
     .eq("id", id);
 
   if (error) return { error: error.message };
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (user)
-    await logAudit(supabase, user.id, "toggle_language_active", "languages", id, {
-      is_active: newActive,
-    });
+  await logAudit(admin, userId, "toggle_language_active", "languages", id, {
+    is_active: newActive,
+  });
 
   revalidatePath("/admin/languages");
   return {};

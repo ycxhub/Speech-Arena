@@ -4,7 +4,11 @@ import { createClient } from "@/lib/supabase/server";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
 
-async function ensureAdmin() {
+type AdminClient = ReturnType<typeof getAdminClient>;
+
+async function ensureAdmin(): Promise<
+  { error: string; admin: null; userId: null } | { error: null; admin: AdminClient; userId: string }
+> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -12,11 +16,12 @@ async function ensureAdmin() {
   if (!user)
     return {
       error: "Not authenticated",
-      supabase: null as unknown as Awaited<ReturnType<typeof createClient>>,
+      admin: null,
+      userId: null,
     };
 
-  // Use admin client to bypass RLS infinite recursion on profiles table
-  const { data: profile } = await getAdminClient()
+  const admin = getAdminClient();
+  const { data: profile } = await admin
     .from("profiles")
     .select("role")
     .eq("id", user.id)
@@ -25,21 +30,22 @@ async function ensureAdmin() {
   if (profile?.role !== "admin") {
     return {
       error: "Forbidden: admin access required",
-      supabase: null as unknown as Awaited<ReturnType<typeof createClient>>,
+      admin: null,
+      userId: null,
     };
   }
-  return { error: null, supabase };
+  return { error: null, admin, userId: user.id };
 }
 
 async function logAudit(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+  admin: AdminClient,
   adminId: string,
   action: string,
   entityType: string,
   entityId?: string,
   details?: Record<string, unknown>
 ) {
-  await supabase.from("admin_audit_log").insert({
+  await admin.from("admin_audit_log").insert({
     admin_id: adminId,
     action,
     entity_type: entityType,
@@ -65,8 +71,8 @@ export async function createProvider(
   slug: string,
   baseUrl?: string
 ): Promise<{ error?: string }> {
-  const { error: authError, supabase } = await ensureAdmin();
-  if (authError || !supabase) return { error: authError ?? "Not authenticated" };
+  const { error: authError, admin, userId } = await ensureAdmin();
+  if (authError || !admin) return { error: authError ?? "Not authenticated" };
 
   const trimmedName = name?.trim();
   const trimmedSlug = (slug ?? slugFromName(trimmedName ?? "")).trim().toLowerCase();
@@ -79,21 +85,21 @@ export async function createProvider(
     };
   }
 
-  const { data: existingName } = await supabase
+  const { data: existingName } = await admin
     .from("providers")
     .select("id")
     .eq("name", trimmedName)
     .single();
   if (existingName) return { error: "Provider name already exists" };
 
-  const { data: existingSlug } = await supabase
+  const { data: existingSlug } = await admin
     .from("providers")
     .select("id")
     .eq("slug", trimmedSlug)
     .single();
   if (existingSlug) return { error: "Slug already exists" };
 
-  const { data: inserted, error } = await supabase
+  const { data: inserted, error } = await admin
     .from("providers")
     .insert({
       name: trimmedName,
@@ -105,15 +111,11 @@ export async function createProvider(
 
   if (error) return { error: error.message };
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (user)
-    await logAudit(supabase, user.id, "create_provider", "providers", inserted?.id, {
-      name: trimmedName,
-      slug: trimmedSlug,
-      base_url: baseUrl?.trim() || null,
-    });
+  await logAudit(admin, userId, "create_provider", "providers", inserted?.id, {
+    name: trimmedName,
+    slug: trimmedSlug,
+    base_url: baseUrl?.trim() || null,
+  });
 
   revalidatePath("/admin/providers");
   revalidatePath("/admin");
@@ -126,8 +128,8 @@ export async function updateProvider(
   slug: string,
   baseUrl?: string
 ): Promise<{ error?: string }> {
-  const { error: authError, supabase } = await ensureAdmin();
-  if (authError || !supabase) return { error: authError ?? "Not authenticated" };
+  const { error: authError, admin, userId } = await ensureAdmin();
+  if (authError || !admin) return { error: authError ?? "Not authenticated" };
 
   const trimmedName = name?.trim();
   const trimmedSlug = slug?.trim().toLowerCase();
@@ -140,7 +142,7 @@ export async function updateProvider(
     };
   }
 
-  const { data: existingName } = await supabase
+  const { data: existingName } = await admin
     .from("providers")
     .select("id")
     .eq("name", trimmedName)
@@ -148,7 +150,7 @@ export async function updateProvider(
     .single();
   if (existingName) return { error: "Provider name already exists" };
 
-  const { data: existingSlug } = await supabase
+  const { data: existingSlug } = await admin
     .from("providers")
     .select("id")
     .eq("slug", trimmedSlug)
@@ -156,7 +158,7 @@ export async function updateProvider(
     .single();
   if (existingSlug) return { error: "Slug already exists" };
 
-  const { error } = await supabase
+  const { error } = await admin
     .from("providers")
     .update({
       name: trimmedName,
@@ -168,15 +170,11 @@ export async function updateProvider(
 
   if (error) return { error: error.message };
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (user)
-    await logAudit(supabase, user.id, "update_provider", "providers", id, {
-      name: trimmedName,
-      slug: trimmedSlug,
-      base_url: baseUrl?.trim() || null,
-    });
+  await logAudit(admin, userId, "update_provider", "providers", id, {
+    name: trimmedName,
+    slug: trimmedSlug,
+    base_url: baseUrl?.trim() || null,
+  });
 
   revalidatePath("/admin/providers");
   revalidatePath(`/admin/providers/${id}`);
@@ -185,10 +183,10 @@ export async function updateProvider(
 }
 
 export async function toggleProviderActive(id: string): Promise<{ error?: string }> {
-  const { error: authError, supabase } = await ensureAdmin();
-  if (authError || !supabase) return { error: authError ?? "Not authenticated" };
+  const { error: authError, admin, userId } = await ensureAdmin();
+  if (authError || !admin) return { error: authError ?? "Not authenticated" };
 
-  const { data: provider } = await supabase
+  const { data: provider } = await admin
     .from("providers")
     .select("is_active")
     .eq("id", id)
@@ -196,20 +194,16 @@ export async function toggleProviderActive(id: string): Promise<{ error?: string
   if (!provider) return { error: "Provider not found" };
 
   const newActive = !provider.is_active;
-  const { error } = await supabase
+  const { error } = await admin
     .from("providers")
     .update({ is_active: newActive, updated_at: new Date().toISOString() })
     .eq("id", id);
 
   if (error) return { error: error.message };
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (user)
-    await logAudit(supabase, user.id, "toggle_provider_active", "providers", id, {
-      is_active: newActive,
-    });
+  await logAudit(admin, userId, "toggle_provider_active", "providers", id, {
+    is_active: newActive,
+  });
 
   revalidatePath("/admin/providers");
   revalidatePath(`/admin/providers/${id}`);
