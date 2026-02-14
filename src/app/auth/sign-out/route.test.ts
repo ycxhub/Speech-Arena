@@ -83,7 +83,7 @@ describe("GET /auth/sign-out", () => {
     // This test verifies the architectural choice: the route uses
     // createServerClient with cookie handlers wired to the response,
     // not the shared createClient() helper that uses cookies() API.
-    const { createServerClient } = require("@supabase/ssr");
+    const { createServerClient } = await import("@supabase/ssr");
 
     const request = new NextRequest(
       new URL("/auth/sign-out", "http://localhost:3000")

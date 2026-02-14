@@ -261,7 +261,7 @@ describe("middleware – authenticated admin user", () => {
   });
 
   it("uses admin client (service role) for profile check, not user client", async () => {
-    const { createClient } = require("@supabase/supabase-js");
+    const { createClient } = await import("@supabase/supabase-js");
 
     await middleware(makeRequest("/admin"));
 
