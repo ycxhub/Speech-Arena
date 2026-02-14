@@ -30,19 +30,21 @@ export default async function LanguagesPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/auth/sign-in");
 
-  const { data: profile } = await getAdminClient()
+  const admin = getAdminClient();
+  const { data: profile } = await admin
     .from("profiles")
     .select("role")
     .eq("id", user.id)
     .single();
   if (profile?.role !== "admin") redirect("/blind-test");
 
-  const { data: languages } = await supabase
+  // Use admin client to bypass RLS (policies reference profiles → infinite recursion)
+  const { data: languages } = await admin
     .from("languages")
     .select("id, name, code, is_active, created_at")
     .order("name");
 
-  const { data: sentences } = await supabase
+  const { data: sentences } = await admin
     .from("sentences")
     .select("language_id");
 

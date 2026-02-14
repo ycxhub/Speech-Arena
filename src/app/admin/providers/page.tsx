@@ -33,23 +33,25 @@ export default async function ProvidersPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/auth/sign-in");
 
-  const { data: profile } = await getAdminClient()
+  const admin = getAdminClient();
+  const { data: profile } = await admin
     .from("profiles")
     .select("role")
     .eq("id", user.id)
     .single();
   if (profile?.role !== "admin") redirect("/blind-test");
 
-  const { data: providers } = await supabase
+  // Use admin client to bypass RLS (policies reference profiles → infinite recursion)
+  const { data: providers } = await admin
     .from("providers")
     .select("id, name, slug, base_url, is_active, created_at")
     .order("name");
 
-  const { data: models } = await supabase
+  const { data: models } = await admin
     .from("models")
     .select("provider_id, is_active");
 
-  const { data: keys } = await supabase
+  const { data: keys } = await admin
     .from("api_keys")
     .select("provider_id");
 
