@@ -28,6 +28,7 @@ function formatDate(isoString: string): string {
 }
 
 export default async function AdminPage() {
+  try {
   const supabase = await createClient();
 
   const {
@@ -153,4 +154,21 @@ export default async function AdminPage() {
       </GlassCard>
     </div>
   );
+  // #region agent log - try-catch to show error directly on page
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error('[DEBUG ADMIN_PAGE:ERROR]', msg, err);
+    return (
+      <div className="mx-auto max-w-6xl px-6 py-8">
+        <GlassCard className="flex flex-col items-start gap-4">
+          <h2 className="text-xl font-semibold text-white">Admin Page Debug Error</h2>
+          <pre className="w-full overflow-auto rounded-lg bg-black/50 p-4 text-sm text-accent-red whitespace-pre-wrap break-all">
+            {msg}
+          </pre>
+          <p className="text-xs text-white/40">Stack: {err instanceof Error ? err.stack?.slice(0, 500) : "N/A"}</p>
+        </GlassCard>
+      </div>
+    );
+  }
+  // #endregion
 }
