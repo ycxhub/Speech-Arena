@@ -60,6 +60,14 @@ export default function SignUpPage() {
       return;
     }
 
+    // Check if Supabase created an immediately-usable session
+    // (e.g. email confirmation is disabled). If so, go straight to the app.
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) {
+      window.location.href = "/blind-test";
+      return;
+    }
+
     setSuccess(true);
   }
 
@@ -88,18 +96,12 @@ export default function SignUpPage() {
     return (
       <GlassCard className="w-full max-w-md">
           <h1 className="mb-2 text-center text-xl font-semibold text-white">
-            Speech Arena
+            Check your email
           </h1>
           <p className="text-center text-white/80">
-            Check your email for a confirmation link. Click it to verify your
-            account, then sign in.
+            We sent a confirmation link to your email. Click it to verify
+            your account &mdash; you&apos;ll be signed in automatically.
           </p>
-          <Link
-            href="/auth/sign-in"
-            className="mt-6 block text-center text-sm text-accent-blue hover:text-accent-blue/80"
-          >
-            Back to sign in
-          </Link>
         </GlassCard>
     );
   }

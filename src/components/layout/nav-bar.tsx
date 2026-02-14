@@ -57,12 +57,15 @@ export function NavBar({ isAdmin = false, user = null }: NavBarProps) {
           {user ? (
             <>
               <span className="text-sm text-white/60">{user.email}</span>
-              <Link
+              {/* Use <a> (not <Link>) for sign-out so the browser does a full
+                  navigation to the route handler, ensuring cookies are properly
+                  cleared on the redirect response. */}
+              <a
                 href="/auth/sign-out"
                 className="text-sm font-medium text-white/60 hover:text-white"
               >
                 Sign out
-              </Link>
+              </a>
             </>
           ) : (
             <Link

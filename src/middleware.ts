@@ -1,4 +1,5 @@
 import { createServerClient } from "@supabase/ssr";
+import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
@@ -87,10 +88,17 @@ export async function middleware(request: NextRequest) {
     return redirectResponse;
   }
 
-  // Admin routes: only query profiles when path is /admin/* to avoid DB calls on other routes
+  // Admin routes: only query profiles when path is /admin/* to avoid DB calls on other routes.
+  // Use the service-role (admin) client to bypass RLS, matching the NavBarWithSession pattern.
+  // The user's identity is already verified via getUser() above, so this is safe.
   if (pathname.startsWith("/admin") && isAuthenticated) {
     if (user.id) {
-      const { data: profile } = await supabase
+      const adminClient = createAdminClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SECRET_KEY!,
+        { auth: { persistSession: false } }
+      );
+      const { data: profile } = await adminClient
         .from("profiles")
         .select("role")
         .eq("id", user.id)

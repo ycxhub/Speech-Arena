@@ -50,7 +50,9 @@ export default function SignInPage() {
       return;
     }
 
-    router.push("/blind-test");
+    // Use full-page navigation (not router.push) to bypass the Next.js Router
+    // Cache, which may serve stale pre-auth responses and redirect back to sign-in.
+    window.location.href = "/blind-test";
   }
 
   async function handleGoogleSignIn() {
