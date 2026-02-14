@@ -44,14 +44,16 @@ export default async function SentencesPage({
   } = await supabase.auth.getUser();
   if (!user) redirect("/auth/sign-in");
 
-  const { data: profile } = await getAdminClient()
+  const admin = getAdminClient();
+  const { data: profile } = await admin
     .from("profiles")
     .select("role")
     .eq("id", user.id)
     .single();
   if (profile?.role !== "admin") redirect("/blind-test");
 
-  const { data: allLanguages } = await supabase
+  // Use admin client to bypass RLS (policies reference profiles → infinite recursion)
+  const { data: allLanguages } = await admin
     .from("languages")
     .select("id, code, name, is_active");
 
@@ -59,7 +61,7 @@ export default async function SentencesPage({
   const activeLanguages = languages.filter((l) => l.is_active);
   const langById = new Map(languages.map((l) => [l.id, l]));
 
-  let query = supabase
+  let query = admin
     .from("sentences")
     .select("id, text, language_id, version, is_active, created_at, updated_at", {
       count: "exact",
