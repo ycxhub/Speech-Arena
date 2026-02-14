@@ -14,7 +14,8 @@ export default async function AdminLogsPage({
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/auth/sign-in");
 
-  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
+  const admin = getAdminClient();
+  const { data: profile } = await admin.from("profiles").select("role").eq("id", user.id).single();
   if (profile?.role !== "admin") redirect("/blind-test");
 
   const params = await searchParams;
@@ -35,7 +36,6 @@ export default async function AdminLogsPage({
 
   const { rows, total } = await getTestLogs(page, null, filters);
 
-  const admin = getAdminClient();
   const { data: providers } = await admin.from("providers").select("id, name").eq("is_active", true);
   const { data: languages } = await admin.from("languages").select("id, name").eq("is_active", true);
   const { data: models } = await admin.from("models").select("id, name, provider_id").eq("is_active", true);

@@ -64,10 +64,9 @@ export async function getTestLogs(
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/auth/sign-in");
 
-  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
-  if (profile?.role !== "admin") redirect("/blind-test");
-
   const admin = getAdminClient();
+  const { data: profile } = await admin.from("profiles").select("role").eq("id", user.id).single();
+  if (profile?.role !== "admin") redirect("/blind-test");
 
   let query = admin
     .from("test_events")
@@ -177,10 +176,10 @@ export async function getSignedLogAudioUrl(audioFileId: string): Promise<{ url?:
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Not authenticated" };
 
-  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
+  const admin = getAdminClient();
+  const { data: profile } = await admin.from("profiles").select("role").eq("id", user.id).single();
   if (profile?.role !== "admin") return { error: "Unauthorized" };
 
-  const admin = getAdminClient();
   const { data: audioFile, error } = await admin
     .from("audio_files")
     .select("r2_key")
@@ -205,10 +204,9 @@ export async function exportLogsCsv(
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Not authenticated" };
 
-  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
-  if (profile?.role !== "admin") return { error: "Unauthorized" };
-
   const admin = getAdminClient();
+  const { data: profile } = await admin.from("profiles").select("role").eq("id", user.id).single();
+  if (profile?.role !== "admin") return { error: "Unauthorized" };
 
   let query = admin
     .from("test_events")

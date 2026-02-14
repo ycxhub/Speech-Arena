@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { getAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { GlassCard } from "@/components/ui/glass-card";
@@ -40,22 +41,40 @@ export default async function AdminPage() {
 
   if (!user) redirect("/auth/sign-in");
 
-  const { data: currentProfile, error: profileError } = await supabase
+  // FIX: Use the service-role (admin) client to bypass RLS.
+  // The "Admins can select all profiles" RLS policy causes infinite recursion
+  // because it queries the profiles table from within a policy on profiles.
+  // The user's identity is already verified via getUser() above, so this is safe.
+  const adminClient = getAdminClient();
+
+  const { data: currentProfile, error: profileError } = await adminClient
     .from("profiles")
     .select("role")
     .eq("id", user.id)
     .single();
 
   // #region agent log
-  console.log('[DEBUG ADMIN_PAGE:PROFILE_CHECK]', JSON.stringify({userId:user.id,currentProfile,profileError:profileError?.message||null,willRedirect:currentProfile?.role!=='admin'}));
-  dbgLog('admin/page.tsx:PROFILE_CHECK', {userId:user.id,currentProfile,profileError:profileError?.message||null,willRedirect:currentProfile?.role!=='admin'});
+  console.log('[DEBUG ADMIN_PAGE:PROFILE_CHECK]', JSON.stringify({userId:user.id,currentProfile,profileError:profileError?.message||null,isAdmin:currentProfile?.role==='admin'}));
+  dbgLog('admin/page.tsx:PROFILE_CHECK', {userId:user.id,currentProfile,profileError:profileError?.message||null,isAdmin:currentProfile?.role==='admin'});
   // #endregion
 
-  // #region agent log - URL-visible diagnostics for production debugging
-  if (currentProfile?.role !== "admin") redirect(`/blind-test?_dbg_src=adminpage&_dbg_role=${currentProfile?.role || "null"}&_dbg_err=${profileError?.message || "none"}`);
-  // #endregion
+  if (currentProfile?.role !== "admin") {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <GlassCard className="w-full max-w-md text-center">
+          <h1 className="mb-2 text-xl font-semibold text-white">
+            Admin Access Required
+          </h1>
+          <p className="text-white/80">
+            Please upgrade your role to Admin to access this page.
+          </p>
+        </GlassCard>
+      </div>
+    );
+  }
 
-  const { data: profiles } = await supabase
+  // FIX: Also use admin client for fetching all profiles to avoid the same RLS recursion.
+  const { data: profiles } = await adminClient
     .from("profiles")
     .select("id, email, role, created_at")
     .order("created_at", { ascending: false });

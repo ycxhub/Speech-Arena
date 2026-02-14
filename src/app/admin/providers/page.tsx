@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { getAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { GlassButton } from "@/components/ui/glass-button";
@@ -32,7 +33,7 @@ export default async function ProvidersPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/auth/sign-in");
 
-  const { data: profile } = await supabase
+  const { data: profile } = await getAdminClient()
     .from("profiles")
     .select("role")
     .eq("id", user.id)

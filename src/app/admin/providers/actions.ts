@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { getAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
 
 async function ensureAdmin() {
@@ -14,7 +15,8 @@ async function ensureAdmin() {
       supabase: null as unknown as Awaited<ReturnType<typeof createClient>>,
     };
 
-  const { data: profile } = await supabase
+  // Use admin client to bypass RLS infinite recursion on profiles table
+  const { data: profile } = await getAdminClient()
     .from("profiles")
     .select("role")
     .eq("id", user.id)

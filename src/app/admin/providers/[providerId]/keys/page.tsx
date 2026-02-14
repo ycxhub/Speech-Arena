@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { getAdminClient } from "@/lib/supabase/admin";
 import { redirect, notFound } from "next/navigation";
 import { KeysPageClient } from "./page-client";
 
@@ -32,7 +33,7 @@ export default async function KeysPage({
   } = await supabase.auth.getUser();
   if (!user) redirect("/auth/sign-in");
 
-  const { data: profile } = await supabase
+  const { data: profile } = await getAdminClient()
     .from("profiles")
     .select("role")
     .eq("id", user.id)

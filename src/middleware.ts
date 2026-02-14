@@ -1,5 +1,4 @@
 import { createServerClient } from "@supabase/ssr";
-import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
@@ -91,45 +90,8 @@ export async function middleware(request: NextRequest) {
     return redirectResponse;
   }
 
-  // Admin routes: only query profiles when path is /admin/* to avoid DB calls on other routes.
-  // Use the service-role (admin) client to bypass RLS, matching the NavBarWithSession pattern.
-  // The user's identity is already verified via getUser() above, so this is safe.
-  if (pathname.startsWith("/admin") && isAuthenticated) {
-    // #region agent log
-    console.log('[DEBUG MW:ADMIN_ENTRY]', JSON.stringify({userId:user.id,pathname,hasSecretKey:!!process.env.SUPABASE_SECRET_KEY,secretKeyLen:process.env.SUPABASE_SECRET_KEY?.length||0}));
-    // #endregion
-    if (user.id) {
-      const adminClient = createAdminClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SECRET_KEY!,
-        { auth: { persistSession: false } }
-      );
-      const { data: profile, error: profileError } = await adminClient
-        .from("profiles")
-        .select("role")
-        .eq("id", user.id)
-        .single();
-
-      // #region agent log
-      console.log('[DEBUG MW:ADMIN_PROFILE]', JSON.stringify({userId:user.id,profile,profileError:profileError?.message||null,willRedirect:profile?.role!=='admin'}));
-      // #endregion
-
-      if (profile?.role !== "admin") {
-        // #region agent log - URL-visible diagnostics for production debugging
-        const redirectUrl = new URL("/blind-test", request.url);
-        redirectUrl.searchParams.set("_dbg_src", "middleware");
-        redirectUrl.searchParams.set("_dbg_role", profile?.role || "null");
-        redirectUrl.searchParams.set("_dbg_err", profileError?.message || "none");
-        redirectUrl.searchParams.set("_dbg_hasKey", String(!!process.env.SUPABASE_SECRET_KEY));
-        // #endregion
-        const redirectResponse = NextResponse.redirect(redirectUrl);
-        supabaseResponse.cookies.getAll().forEach((cookie) => {
-          redirectResponse.cookies.set(cookie);
-        });
-        return redirectResponse;
-      }
-    }
-  }
+  // Admin role check is handled by the page itself (using the service-role client
+  // to bypass RLS). Middleware only enforces authentication for /admin routes (above).
 
   return supabaseResponse;
 }
