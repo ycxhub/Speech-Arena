@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { GlassCard } from "@/components/ui/glass-card";
 import { GlassTable } from "@/components/ui/glass-table";
 import { GlassButton } from "@/components/ui/glass-button";
@@ -11,10 +10,18 @@ import { AddModelModal } from "./add-model-modal";
 import { ModelToggle } from "./model-toggle";
 import { getTagColor, type ModelRow } from "./model-types";
 
+type ProviderVoice = {
+  id: string;
+  voice_id: string;
+  gender: string;
+  display_name: string | null;
+};
+
 interface ModelsPageClientProps {
   providerId: string;
   tableData: ModelRow[];
   languages: { id: string; code: string; name: string }[];
+  providerVoices: ProviderVoice[];
   filters: { gender: string; language: string; tag: string; status: string; q: string };
 }
 
@@ -22,9 +29,9 @@ export function ModelsPageClient({
   providerId,
   tableData,
   languages,
+  providerVoices,
   filters,
 }: ModelsPageClientProps) {
-  const router = useRouter();
   const [modalOpen, setModalOpen] = useState(false);
   const [editingModel, setEditingModel] = useState<ModelRow | null>(null);
 
@@ -125,10 +132,7 @@ export function ModelsPageClient({
   return (
     <>
       <GlassCard>
-        <div className="mb-4 flex items-center justify-between">
-          <GlassButton variant="ghost" size="sm" onClick={() => router.back()}>
-            ← Back to providers
-          </GlassButton>
+        <div className="mb-4 flex items-center justify-end">
           <GlassButton onClick={openAdd}>Add model</GlassButton>
         </div>
         <FilterBar languages={languages} filters={filters} />
@@ -146,6 +150,7 @@ export function ModelsPageClient({
         providerId={providerId}
         model={modelForModal}
         languages={languages}
+        providerVoices={providerVoices}
         onSuccess={handleModalClose}
       />
     </>

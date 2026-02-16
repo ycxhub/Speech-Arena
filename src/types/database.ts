@@ -391,6 +391,74 @@ export type Database = {
         }
         Relationships: []
       }
+      provider_languages: {
+        Row: {
+          language_id: string
+          provider_id: string
+        }
+        Insert: {
+          language_id: string
+          provider_id: string
+        }
+        Update: {
+          language_id?: string
+          provider_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "provider_languages_language_id_fkey"
+            columns: ["language_id"]
+            isOneToOne: false
+            referencedRelation: "languages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "provider_languages_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "providers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      provider_voices: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          gender: string
+          id: string
+          provider_id: string
+          updated_at: string
+          voice_id: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          gender: string
+          id?: string
+          provider_id: string
+          updated_at?: string
+          voice_id: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          gender?: string
+          id?: string
+          provider_id?: string
+          updated_at?: string
+          voice_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "provider_voices_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "providers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sentence_versions: {
         Row: {
           created_at: string

@@ -1,6 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import { LogsClient } from "./page-client";
 import { getTestLogs } from "./actions";
 import { getAdminClient } from "@/lib/supabase/admin";
@@ -43,9 +42,7 @@ export default async function AdminLogsPage({
   return (
     <div className="space-y-8">
       <h1 className="text-page-title">Test Logs</h1>
-      <Link href="/admin" className="text-sm text-accent-blue hover:text-accent-blue/80">
-        ← Back to Admin
-      </Link>
+
       <LogsClient
         initialRows={rows}
         total={total}

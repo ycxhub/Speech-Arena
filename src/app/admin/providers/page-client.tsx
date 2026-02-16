@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { GlassCard } from "@/components/ui/glass-card";
 import { GlassTable } from "@/components/ui/glass-table";
 import { GlassButton } from "@/components/ui/glass-button";
+import { GlassBadge } from "@/components/ui/glass-badge";
 import { AddProviderModal } from "./add-provider-modal";
 import { ProviderToggle } from "./provider-toggle";
 import type { ProviderRow } from "./page";
@@ -21,6 +23,31 @@ export function ProvidersPageClient({
   const columns = [
     { key: "name", header: "Name", sortable: true },
     { key: "slug", header: "Slug", sortable: true },
+    {
+      key: "readiness",
+      header: "Readiness",
+      render: (row: ProviderRow) => (
+        <GlassBadge color={row.is_ready ? "green" : "orange"}>
+          {row.is_ready ? "Ready" : "Setup incomplete"}
+        </GlassBadge>
+      ),
+    },
+    {
+      key: "next_step",
+      header: "Next step",
+      render: (row: ProviderRow) =>
+        row.next_step && row.next_step_href ? (
+          <Link
+            href={row.next_step_href}
+            className="text-sm text-accent-blue hover:text-accent-blue/80 hover:underline"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {row.next_step}
+          </Link>
+        ) : (
+          <span className="text-sm text-white/40">—</span>
+        ),
+    },
     {
       key: "base_url",
       header: "Base URL",

@@ -114,11 +114,29 @@ export default async function ModelsPage({
     .eq("is_active", true)
     .order("code");
 
+  const { data: providerVoices } = await admin
+    .from("provider_voices")
+    .select("id, voice_id, gender, display_name")
+    .eq("provider_id", providerId)
+    .order("created_at", { ascending: false });
+
+  const { data: providerLangs } = await admin
+    .from("provider_languages")
+    .select("language_id")
+    .eq("provider_id", providerId);
+
+  const providerLangIds = new Set((providerLangs ?? []).map((pl) => pl.language_id));
+  const languagesForModels =
+    providerLangIds.size > 0
+      ? (languages ?? []).filter((l) => providerLangIds.has(l.id))
+      : (languages ?? []);
+
   return (
     <ModelsPageClient
       providerId={providerId}
       tableData={tableData}
-      languages={languages ?? []}
+      languages={languagesForModels}
+      providerVoices={providerVoices ?? []}
       filters={{
         gender: sp.gender ?? "",
         language: sp.language ?? "",

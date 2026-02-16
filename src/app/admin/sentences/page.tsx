@@ -1,8 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
-import Link from "next/link";
-import { GlassButton } from "@/components/ui/glass-button";
 import { SentencesPageClient } from "./page-client";
 
 export type SentenceRow = {
@@ -103,14 +101,7 @@ export default async function SentencesPage({
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center justify-between">
-        <h1 className="text-page-title">Sentences</h1>
-        <Link href="/admin">
-          <GlassButton variant="ghost" size="sm">
-            ← Back to Dashboard
-          </GlassButton>
-        </Link>
-      </div>
+      <h1 className="text-page-title">Sentences</h1>
 
       <SentencesPageClient
         tableData={tableData}

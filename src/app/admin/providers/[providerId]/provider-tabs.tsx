@@ -9,13 +9,27 @@ interface ProviderTabsProps {
 
 export function ProviderTabs({ providerId }: ProviderTabsProps) {
   const pathname = usePathname();
-  const isModels = pathname.endsWith("/models");
-  const activeTab = isModels ? "models" : "keys";
 
   const tabs = [
+    { id: "languages", label: "Languages", href: `/admin/providers/${providerId}/languages` },
+    { id: "voices", label: "Voices", href: `/admin/providers/${providerId}/voices` },
     { id: "models", label: "Models", href: `/admin/providers/${providerId}/models` },
-    { id: "keys", label: "API Keys", href: `/admin/providers/${providerId}/keys` },
+    { id: "keys", label: "Keys", href: `/admin/providers/${providerId}/keys` },
+    { id: "test", label: "Test API", href: `/admin/providers/${providerId}/test` },
   ];
+
+  const activeTab =
+    pathname.endsWith("/languages")
+      ? "languages"
+      : pathname.endsWith("/voices")
+        ? "voices"
+        : pathname.endsWith("/models")
+          ? "models"
+          : pathname.endsWith("/keys")
+            ? "keys"
+            : pathname.endsWith("/test")
+              ? "test"
+              : "models";
 
   return (
     <GlassTabs

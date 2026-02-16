@@ -1,6 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import { GlassCard } from "@/components/ui/glass-card";
 import { GlassTable } from "@/components/ui/glass-table";
 import { getAdminClient } from "@/lib/supabase/admin";
@@ -61,9 +60,6 @@ export default async function AdminAnalyticsPage() {
   return (
     <div className="space-y-8">
       <h1 className="text-page-title">Analytics</h1>
-      <Link href="/admin" className="text-sm text-accent-blue hover:text-accent-blue/80">
-        ← Back to Admin
-      </Link>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <GlassCard>

@@ -6,9 +6,14 @@ const IV_LENGTH = 12;
 
 function getEncryptionKey(): Buffer {
   const secret = process.env.API_KEY_ENCRYPTION_SECRET;
-  if (!secret || secret.length < 16) {
+  if (!secret) {
     throw new Error(
-      "API_KEY_ENCRYPTION_SECRET environment variable must be set and at least 16 characters"
+      "API_KEY_ENCRYPTION_SECRET is not set. Add it in Vercel: Project → Settings → Environment Variables → add API_KEY_ENCRYPTION_SECRET (min 16 chars). Redeploy after adding."
+    );
+  }
+  if (secret.length < 16) {
+    throw new Error(
+      `API_KEY_ENCRYPTION_SECRET is too short (${secret.length} chars). It must be at least 16 characters.`
     );
   }
   return createHash("sha256").update(secret).digest();

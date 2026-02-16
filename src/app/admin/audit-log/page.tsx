@@ -1,6 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import { AuditLogClient } from "./page-client";
 import { getAdminClient } from "@/lib/supabase/admin";
 
@@ -70,9 +69,6 @@ export default async function AdminAuditLogPage({
   return (
     <div className="space-y-8">
       <h1 className="text-page-title">Audit Log</h1>
-      <Link href="/admin" className="text-sm text-accent-blue hover:text-accent-blue/80">
-        ← Back to Admin
-      </Link>
 
       <AuditLogClient
         rows={rows}

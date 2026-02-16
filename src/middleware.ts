@@ -45,9 +45,6 @@ export async function middleware(request: NextRequest) {
   const isAuthenticated = !!user;
 
   const pathname = request.nextUrl.pathname;
-  // #region agent log
-  console.log('[DEBUG MW:ENTRY]', JSON.stringify({pathname,isAuthenticated,userId:user?.id||null,userEmail:user?.email||null,cookieCount:request.cookies.getAll().length}));
-  // #endregion
   // Leaderboard is public; admin, blind-test, my-results require auth
   const isProtectedRoute =
     pathname.startsWith("/admin") ||
