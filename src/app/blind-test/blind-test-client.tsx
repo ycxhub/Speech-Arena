@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { GlassCard } from "@/components/ui/glass-card";
 import { GlassButton } from "@/components/ui/glass-button";
 import { GlassSelect } from "@/components/ui/glass-select";
@@ -18,6 +18,7 @@ const LANGUAGE_STORAGE_KEY = "blind-test-language-id";
 interface BlindTestClientProps {
   userId: string;
   languages: LanguageOption[];
+  initialCompletedRounds: number;
 }
 
 type RoundData = {
@@ -25,12 +26,17 @@ type RoundData = {
   sentence: string;
   audioA: string;
   audioB: string;
-} | null;
+};
 
-export function BlindTestClient({ userId: _userId, languages }: BlindTestClientProps) {
+export function BlindTestClient({
+  userId: _userId,
+  languages,
+  initialCompletedRounds,
+}: BlindTestClientProps) {
   const [languageId, setLanguageId] = useState<string>("");
-  const [roundNumber, setRoundNumber] = useState(1);
-  const [round, setRound] = useState<RoundData>(null);
+  const [completedRoundsCount, setCompletedRoundsCount] =
+    useState(initialCompletedRounds);
+  const [round, setRound] = useState<RoundData | null>(null);
   const [loading, setLoading] = useState(true);
   const [listenTimeA, setListenTimeA] = useState(0);
   const [listenTimeB, setListenTimeB] = useState(0);
@@ -38,6 +44,34 @@ export function BlindTestClient({ userId: _userId, languages }: BlindTestClientP
   const [errorA, setErrorA] = useState(false);
   const [errorB, setErrorB] = useState(false);
   const [voteFlash, setVoteFlash] = useState<"A" | "B" | null>(null);
+
+  const [prefetchedRound, setPrefetchedRound] = useState<{
+    languageId: string;
+    round: RoundData;
+  } | null>(null);
+  const prefetchInFlightRef = useRef(false);
+
+  const startPrefetch = useCallback((langId: string) => {
+    if (prefetchInFlightRef.current) return;
+    prefetchInFlightRef.current = true;
+    prepareNextRoundAction(langId)
+      .then(({ data, error }) => {
+        prefetchInFlightRef.current = false;
+        if (error || !data) return;
+        setPrefetchedRound({
+          languageId: langId,
+          round: {
+            testEventId: data.testEventId,
+            sentence: data.sentence.text,
+            audioA: data.audioA.url,
+            audioB: data.audioB.url,
+          },
+        });
+      })
+      .catch(() => {
+        prefetchInFlightRef.current = false;
+      });
+  }, []);
 
   const loadRound = useCallback(
     async (langId: string) => {
@@ -60,9 +94,10 @@ export function BlindTestClient({ userId: _userId, languages }: BlindTestClientP
           audioA: data.audioA.url,
           audioB: data.audioB.url,
         });
+        startPrefetch(langId);
       }
     },
-    []
+    [startPrefetch]
   );
 
   useEffect(() => {
@@ -84,6 +119,7 @@ export function BlindTestClient({ userId: _userId, languages }: BlindTestClientP
   const handleLanguageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const id = e.target.value;
     if (id) {
+      setPrefetchedRound(null);
       setLanguageId(id);
       loadRound(id);
     }
@@ -121,23 +157,47 @@ export function BlindTestClient({ userId: _userId, languages }: BlindTestClientP
     }
 
     toast.success("Vote recorded");
-    setRoundNumber((n) => n + 1);
-    loadRound(languageId);
+    setCompletedRoundsCount((n) => n + 1);
     setTimeout(() => {
       setVoteFlash(null);
       setVoting(false);
     }, 500);
+
+    if (prefetchedRound && prefetchedRound.languageId === languageId) {
+      setRound(prefetchedRound.round);
+      setPrefetchedRound(null);
+      setListenTimeA(0);
+      setListenTimeB(0);
+      setErrorA(false);
+      setErrorB(false);
+      startPrefetch(languageId);
+    } else {
+      loadRound(languageId);
+    }
   };
 
   const handleSkipRound = async () => {
     if (!round || voting) return;
     setVoting(true);
     const { error } = await markRoundInvalid(round.testEventId);
-    if (error) toast.error(error);
-    else loadRound(languageId);
-    setVoting(false);
-    setErrorA(false);
-    setErrorB(false);
+    if (error) {
+      toast.error(error);
+      setVoting(false);
+    } else {
+      setErrorA(false);
+      setErrorB(false);
+      setCompletedRoundsCount((n) => n + 1);
+      if (prefetchedRound && prefetchedRound.languageId === languageId) {
+        setRound(prefetchedRound.round);
+        setPrefetchedRound(null);
+        setListenTimeA(0);
+        setListenTimeB(0);
+        startPrefetch(languageId);
+      } else {
+        loadRound(languageId);
+      }
+      setVoting(false);
+    }
   };
 
   const canVote = listenTimeA >= 3000 && listenTimeB >= 3000 && !voting;
@@ -151,7 +211,7 @@ export function BlindTestClient({ userId: _userId, languages }: BlindTestClientP
       <h1 className="text-page-title">Blind Test</h1>
 
       <div className="absolute right-4 top-6 text-sm text-white/60">
-        Round {roundNumber}
+        Round {completedRoundsCount + 1}
       </div>
 
       {/* Language picker */}

@@ -30,6 +30,12 @@ export default function AdminPage() {
           >
             Providers
           </Link>
+          <Link
+            href="/admin/api-playground"
+            className="text-sm font-medium text-accent-blue hover:text-accent-blue/80"
+          >
+            API Playground
+          </Link>
         </div>
       </GlassCard>
     </div>

@@ -27,17 +27,18 @@ export default function RootLayout({
       <body className="min-h-screen bg-[#0a0a0a] text-white antialiased">
         <AppShell>{children}</AppShell>
         <Toaster
-          position="top-right"
+          position="top-center"
           theme="dark"
-          richColors
+          richColors={false}
           duration={4000}
           closeButton
+          offset={{ top: "5rem" }}
           toastOptions={{
             classNames: {
-              success: "!bg-accent-green/20 !border-accent-green !text-accent-green",
-              error: "!bg-accent-red/20 !border-accent-red !text-accent-red",
-              warning: "!bg-accent-yellow/20 !border-accent-yellow !text-accent-yellow",
-              info: "!bg-accent-blue/20 !border-accent-blue !text-accent-blue",
+              success: "!bg-[#0a0a0a] !border !border-accent-green !text-accent-green",
+              error: "!bg-[#0a0a0a] !border !border-accent-red !text-accent-red",
+              warning: "!bg-[#0a0a0a] !border !border-accent-yellow !text-accent-yellow",
+              info: "!bg-[#0a0a0a] !border !border-accent-blue !text-accent-blue",
             },
           }}
         />

@@ -10,7 +10,7 @@ const MAX_EXPORT_ROWS = 10_000;
 const SIGNED_URL_EXPIRY_SECONDS = 300; // 5 minutes
 
 export type PersonalLeaderboardRow = {
-  modelId: string;
+  modelId: string; // composite: provider_id:model_id for model-level
   modelName: string;
   providerName: string;
   matchesPlayed: number;
@@ -65,10 +65,10 @@ export async function getPersonalLeaderboard(
     .select(
       `
       id, voted_at, model_a_id, model_b_id, winner_id, loser_id,
-      model_a:models!model_a_id(name, provider:providers(name)),
-      model_b:models!model_b_id(name, provider:providers(name)),
-      winner:models!winner_id(id),
-      loser:models!loser_id(id)
+      model_a:models!model_a_id(name, provider_id, model_id, provider:providers(name)),
+      model_b:models!model_b_id(name, provider_id, model_id, provider:providers(name)),
+      winner:models!winner_id(id, provider_id, model_id),
+      loser:models!loser_id(id, provider_id, model_id)
     `
     )
     .eq("user_id", userId)
@@ -88,7 +88,8 @@ export async function getPersonalLeaderboard(
   const { data: events, error } = await query;
   if (error || !events) return [];
 
-  // Build model stats and replay ELO
+  // Build model-level stats (group by provider_id:model_id) and replay ELO
+  // Skip same-model pairs (different voices of same model)
   const modelStats: Record<
     string,
     {
@@ -98,37 +99,67 @@ export async function getPersonalLeaderboard(
       matchesPlayed: number;
       wins: number;
       losses: number;
-      ratings: Record<string, number>; // modelId -> current rating
+      ratings: Record<string, number>; // modelKey -> current rating
     }
   > = {};
 
+  function modelKey(providerId: string, modelId: string): string {
+    return `${providerId}:${modelId}`;
+  }
+
   for (const e of events) {
-    const modelA = e.model_a as { id?: string; name?: string; provider?: { name?: string } } | null;
-    const modelB = e.model_b as { id?: string; name?: string; provider?: { name?: string } } | null;
-    const winnerId = (e.winner as { id?: string } | null)?.id ?? e.winner_id;
-    const loserId = (e.loser as { id?: string } | null)?.id ?? e.loser_id;
+    const modelA = e.model_a as {
+      id?: string;
+      name?: string;
+      provider_id?: string;
+      model_id?: string;
+      provider?: { name?: string };
+    } | null;
+    const modelB = e.model_b as {
+      id?: string;
+      name?: string;
+      provider_id?: string;
+      model_id?: string;
+      provider?: { name?: string };
+    } | null;
+    const winner = e.winner as { id?: string; provider_id?: string; model_id?: string } | null;
+    const loser = e.loser as { id?: string; provider_id?: string; model_id?: string } | null;
 
-    if (!winnerId || !loserId) continue;
+    const winnerProviderId = winner?.provider_id;
+    const winnerModelId = winner?.model_id;
+    const loserProviderId = loser?.provider_id;
+    const loserModelId = loser?.model_id;
 
-    const modelAId = e.model_a_id;
-    const modelBId = e.model_b_id;
+    if (!winnerProviderId || !winnerModelId || !loserProviderId || !loserModelId) continue;
 
-    if (!modelStats[modelAId]) {
-      modelStats[modelAId] = {
-        modelId: modelAId,
-        modelName: modelA?.name ?? "Unknown",
-        providerName: (modelA?.provider as { name?: string })?.name ?? "Unknown",
+    // Skip same-model pairs (different voices of same TTS model)
+    if (winnerProviderId === loserProviderId && winnerModelId === loserModelId) continue;
+
+    const winnerKey = modelKey(winnerProviderId, winnerModelId);
+    const loserKey = modelKey(loserProviderId, loserModelId);
+
+    if (!modelStats[winnerKey]) {
+      const winnerModel = winnerKey === modelKey(modelA?.provider_id ?? "", modelA?.model_id ?? "")
+        ? modelA
+        : modelB;
+      modelStats[winnerKey] = {
+        modelId: winnerKey,
+        modelName: winnerModel?.name ?? "Unknown",
+        providerName: (winnerModel?.provider as { name?: string })?.name ?? "Unknown",
         matchesPlayed: 0,
         wins: 0,
         losses: 0,
         ratings: {},
       };
     }
-    if (!modelStats[modelBId]) {
-      modelStats[modelBId] = {
-        modelId: modelBId,
-        modelName: modelB?.name ?? "Unknown",
-        providerName: (modelB?.provider as { name?: string })?.name ?? "Unknown",
+    if (!modelStats[loserKey]) {
+      const loserModel = loserKey === modelKey(modelA?.provider_id ?? "", modelA?.model_id ?? "")
+        ? modelA
+        : modelB;
+      modelStats[loserKey] = {
+        modelId: loserKey,
+        modelName: loserModel?.name ?? "Unknown",
+        providerName: (loserModel?.provider as { name?: string })?.name ?? "Unknown",
         matchesPlayed: 0,
         wins: 0,
         losses: 0,
@@ -136,15 +167,15 @@ export async function getPersonalLeaderboard(
       };
     }
 
-    const winnerStats = modelStats[winnerId];
-    const loserStats = modelStats[loserId];
+    const winnerStats = modelStats[winnerKey];
+    const loserStats = modelStats[loserKey];
     winnerStats.matchesPlayed++;
     winnerStats.wins++;
     loserStats.matchesPlayed++;
     loserStats.losses++;
 
-    const winnerRating = winnerStats.ratings[winnerId] ?? 1500;
-    const loserRating = loserStats.ratings[loserId] ?? 1500;
+    const winnerRating = winnerStats.ratings[winnerKey] ?? 1500;
+    const loserRating = loserStats.ratings[loserKey] ?? 1500;
     const winnerMatches = winnerStats.matchesPlayed - 1;
     const loserMatches = loserStats.matchesPlayed - 1;
 
@@ -155,11 +186,11 @@ export async function getPersonalLeaderboard(
       loserMatchesPlayed: loserMatches,
     });
 
-    winnerStats.ratings[winnerId] = result.winnerNewRating;
-    loserStats.ratings[loserId] = result.loserNewRating;
+    winnerStats.ratings[winnerKey] = result.winnerNewRating;
+    loserStats.ratings[loserKey] = result.loserNewRating;
   }
 
-  // Apply provider/model filter
+  // Apply provider/model filter (modelId is now provider_id:model_id)
   let rows: PersonalLeaderboardRow[] = Object.values(modelStats).map((s) => {
     const winRate = s.matchesPlayed > 0 ? (s.wins / s.matchesPlayed) * 100 : 0;
     const userElo = s.ratings[s.modelId] ?? 1500;
@@ -181,15 +212,25 @@ export async function getPersonalLeaderboard(
   });
 
   if (filters?.providerId) {
-    const providerModels = await admin
-      .from("models")
-      .select("id")
-      .eq("provider_id", filters.providerId);
-    const providerModelIds = new Set((providerModels.data ?? []).map((m) => m.id));
-    rows = rows.filter((r) => providerModelIds.has(r.modelId));
+    rows = rows.filter((r) => r.modelId.startsWith(`${filters.providerId}:`));
   }
   if (filters?.modelId) {
-    rows = rows.filter((r) => r.modelId === filters.modelId);
+    // modelId filter can be models.id (legacy) or provider_id:model_id
+    const isComposite = filters.modelId.includes(":");
+    if (isComposite) {
+      rows = rows.filter((r) => r.modelId === filters.modelId);
+    } else {
+      // Resolve models.id -> (provider_id, model_id) and filter
+      const { data: modelRow } = await admin
+        .from("models")
+        .select("provider_id, model_id")
+        .eq("id", filters.modelId)
+        .single();
+      if (modelRow) {
+        const key = `${modelRow.provider_id}:${modelRow.model_id}`;
+        rows = rows.filter((r) => r.modelId === key);
+      }
+    }
   }
 
   rows.sort((a, b) => b.userElo - a.userElo);

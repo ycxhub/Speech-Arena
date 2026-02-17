@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { GlassCard } from "@/components/ui/glass-card";
 import { GlassTable } from "@/components/ui/glass-table";
 import { GlassButton } from "@/components/ui/glass-button";
@@ -32,8 +33,10 @@ export function ModelsPageClient({
   providerVoices,
   filters,
 }: ModelsPageClientProps) {
+  const router = useRouter();
   const [modalOpen, setModalOpen] = useState(false);
   const [editingModel, setEditingModel] = useState<ModelRow | null>(null);
+  const [duplicateSource, setDuplicateSource] = useState<ModelRow | null>(null);
 
   const columns = [
     { key: "name", header: "Name", sortable: true },
@@ -84,24 +87,35 @@ export function ModelsPageClient({
       key: "actions",
       header: "",
       render: (row: ModelRow) => (
-        <GlassButton
-          variant="ghost"
-          size="sm"
-          onClick={(e) => handleEditClick(e, row)}
-        >
-          Edit
-        </GlassButton>
+        <div className="flex items-center gap-1">
+          <GlassButton
+            variant="ghost"
+            size="sm"
+            onClick={(e) => handleEditClick(e, row)}
+          >
+            Edit
+          </GlassButton>
+          <GlassButton
+            variant="ghost"
+            size="sm"
+            onClick={(e) => handleDuplicateClick(e, row)}
+          >
+            Duplicate
+          </GlassButton>
+        </div>
       ),
     },
   ];
 
   const openAdd = () => {
     setEditingModel(null);
+    setDuplicateSource(null);
     setModalOpen(true);
   };
 
   const openEdit = (row: ModelRow) => {
     setEditingModel(row);
+    setDuplicateSource(null);
     setModalOpen(true);
   };
 
@@ -110,9 +124,18 @@ export function ModelsPageClient({
     openEdit(row);
   };
 
+  const handleDuplicateClick = (e: React.MouseEvent, row: ModelRow) => {
+    e.stopPropagation();
+    setEditingModel(null);
+    setDuplicateSource(row);
+    setModalOpen(true);
+  };
+
   const handleModalClose = () => {
     setModalOpen(false);
     setEditingModel(null);
+    setDuplicateSource(null);
+    router.refresh();
   };
 
   const modelForModal = editingModel
@@ -127,7 +150,19 @@ export function ModelsPageClient({
           .map((l) => l.id),
         tags: editingModel.tags,
       }
-    : null;
+    : duplicateSource
+      ? {
+          name: duplicateSource.name,
+          model_id: duplicateSource.model_id,
+          voice_id: null as string | null,
+          excludeVoiceId: duplicateSource.voice_id ?? undefined,
+          gender: duplicateSource.gender,
+          languages: languages
+            .filter((l) => duplicateSource.languages.includes(l.code))
+            .map((l) => l.id),
+          tags: duplicateSource.tags,
+        }
+      : null;
 
   return (
     <>

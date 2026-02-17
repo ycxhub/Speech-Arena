@@ -85,13 +85,18 @@ export async function createModel(
     .map((t) => t.trim())
     .filter(Boolean) ?? [];
 
-  const { data: existing } = await admin
+  let existingQuery = admin
     .from("models")
     .select("id")
     .eq("provider_id", providerId)
-    .eq("model_id", trimmedModelId)
-    .single();
-  if (existing) return { error: "Model ID already exists for this provider" };
+    .eq("model_id", trimmedModelId);
+  if (voiceId?.trim()) {
+    existingQuery = existingQuery.eq("voice_id", voiceId.trim());
+  } else {
+    existingQuery = existingQuery.is("voice_id", null);
+  }
+  const { data: existing } = await existingQuery.maybeSingle();
+  if (existing) return { error: "This model and voice combination already exists for this provider" };
 
   const { data: inserted, error } = await admin
     .from("models")
@@ -110,13 +115,18 @@ export async function createModel(
 
   const modelUuid = inserted?.id;
   if (modelUuid) {
-    const { error: eloError } = await admin.from("elo_ratings_global").insert({
-      model_id: modelUuid,
-      rating: 1500,
-      matches_played: 0,
-      wins: 0,
-      losses: 0,
-    });
+    // Model-level ELO: one row per (provider_id, model_id); skip if already exists (e.g. adding another voice)
+    const { error: eloError } = await admin.from("elo_ratings_global_model").upsert(
+      {
+        provider_id: providerId,
+        model_id: trimmedModelId,
+        rating: 1500,
+        matches_played: 0,
+        wins: 0,
+        losses: 0,
+      },
+      { onConflict: "provider_id,model_id", ignoreDuplicates: true }
+    );
     if (eloError) return { error: eloError.message };
   }
   if (modelUuid && languageIds.length > 0) {
@@ -169,14 +179,19 @@ export async function updateModel(
     .map((t) => t.trim())
     .filter(Boolean) ?? [];
 
-  const { data: existing } = await admin
+  let existingQuery = admin
     .from("models")
     .select("id")
     .eq("provider_id", providerId)
     .eq("model_id", trimmedModelId)
-    .neq("id", modelUuid)
-    .single();
-  if (existing) return { error: "Model ID already exists for this provider" };
+    .neq("id", modelUuid);
+  if (voiceId?.trim()) {
+    existingQuery = existingQuery.eq("voice_id", voiceId.trim());
+  } else {
+    existingQuery = existingQuery.is("voice_id", null);
+  }
+  const { data: existing } = await existingQuery.maybeSingle();
+  if (existing) return { error: "This model and voice combination already exists for this provider" };
 
   const { error } = await admin
     .from("models")

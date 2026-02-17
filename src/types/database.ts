@@ -230,6 +230,92 @@ export type Database = {
           },
         ]
       }
+      elo_ratings_global_model: {
+        Row: {
+          provider_id: string
+          model_id: string
+          rating: number
+          matches_played: number
+          wins: number
+          losses: number
+          last_updated: string
+        }
+        Insert: {
+          provider_id: string
+          model_id: string
+          rating?: number
+          matches_played?: number
+          wins?: number
+          losses?: number
+          last_updated?: string
+        }
+        Update: {
+          provider_id?: string
+          model_id?: string
+          rating?: number
+          matches_played?: number
+          wins?: number
+          losses?: number
+          last_updated?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "elo_ratings_global_model_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "providers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      elo_ratings_by_language_model: {
+        Row: {
+          provider_id: string
+          model_id: string
+          language_id: string
+          rating: number
+          matches_played: number
+          wins: number
+          losses: number
+          last_updated: string
+        }
+        Insert: {
+          provider_id: string
+          model_id: string
+          language_id: string
+          rating?: number
+          matches_played?: number
+          wins?: number
+          losses?: number
+          last_updated?: string
+        }
+        Update: {
+          provider_id?: string
+          model_id?: string
+          language_id?: string
+          rating?: number
+          matches_played?: number
+          wins?: number
+          losses?: number
+          last_updated?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "elo_ratings_by_language_model_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "providers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "elo_ratings_by_language_model_language_id_fkey"
+            columns: ["language_id"]
+            isOneToOne: false
+            referencedRelation: "languages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       languages: {
         Row: {
           code: string
@@ -680,9 +766,58 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_leaderboard_by_language_model: {
+        Args: {
+          p_language_id: string
+          p_provider_id?: string | null
+          p_min_matches?: number | null
+        }
+        Returns: {
+          provider_id: string
+          model_id: string
+          model_name: string | null
+          provider_name: string
+          provider_slug: string
+          rating: number
+          matches_played: number
+          wins: number
+          losses: number
+          last_updated: string
+          tags: string[] | null
+        }[]
+      }
+      get_leaderboard_global_model: {
+        Args: {
+          p_provider_id?: string | null
+          p_min_matches?: number | null
+        }
+        Returns: {
+          provider_id: string
+          model_id: string
+          model_name: string | null
+          provider_name: string
+          provider_slug: string
+          rating: number
+          matches_played: number
+          wins: number
+          losses: number
+          last_updated: string
+          tags: string[] | null
+        }[]
+      }
       get_matchmaking_candidates: {
         Args: { p_language_id: string }
         Returns: {
+          model_id: string
+          gender: string
+          rating: number
+          matches_played: number
+        }[]
+      }
+      get_matchmaking_candidates_by_model: {
+        Args: { p_language_id: string }
+        Returns: {
+          provider_id: string
           model_id: string
           gender: string
           rating: number
@@ -696,6 +831,15 @@ export type Database = {
           p_exclude_window?: number
         }
         Returns: { id: string; text: string }[]
+      }
+      pick_random_voice_for_model: {
+        Args: {
+          p_provider_id: string
+          p_model_id: string
+          p_language_id: string
+          p_gender?: string
+        }
+        Returns: string
       }
       process_vote: {
         Args: {

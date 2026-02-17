@@ -30,86 +30,61 @@ export async function getGlobalLeaderboard(
   const admin = getAdminClient();
 
   if (filters?.languageId) {
-    const { data, error } = await admin
-      .from("elo_ratings_by_language")
-      .select(
-        `
-        rating, matches_played, wins, losses, last_updated,
-        model:models!inner(id, name, tags, provider_id, provider:providers!inner(id, name, slug))
-      `
-      )
-      .eq("language_id", filters.languageId)
-      .order("rating", { ascending: false });
-
-    if (error) return [];
-    return mapToRows(data ?? [], filters);
-  }
-
-  const { data, error } = await admin
-    .from("elo_ratings_global")
-    .select(
-      `
-      rating, matches_played, wins, losses, last_updated,
-      model:models!inner(id, name, tags, provider_id, is_active, provider:providers!inner(id, name, slug, is_active))
-    `
-    )
-    .eq("model.is_active", true)
-    .eq("model.provider.is_active", true)
-    .order("rating", { ascending: false });
-
-  if (error) return [];
-  return mapToRows(data ?? [], filters);
-}
-
-function mapToRows(
-  data: Array<{
-    rating: number;
-    matches_played: number;
-    wins: number;
-    losses: number;
-    last_updated: string;
-    model: {
-      id: string;
-      name: string;
-      tags: string[] | null;
-      provider_id?: string;
-      provider?: { id: string; name: string; slug: string };
-    } | null;
-  }>,
-  filters?: LeaderboardFilters
-): LeaderboardRow[] {
-  type RowWithProvider = LeaderboardRow & { _providerId?: string };
-  let rows: RowWithProvider[] = data
-    .filter((r) => r.model != null)
-    .map((r) => {
-      const m = r.model!;
-      const provider = m.provider ?? { name: "Unknown", slug: "", id: "" };
-      const winRate =
-        r.matches_played > 0 ? (r.wins / r.matches_played) * 100 : 0;
-      return {
-        modelId: m.id,
-        modelName: m.name,
-        providerName: provider.name,
-        providerSlug: provider.slug,
-        rating: Math.round(r.rating),
-        matchesPlayed: r.matches_played,
-        wins: r.wins,
-        losses: r.losses,
-        winRate,
-        lastUpdated: r.last_updated,
-        tags: m.tags,
-        isProvisional: r.matches_played < 30,
-        _providerId: provider.id || m.provider_id,
-      };
+    const { data, error } = await admin.rpc("get_leaderboard_by_language_model", {
+      p_language_id: filters.languageId,
+      p_provider_id: filters.providerId ?? null,
+      p_min_matches: filters.minMatches ?? null,
     });
 
-  if (filters?.providerId) {
-    rows = rows.filter((r) => r._providerId === filters.providerId);
+    if (error) return [];
+    return mapModelRowsToLeaderboard(data ?? [], filters);
   }
 
-  if (filters?.minMatches != null && filters.minMatches > 0) {
-    rows = rows.filter((r) => r.matchesPlayed >= filters!.minMatches!);
-  }
+  const { data, error } = await admin.rpc("get_leaderboard_global_model", {
+    p_provider_id: filters?.providerId ?? null,
+    p_min_matches: filters?.minMatches ?? null,
+  });
+
+  if (error) return [];
+  return mapModelRowsToLeaderboard(data ?? [], filters);
+}
+
+type ModelLeaderboardRow = {
+  provider_id: string;
+  model_id: string;
+  model_name: string | null;
+  provider_name: string;
+  provider_slug: string;
+  rating: number;
+  matches_played: number;
+  wins: number;
+  losses: number;
+  last_updated: string;
+  tags: string[] | null;
+};
+
+function mapModelRowsToLeaderboard(
+  data: ModelLeaderboardRow[],
+  filters?: LeaderboardFilters
+): LeaderboardRow[] {
+  let rows: LeaderboardRow[] = data.map((r) => {
+    const winRate =
+      r.matches_played > 0 ? (r.wins / r.matches_played) * 100 : 0;
+    return {
+      modelId: `${r.provider_id}:${r.model_id}`,
+      modelName: r.model_name ?? "Unknown",
+      providerName: r.provider_name,
+      providerSlug: r.provider_slug,
+      rating: Math.round(r.rating),
+      matchesPlayed: r.matches_played,
+      wins: r.wins,
+      losses: r.losses,
+      winRate,
+      lastUpdated: r.last_updated,
+      tags: r.tags,
+      isProvisional: r.matches_played < 30,
+    };
+  });
 
   if (filters?.tags && filters.tags.length > 0) {
     rows = rows.filter(
@@ -117,7 +92,7 @@ function mapToRows(
     );
   }
 
-  return rows.map(({ _providerId: _, ...rest }) => rest);
+  return rows;
 }
 
 export async function getLeaderboardOptions(): Promise<{
@@ -145,7 +120,7 @@ export async function getLeaderboardSummary(): Promise<{
   const admin = getAdminClient();
 
   const { data: global } = await admin
-    .from("elo_ratings_global")
+    .from("elo_ratings_global_model")
     .select("matches_played");
 
   const totalModels = global?.length ?? 0;
@@ -154,7 +129,7 @@ export async function getLeaderboardSummary(): Promise<{
   );
 
   const { data: langIds } = await admin
-    .from("elo_ratings_by_language")
+    .from("elo_ratings_by_language_model")
     .select("language_id");
   const distinctLangs = new Set((langIds ?? []).map((r) => r.language_id));
 

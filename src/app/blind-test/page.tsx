@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { BlindTestClient } from "./blind-test-client";
-import { getActiveLanguages } from "./actions";
+import { getActiveLanguages, getCompletedRoundsCount } from "./actions";
 
 export default async function BlindTestPage() {
   const supabase = await createClient();
@@ -11,7 +11,16 @@ export default async function BlindTestPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/auth/sign-in");
 
-  const languages = await getActiveLanguages();
+  const [languages, completedRoundsCount] = await Promise.all([
+    getActiveLanguages(),
+    getCompletedRoundsCount(),
+  ]);
 
-  return <BlindTestClient userId={user.id} languages={languages} />;
+  return (
+    <BlindTestClient
+      userId={user.id}
+      languages={languages}
+      initialCompletedRounds={completedRoundsCount}
+    />
+  );
 }

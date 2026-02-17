@@ -30,17 +30,22 @@ export interface PrepareNextRoundResult {
 }
 
 type CandidateModel = {
+  provider_id: string;
   model_id: string;
   gender: string;
   rating: number;
   matches_played: number;
 };
 
-type RecentEvent = {
-  sentence_id: string;
-  model_a_id: string;
-  model_b_id: string;
-};
+function modelKey(p: string, m: string): string {
+  return `${p}:${m}`;
+}
+
+function pairKey(a: CandidateModel, b: CandidateModel): string {
+  const k1 = modelKey(a.provider_id, a.model_id);
+  const k2 = modelKey(b.provider_id, b.model_id);
+  return [k1, k2].sort().join("--");
+}
 
 /**
  * Prepares the next blind test round for a user.
@@ -55,12 +60,14 @@ export async function prepareNextRound(params: {
 
   for (let attempt = 0; attempt < MAX_PREPARE_RETRIES; attempt++) {
     try {
-      // 1. Fetch data: candidates (with ELO), recent events, sentence
+      // 1. Fetch data: candidates (model-level with ELO), recent events (with model keys), sentence
       const [candidatesResult, recentEventsResult, sentenceResult] = await Promise.all([
-        supabase.rpc("get_matchmaking_candidates", { p_language_id: languageId }),
+        supabase.rpc("get_matchmaking_candidates_by_model", { p_language_id: languageId }),
         supabase
           .from("test_events")
-          .select("sentence_id, model_a_id, model_b_id")
+          .select(
+            "sentence_id, model_a_id, model_b_id, model_a:models!model_a_id(provider_id, model_id), model_b:models!model_b_id(provider_id, model_id)"
+          )
           .eq("user_id", userId)
           .order("created_at", { ascending: false })
           .limit(RECENT_PAIR_WINDOW),
@@ -72,7 +79,13 @@ export async function prepareNextRound(params: {
       ]);
 
       const candidates = (candidatesResult.data ?? []) as CandidateModel[];
-      const recentEvents = (recentEventsResult.data ?? []) as RecentEvent[];
+      const recentEventsRaw = (recentEventsResult.data ?? []) as Array<{
+        sentence_id: string;
+        model_a_id: string;
+        model_b_id: string;
+        model_a?: { provider_id: string; model_id: string };
+        model_b?: { provider_id: string; model_id: string };
+      }>;
       const sentenceRows = sentenceResult.data ?? [];
 
       if (candidates.length < 2) {
@@ -106,9 +119,20 @@ export async function prepareNextRound(params: {
         const recentPairs =
           pairWindow > 0
             ? new Set(
-                recentEvents
+                recentEventsRaw
                   .slice(0, pairWindow)
-                  .map((e) => [e.model_a_id, e.model_b_id].sort().join(":"))
+                  .filter(
+                    (e) =>
+                      e.model_a?.provider_id &&
+                      e.model_a?.model_id &&
+                      e.model_b?.provider_id &&
+                      e.model_b?.model_id
+                  )
+                  .map((e) => {
+                    const k1 = modelKey(e.model_a!.provider_id, e.model_a!.model_id);
+                    const k2 = modelKey(e.model_b!.provider_id, e.model_b!.model_id);
+                    return [k1, k2].sort().join("--");
+                  })
               )
             : new Set<string>();
 
@@ -127,26 +151,50 @@ export async function prepareNextRound(params: {
         throw new Error("Could not select second model");
       }
 
-      // 5. Randomize A/B ordering
-      const [modelAId, modelBId] =
-        Math.random() < 0.5 ? [modelA.model_id, modelB.model_id] : [modelB.model_id, modelA.model_id];
+      // 5. Pick random voice for each model (provider_id, model_id) -> models.id
+      // Must pass p_gender so we get voices of the matched gender (same model can have male/female variants)
+      const matchedGender = modelA.gender;
+      const [voiceAResult, voiceBResult] = await Promise.all([
+        supabase.rpc("pick_random_voice_for_model", {
+          p_provider_id: modelA.provider_id,
+          p_model_id: modelA.model_id,
+          p_language_id: languageId,
+          p_gender: matchedGender,
+        }),
+        supabase.rpc("pick_random_voice_for_model", {
+          p_provider_id: modelB.provider_id,
+          p_model_id: modelB.model_id,
+          p_language_id: languageId,
+          p_gender: matchedGender,
+        }),
+      ]);
 
-      // 6. Generate audio in parallel
+      const modelAId = voiceAResult.data as string | null;
+      const modelBId = voiceBResult.data as string | null;
+      if (!modelAId || !modelBId) {
+        throw new Error("Could not pick voice for model");
+      }
+
+      // 6. Randomize A/B ordering
+      const [finalModelAId, finalModelBId] =
+        Math.random() < 0.5 ? [modelAId, modelBId] : [modelBId, modelAId];
+
+      // 7. Generate audio in parallel
       const { audioA, audioB } = await generateAndStoreAudioPair(
-        modelAId,
-        modelBId,
+        finalModelAId,
+        finalModelBId,
         finalSentence.id
       );
 
-      // 7. Create test_event
+      // 8. Create test_event
       const { data: inserted, error } = await supabase
         .from("test_events")
         .insert({
           user_id: userId,
           sentence_id: finalSentence.id,
           language_id: languageId,
-          model_a_id: modelAId,
-          model_b_id: modelBId,
+          model_a_id: finalModelAId,
+          model_b_id: finalModelBId,
           audio_a_id: audioA.audioFileId,
           audio_b_id: audioB.audioFileId,
           status: "pending",
@@ -196,7 +244,9 @@ function selectModelsBalanced(
   const modelA = modelAPool[Math.floor(Math.random() * modelAPool.length)];
   if (!modelA) return { modelA: null, modelB: null };
 
-  const sameGender = (byGender.get(modelA.gender) ?? []).filter((m) => m.model_id !== modelA.model_id);
+  const sameGender = (byGender.get(modelA.gender) ?? []).filter(
+    (m) => m.provider_id !== modelA.provider_id || m.model_id !== modelA.model_id
+  );
   if (sameGender.length === 0) return { modelA: null, modelB: null };
 
   // ELO window: ±200, then ±400, then random
@@ -209,10 +259,8 @@ function selectModelsBalanced(
   );
   const eloPool = inNarrow.length > 0 ? inNarrow : inWide.length > 0 ? inWide : sameGender;
 
-  // Anti-repeat with constraint relaxation (4.1, 4.2)
-  const avoidPairs = eloPool.filter(
-    (m) => !recentPairs.has([modelA.model_id, m.model_id].sort().join(":"))
-  );
+  // Anti-repeat with constraint relaxation (4.1, 4.2) - use model-level keys
+  const avoidPairs = eloPool.filter((m) => !recentPairs.has(pairKey(modelA, m)));
   const modelBPool = avoidPairs.length > 0 ? avoidPairs : eloPool;
 
   const modelB = modelBPool[Math.floor(Math.random() * modelBPool.length)] ?? null;
@@ -233,7 +281,9 @@ function selectModelsExploration(
   const modelA = modelAPool[Math.floor(Math.random() * modelAPool.length)];
   if (!modelA) return { modelA: null, modelB: null };
 
-  const sameGender = (byGender.get(modelA.gender) ?? []).filter((m) => m.model_id !== modelA.model_id);
+  const sameGender = (byGender.get(modelA.gender) ?? []).filter(
+    (m) => m.provider_id !== modelA.provider_id || m.model_id !== modelA.model_id
+  );
   if (sameGender.length === 0) return { modelA: null, modelB: null };
 
   // Prefer similar ELO for Model B
@@ -243,9 +293,7 @@ function selectModelsExploration(
   );
   const eloPool = withSimilarRating.length > 0 ? withSimilarRating : sameGender;
 
-  const avoidPairs = eloPool.filter(
-    (m) => !recentPairs.has([modelA.model_id, m.model_id].sort().join(":"))
-  );
+  const avoidPairs = eloPool.filter((m) => !recentPairs.has(pairKey(modelA, m)));
   const modelBPool = avoidPairs.length > 0 ? avoidPairs : eloPool;
 
   const modelB = modelBPool[Math.floor(Math.random() * modelBPool.length)] ?? null;

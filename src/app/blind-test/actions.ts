@@ -9,9 +9,27 @@ import { logger } from "@/lib/logger";
 
 export type LanguageOption = { id: string; name: string; code: string };
 
-export async function getActiveLanguages(): Promise<LanguageOption[]> {
+export async function getCompletedRoundsCount(): Promise<number> {
   const supabase = await createClient();
-  const { data, error } = await supabase
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return 0;
+
+  const admin = getAdminClient();
+  const { count, error } = await admin
+    .from("test_events")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", user.id)
+    .in("status", ["completed", "invalid"]);
+
+  if (error) return 0;
+  return count ?? 0;
+}
+
+export async function getActiveLanguages(): Promise<LanguageOption[]> {
+  const admin = getAdminClient();
+  const { data, error } = await admin
     .from("languages")
     .select("id, name, code")
     .eq("is_active", true)
@@ -97,13 +115,16 @@ export async function submitVote(
   const winnerId = winner === "A" ? testEvent.model_a_id : testEvent.model_b_id;
   const loserId = winner === "A" ? testEvent.model_b_id : testEvent.model_a_id;
 
+  const listenA = Math.floor(listenTimeAMs);
+  const listenB = Math.floor(listenTimeBMs);
+
   const { error: rpcError } = await admin.rpc("process_vote", {
     p_test_event_id: testEventId,
     p_winner_id: winnerId,
     p_loser_id: loserId,
     p_language_id: testEvent.language_id,
-    p_listen_time_a_ms: listenTimeAMs,
-    p_listen_time_b_ms: listenTimeBMs,
+    p_listen_time_a_ms: listenA,
+    p_listen_time_b_ms: listenB,
   });
 
   if (rpcError) return { error: rpcError.message };

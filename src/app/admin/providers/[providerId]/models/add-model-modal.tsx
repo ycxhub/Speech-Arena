@@ -10,10 +10,11 @@ import { createModel, updateModel } from "./actions";
 import { toast } from "sonner";
 
 type Model = {
-  id: string;
+  id?: string;
   name: string;
   model_id: string;
   voice_id?: string | null;
+  excludeVoiceId?: string;
   gender: string;
   languages: string[];
   tags: string[];
@@ -62,8 +63,10 @@ export function AddModelModal({
   const [nameError, setNameError] = useState<string | null>(null);
   const [modelIdError, setModelIdError] = useState<string | null>(null);
   const [langError, setLangError] = useState<string | null>(null);
+  const [voiceError, setVoiceError] = useState<string | null>(null);
 
-  const isEdit = !!model;
+  const isEdit = !!model?.id;
+  const isDuplicate = !!model && !model.id && !!model.excludeVoiceId;
   const useCustomVoice = selectedVoiceId === "__custom__";
 
   const selectedVoice = providerVoices.find((v) => v.id === selectedVoiceId);
@@ -81,7 +84,11 @@ export function AddModelModal({
       setSelectedLangIds(langIds as string[]);
       setTagsStr((model?.tags ?? []).join(", "));
 
-      if (model?.voice_id) {
+      if (isDuplicate) {
+        setSelectedVoiceId("");
+        setCustomVoiceId("");
+        setCustomGender("neutral");
+      } else if (model?.voice_id) {
         const match = providerVoices.find((v) => v.voice_id === model.voice_id);
         if (match) {
           setSelectedVoiceId(match.id);
@@ -120,6 +127,12 @@ export function AddModelModal({
     if (useCustomVoice && !customVoiceId.trim()) {
       valid = false;
     }
+    if (isDuplicate && !selectedVoiceId && !customVoiceId.trim()) {
+      setVoiceError("Select a different voice");
+      valid = false;
+    } else {
+      setVoiceError(null);
+    }
     return valid;
   };
 
@@ -132,13 +145,13 @@ export function AddModelModal({
     setLoading(true);
     try {
       const result = isEdit
-        ? await updateModel(model.id, providerId, name.trim(), modelId.trim(), voiceId.trim() || null, gender, selectedLangIds, tagsStr)
+        ? await updateModel(model.id!, providerId, name.trim(), modelId.trim(), voiceId.trim() || null, gender, selectedLangIds, tagsStr)
         : await createModel(providerId, name.trim(), modelId.trim(), voiceId.trim() || null, gender, selectedLangIds, tagsStr);
       if (result.error) {
         toast.error(result.error);
         return;
       }
-      toast.success(isEdit ? "Model updated" : "Model added");
+      toast.success(isEdit ? "Model updated" : isDuplicate ? "Model duplicated with new voice" : "Model added");
       onClose();
       onSuccess?.();
       setName("");
@@ -164,6 +177,7 @@ export function AddModelModal({
     setNameError(null);
     setModelIdError(null);
     setLangError(null);
+    setVoiceError(null);
     onClose();
   };
 
@@ -173,19 +187,23 @@ export function AddModelModal({
     );
   };
 
+  const filteredVoices = model?.excludeVoiceId
+    ? providerVoices.filter((v) => v.voice_id !== model.excludeVoiceId)
+    : providerVoices;
+
   const voiceOptions = [
-    ...providerVoices.map((v) => ({
+    ...filteredVoices.map((v) => ({
       value: v.id,
       label: v.display_name ? `${v.display_name} (${v.voice_id})` : v.voice_id,
     })),
-    ...(isEdit ? [{ value: "__custom__", label: "Other (custom voice ID)" }] : []),
+    ...(isEdit || isDuplicate ? [{ value: "__custom__", label: "Other (custom voice ID)" }] : []),
   ];
 
   return (
     <GlassModal
       open={open}
       onClose={handleClose}
-      title={isEdit ? "Edit Model" : "Add Model"}
+      title={isEdit ? "Edit Model" : isDuplicate ? "Duplicate with different voice" : "Add Model"}
       footer={
         <>
           <GlassButton variant="ghost" onClick={handleClose}>
@@ -235,7 +253,12 @@ export function AddModelModal({
                   label="Voice"
                   options={voiceOptions}
                   value={selectedVoiceId}
-                  onChange={(e) => setSelectedVoiceId(e.target.value)}
+                  onChange={(e) => {
+                    setSelectedVoiceId(e.target.value);
+                    setVoiceError(null);
+                  }}
+                  placeholder={isDuplicate ? "Select a different voice" : undefined}
+                  error={voiceError ?? undefined}
                 />
                 {useCustomVoice && (
                   <>

@@ -49,19 +49,36 @@ export async function GET(request: Request) {
 
     console.log(`[ELO verify] Fetched ${events?.length ?? 0} completed events`);
 
-    // Replay events to recompute global and per-language ratings
+    // Build model_id -> (provider_id, model_id) lookup
+    const modelIds = new Set<string>();
+    for (const ev of events ?? []) {
+      modelIds.add(ev.winner_id as string);
+      modelIds.add(ev.loser_id as string);
+    }
+    const { data: models } = await admin
+      .from("models")
+      .select("id, provider_id, model_id")
+      .in("id", Array.from(modelIds));
+    const modelToKey = new Map(
+      (models ?? []).map((m) => [m.id, `${m.provider_id}:${m.model_id}`])
+    );
+
+    // Replay events at model level; skip same-model pairs
     const globalState = new Map<string, { rating: number; matches_played: number; wins: number; losses: number }>();
     const langState = new Map<string, { rating: number; matches_played: number; wins: number; losses: number }>();
 
     for (const ev of events ?? []) {
-      const winnerId = ev.winner_id as string;
-      const loserId = ev.loser_id as string;
+      const winnerKey = modelToKey.get(ev.winner_id as string);
+      const loserKey = modelToKey.get(ev.loser_id as string);
       const langId = ev.language_id as string;
 
-      const wGlobal = getOrInit(globalState, winnerId, () => ({ ...INITIAL }));
-      const lGlobal = getOrInit(globalState, loserId, () => ({ ...INITIAL }));
-      const wLang = getOrInit(langState, `${winnerId}:${langId}`, () => ({ ...INITIAL }));
-      const lLang = getOrInit(langState, `${loserId}:${langId}`, () => ({ ...INITIAL }));
+      if (!winnerKey || !loserKey) continue;
+      if (winnerKey === loserKey) continue; // skip same-model pairs
+
+      const wGlobal = getOrInit(globalState, winnerKey, () => ({ ...INITIAL }));
+      const lGlobal = getOrInit(globalState, loserKey, () => ({ ...INITIAL }));
+      const wLang = getOrInit(langState, `${winnerKey}:${langId}`, () => ({ ...INITIAL }));
+      const lLang = getOrInit(langState, `${loserKey}:${langId}`, () => ({ ...INITIAL }));
 
       const globalResult = calculateEloUpdate({
         winnerRating: wGlobal.rating,
@@ -91,35 +108,35 @@ export async function GET(request: Request) {
       lLang.losses += 1;
     }
 
-    // Fetch stored ratings for comparison
+    // Fetch stored model-level ratings for comparison
     const { data: storedGlobal } = await admin
-      .from("elo_ratings_global")
-      .select("model_id, rating, matches_played, wins, losses");
+      .from("elo_ratings_global_model")
+      .select("provider_id, model_id, rating, matches_played, wins, losses");
     const { data: storedLang } = await admin
-      .from("elo_ratings_by_language")
-      .select("model_id, language_id, rating, matches_played, wins, losses");
+      .from("elo_ratings_by_language_model")
+      .select("provider_id, model_id, language_id, rating, matches_played, wins, losses");
 
     const storedGlobalMap = new Map(
-      (storedGlobal ?? []).map((r) => [r.model_id, { rating: r.rating, matches_played: r.matches_played, wins: r.wins, losses: r.losses }])
+      (storedGlobal ?? []).map((r) => [`${r.provider_id}:${r.model_id}`, { rating: r.rating, matches_played: r.matches_played, wins: r.wins, losses: r.losses }])
     );
     const storedLangMap = new Map(
-      (storedLang ?? []).map((r) => [`${r.model_id}:${r.language_id}`, { rating: r.rating, matches_played: r.matches_played, wins: r.wins, losses: r.losses }])
+      (storedLang ?? []).map((r) => [`${r.provider_id}:${r.model_id}:${r.language_id}`, { rating: r.rating, matches_played: r.matches_played, wins: r.wins, losses: r.losses }])
     );
 
     const RATING_TOLERANCE = 1;
     let ratingDiscrepancies = 0;
     let statsDiscrepancies = 0;
 
-    for (const [modelId, recomputed] of globalState) {
-      const stored = storedGlobalMap.get(modelId);
+    for (const [modelKey, recomputed] of globalState) {
+      const stored = storedGlobalMap.get(modelKey);
       if (!stored) continue;
       const ratingDiff = Math.abs(recomputed.rating - stored.rating);
       if (ratingDiff > RATING_TOLERANCE) {
-        console.warn(`[ELO verify] Global rating discrepancy model_id=${modelId}: recomputed=${recomputed.rating.toFixed(2)} stored=${stored.rating} diff=${ratingDiff.toFixed(2)}`);
+        console.warn(`[ELO verify] Global rating discrepancy ${modelKey}: recomputed=${recomputed.rating.toFixed(2)} stored=${stored.rating} diff=${ratingDiff.toFixed(2)}`);
         ratingDiscrepancies++;
       }
       if (recomputed.matches_played !== stored.matches_played || recomputed.wins !== stored.wins || recomputed.losses !== stored.losses) {
-        console.warn(`[ELO verify] Global stats discrepancy model_id=${modelId}: recomputed(matches=${recomputed.matches_played}, wins=${recomputed.wins}, losses=${recomputed.losses}) stored(matches=${stored.matches_played}, wins=${stored.wins}, losses=${stored.losses})`);
+        console.warn(`[ELO verify] Global stats discrepancy ${modelKey}: recomputed(matches=${recomputed.matches_played}, wins=${recomputed.wins}, losses=${recomputed.losses}) stored(matches=${stored.matches_played}, wins=${stored.wins}, losses=${stored.losses})`);
         statsDiscrepancies++;
       }
     }
