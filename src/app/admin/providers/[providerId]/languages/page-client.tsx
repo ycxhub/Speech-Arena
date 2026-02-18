@@ -78,7 +78,7 @@ export function LanguagesPageClient({
               onChange={() => toggleLanguage(l.id)}
               className="rounded border-white/20"
             />
-            {l.name} ({l.code})
+            {l.code}
           </label>
         ))}
       </div>

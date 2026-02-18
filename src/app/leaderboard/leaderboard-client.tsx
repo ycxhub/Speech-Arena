@@ -13,7 +13,7 @@ import type { LeaderboardRow } from "./actions";
 type Props = {
   initialData: LeaderboardRow[];
   summary: { totalModels: number; totalMatches: number; activeLanguages: number };
-  languages: { id: string; name: string }[];
+  languages: { id: string; code: string }[];
   providers: { id: string; name: string }[];
 };
 
@@ -123,7 +123,7 @@ export function LeaderboardClient({
             label="Language"
             options={[
               { value: "", label: "All Languages" },
-              ...languages.map((l) => ({ value: l.id, label: l.name })),
+              ...languages.map((l) => ({ value: l.id, label: l.code })),
             ]}
             value={languageId}
             onChange={(e) => updateUrl({ language: e.target.value })}

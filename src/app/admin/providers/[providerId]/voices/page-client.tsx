@@ -13,6 +13,8 @@ type VoiceRow = {
   voice_id: string;
   gender: string;
   display_name: string | null;
+  language_id?: string;
+  language_code: string;
   created_at: string;
 };
 
@@ -20,12 +22,14 @@ interface VoicesPageClientProps {
   providerId: string;
   providerName: string;
   tableData: VoiceRow[];
+  languages: { id: string; code: string }[];
 }
 
 export function VoicesPageClient({
   providerId,
   providerName: _providerName,
   tableData,
+  languages,
 }: VoicesPageClientProps) {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingVoice, setEditingVoice] = useState<VoiceRow | null>(null);
@@ -49,6 +53,7 @@ export function VoicesPageClient({
   const columns = [
     { key: "voice_id", header: "Voice ID" },
     { key: "gender", header: "Gender" },
+    { key: "language_code", header: "Language" },
     {
       key: "display_name",
       header: "Display Name",
@@ -127,6 +132,7 @@ export function VoicesPageClient({
         onClose={handleModalClose}
         providerId={providerId}
         voice={editingVoice}
+        languages={languages}
         onSuccess={handleModalClose}
       />
     </>

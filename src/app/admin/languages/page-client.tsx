@@ -17,8 +17,8 @@ export function LanguagesPageClient({
   const [editingLanguage, setEditingLanguage] = useState<LanguageRow | null>(null);
 
   const columns = [
-    { key: "name", header: "Name", sortable: true },
     { key: "code", header: "Code", sortable: true },
+    { key: "name", header: "Name", sortable: true },
     {
       key: "is_active",
       header: "Status",
@@ -66,6 +66,7 @@ export function LanguagesPageClient({
         open={modalOpen}
         onClose={handleModalClose}
         language={editingLanguage}
+        existingCodes={tableData.map((r) => r.code)}
         onSuccess={handleModalClose}
       />
     </>

@@ -52,6 +52,7 @@ export async function createVoice(
   providerId: string,
   voiceId: string,
   gender: string,
+  languageId: string,
   displayName?: string
 ): Promise<{ error?: string }> {
   const { error: authError, admin, userId } = await ensureAdmin();
@@ -61,6 +62,7 @@ export async function createVoice(
   const trimmedGender = gender?.trim().toLowerCase();
 
   if (!trimmedVoiceId) return { error: "Voice ID is required" };
+  if (!languageId) return { error: "Language is required" };
   if (!trimmedGender || !GENDERS.includes(trimmedGender as (typeof GENDERS)[number])) {
     return { error: "Gender must be male, female, or neutral" };
   }
@@ -71,6 +73,7 @@ export async function createVoice(
       provider_id: providerId,
       voice_id: trimmedVoiceId,
       gender: trimmedGender,
+      language_id: languageId,
       display_name: displayName?.trim() || null,
     })
     .select("id")
@@ -95,6 +98,7 @@ export async function updateVoice(
   providerId: string,
   voiceId: string,
   gender: string,
+  languageId: string,
   displayName?: string
 ): Promise<{ error?: string }> {
   const { error: authError, admin, userId } = await ensureAdmin();
@@ -104,6 +108,7 @@ export async function updateVoice(
   const trimmedGender = gender?.trim().toLowerCase();
 
   if (!trimmedVoiceId) return { error: "Voice ID is required" };
+  if (!languageId) return { error: "Language is required" };
   if (!trimmedGender || !GENDERS.includes(trimmedGender as (typeof GENDERS)[number])) {
     return { error: "Gender must be male, female, or neutral" };
   }
@@ -113,6 +118,7 @@ export async function updateVoice(
     .update({
       voice_id: trimmedVoiceId,
       gender: trimmedGender,
+      language_id: languageId,
       display_name: displayName?.trim() || null,
       updated_at: new Date().toISOString(),
     })

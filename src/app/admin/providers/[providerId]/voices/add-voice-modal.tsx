@@ -13,6 +13,7 @@ type Voice = {
   voice_id: string;
   gender: string;
   display_name: string | null;
+  language_id?: string;
 };
 
 interface AddVoiceModalProps {
@@ -20,6 +21,7 @@ interface AddVoiceModalProps {
   onClose: () => void;
   providerId: string;
   voice?: Voice | null;
+  languages: { id: string; code: string }[];
   onSuccess?: () => void;
 }
 
@@ -34,32 +36,43 @@ export function AddVoiceModal({
   onClose,
   providerId,
   voice,
+  languages,
   onSuccess,
 }: AddVoiceModalProps) {
   const [voiceId, setVoiceId] = useState(voice?.voice_id ?? "");
   const [gender, setGender] = useState(voice?.gender ?? "neutral");
+  const [languageId, setLanguageId] = useState(voice?.language_id ?? "");
   const [displayName, setDisplayName] = useState(voice?.display_name ?? "");
   const [loading, setLoading] = useState(false);
   const [voiceIdError, setVoiceIdError] = useState<string | null>(null);
+  const [languageError, setLanguageError] = useState<string | null>(null);
 
   const isEdit = !!voice;
+
+  const languageOptions = languages.map((l) => ({ value: l.id, label: l.code }));
 
   useEffect(() => {
     if (open) {
       setVoiceId(voice?.voice_id ?? "");
       setGender(voice?.gender ?? "neutral");
+      setLanguageId(voice?.language_id ?? languages[0]?.id ?? "");
       setDisplayName(voice?.display_name ?? "");
       setVoiceIdError(null);
+      setLanguageError(null);
     }
-  }, [open, voice]);
+  }, [open, voice, languages]);
 
   const validate = () => {
+    let valid = true;
     if (!voiceId.trim()) {
       setVoiceIdError("Voice ID is required");
-      return false;
-    }
-    setVoiceIdError(null);
-    return true;
+      valid = false;
+    } else setVoiceIdError(null);
+    if (!languageId) {
+      setLanguageError("Language is required");
+      valid = false;
+    } else setLanguageError(null);
+    return valid;
   };
 
   const handleSubmit = async () => {
@@ -67,8 +80,8 @@ export function AddVoiceModal({
     setLoading(true);
     try {
       const result = isEdit
-        ? await updateVoice(voice.id, providerId, voiceId.trim(), gender, displayName.trim() || undefined)
-        : await createVoice(providerId, voiceId.trim(), gender, displayName.trim() || undefined);
+        ? await updateVoice(voice.id, providerId, voiceId.trim(), gender, languageId, displayName.trim() || undefined)
+        : await createVoice(providerId, voiceId.trim(), gender, languageId, displayName.trim() || undefined);
       if (result.error) {
         toast.error(result.error);
         return;
@@ -116,6 +129,13 @@ export function AddVoiceModal({
           options={GENDER_OPTIONS}
           value={gender}
           onChange={(e) => setGender(e.target.value)}
+        />
+        <GlassSelect
+          label="Language"
+          options={languageOptions}
+          value={languageId}
+          onChange={(e) => setLanguageId(e.target.value)}
+          error={languageError ?? undefined}
         />
         <GlassInput
           label="Display name"

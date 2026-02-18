@@ -8,7 +8,7 @@ function getEncryptionKey(): Buffer {
   const secret = process.env.API_KEY_ENCRYPTION_SECRET;
   if (!secret) {
     throw new Error(
-      "API_KEY_ENCRYPTION_SECRET is not set. Add it in Vercel: Project → Settings → Environment Variables → add API_KEY_ENCRYPTION_SECRET (min 16 chars). Redeploy after adding."
+      "API_KEY_ENCRYPTION_SECRET is not set. For local dev: add to .env.local (min 16 chars). For Vercel: Project → Settings → Environment Variables."
     );
   }
   if (secret.length < 16) {

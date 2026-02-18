@@ -513,6 +513,7 @@ export type Database = {
           display_name: string | null
           gender: string
           id: string
+          language_id: string
           provider_id: string
           updated_at: string
           voice_id: string
@@ -522,6 +523,7 @@ export type Database = {
           display_name?: string | null
           gender: string
           id?: string
+          language_id: string
           provider_id: string
           updated_at?: string
           voice_id: string
@@ -531,6 +533,7 @@ export type Database = {
           display_name?: string | null
           gender?: string
           id?: string
+          language_id?: string
           provider_id?: string
           updated_at?: string
           voice_id?: string
@@ -630,6 +633,7 @@ export type Database = {
           audio_a_id: string
           audio_b_id: string
           created_at: string
+          test_type: string
           elo_after_loser: number | null
           elo_after_winner: number | null
           elo_before_loser: number | null
@@ -653,6 +657,7 @@ export type Database = {
           audio_a_id: string
           audio_b_id: string
           created_at?: string
+          test_type?: string
           elo_after_loser?: number | null
           elo_after_winner?: number | null
           elo_before_loser?: number | null
@@ -676,6 +681,7 @@ export type Database = {
           audio_a_id?: string
           audio_b_id?: string
           created_at?: string
+          test_type?: string
           elo_after_loser?: number | null
           elo_after_winner?: number | null
           elo_before_loser?: number | null

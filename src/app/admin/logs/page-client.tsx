@@ -17,7 +17,7 @@ type Props = {
   total: number;
   page: number;
   providers: { id: string; name: string }[];
-  languages: { id: string; name: string }[];
+  languages: { id: string; code: string }[];
   models: { id: string; name: string; provider_id: string }[];
 };
 
@@ -164,7 +164,7 @@ export function LogsClient({
           label="Language"
           options={[
             { value: "", label: "All" },
-            ...languages.map((l) => ({ value: l.id, label: l.name })),
+            ...languages.map((l) => ({ value: l.id, label: l.code })),
           ]}
           value={languageId}
           onChange={(e) => updateUrl({ language: e.target.value })}

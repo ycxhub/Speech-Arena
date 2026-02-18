@@ -63,7 +63,7 @@ export function FilterBar({ languages, filters }: FilterBarProps) {
 
   const languageOptions = [
     { value: "", label: "All languages" },
-    ...languages.map((l) => ({ value: l.code, label: `${l.name} (${l.code})` })),
+    ...languages.map((l) => ({ value: l.code, label: l.code })),
   ];
 
   const statusOptions = [
