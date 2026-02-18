@@ -6,6 +6,7 @@ import {
   getPersonalLeaderboard,
   getTestHistory,
   getFilterOptions,
+  type TestType,
 } from "./actions";
 
 export default async function MyResultsPage({
@@ -20,6 +21,8 @@ export default async function MyResultsPage({
   if (!user) redirect("/auth/sign-in");
 
   const params = await searchParams;
+  const testType: TestType =
+    params.type === "custom" ? "custom" : "blind";
   const filters = {
     languageId: params.language ?? undefined,
     providerId: params.provider ?? undefined,
@@ -30,14 +33,15 @@ export default async function MyResultsPage({
   const page = Math.max(1, parseInt(params.page ?? "1", 10));
 
   const [completedCount, leaderboard, history, filterOptions] = await Promise.all([
-    getCompletedTestCount(user.id),
-    getPersonalLeaderboard(user.id, filters),
-    getTestHistory(user.id, page, filters),
-    getFilterOptions(user.id),
+    getCompletedTestCount(user.id, testType),
+    getPersonalLeaderboard(user.id, filters, testType),
+    getTestHistory(user.id, page, filters, testType),
+    getFilterOptions(user.id, testType),
   ]);
 
   return (
     <MyResultsClient
+      testType={testType}
       completedCount={completedCount}
       initialLeaderboard={leaderboard}
       initialHistory={history}

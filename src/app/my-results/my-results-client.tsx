@@ -9,12 +9,14 @@ import { GlassButton } from "@/components/ui/glass-button";
 import { GlassBadge } from "@/components/ui/glass-badge";
 import { GlassSelect } from "@/components/ui/glass-select";
 import { GlassInput } from "@/components/ui/glass-input";
+import { GlassTabs } from "@/components/ui/glass-tabs";
 import {
   getSignedAudioUrl,
   exportMyResultsCsv,
   type PersonalLeaderboardRow,
   type TestHistoryRow,
   type MyResultsFilters,
+  type TestType,
 } from "./actions";
 import { toast } from "sonner";
 
@@ -25,6 +27,7 @@ type FilterOptions = {
 };
 
 type Props = {
+  testType: TestType;
   completedCount: number;
   initialLeaderboard: PersonalLeaderboardRow[];
   initialHistory: { rows: TestHistoryRow[]; total: number };
@@ -91,6 +94,7 @@ function AudioPlayButton({ audioFileId }: { audioFileId: string }) {
 }
 
 export function MyResultsClient({
+  testType,
   completedCount,
   initialLeaderboard,
   initialHistory,
@@ -118,6 +122,7 @@ export function MyResultsClient({
   const updateUrl = useCallback(
     (updates: Record<string, string>) => {
       const params = new URLSearchParams(searchParams.toString());
+      if (!params.has("type")) params.set("type", "blind");
       Object.entries(updates).forEach(([k, v]) => {
         if (v) params.set(k, v);
         else params.delete(k);
@@ -154,7 +159,7 @@ export function MyResultsClient({
 
   const handleExport = async () => {
     setExporting(true);
-    const result = await exportMyResultsCsv(filters);
+    const result = await exportMyResultsCsv(filters, testType);
     setExporting(false);
     if (result.error) {
       toast.error(result.error);
@@ -174,11 +179,28 @@ export function MyResultsClient({
 
   // We need userId for getTestHistory and exportMyResultsCsv. The page must pass it.
   // Let me add userId to the props.
+  const handleTestTypeChange = (type: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("type", type);
+    params.set("page", "1");
+    router.push(`/my-results?${params.toString()}`);
+  };
+
   return (
     <div className="space-y-8">
-      <h1 className="text-page-title">My Results</h1>
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <h1 className="text-page-title">My Results</h1>
+        <GlassTabs
+          tabs={[
+            { id: "blind", label: "Blind Test" },
+            { id: "custom", label: "Custom Test" },
+          ]}
+          activeTab={testType}
+          onTabChange={handleTestTypeChange}
+        />
+      </div>
 
-      {completedCount < MIN_TESTS && (
+      {testType === "blind" && completedCount < MIN_TESTS && (
         <GlassCard className="border-accent-blue/30">
           <p className="mb-4 text-lg">
             Complete at least {MIN_TESTS} tests to unlock your full results.
@@ -257,7 +279,11 @@ export function MyResultsClient({
           <GlassButton
             size="sm"
             variant="secondary"
-            onClick={() => router.push("/my-results")}
+            onClick={() => {
+              const params = new URLSearchParams();
+              if (testType) params.set("type", testType);
+              router.push(`/my-results${params.toString() ? `?${params.toString()}` : ""}`);
+            }}
           >
             Clear
           </GlassButton>
@@ -267,7 +293,8 @@ export function MyResultsClient({
         </div>
       </GlassCard>
 
-      {/* Personal Leaderboard */}
+      {/* Personal Leaderboard (blind tests only) */}
+      {testType === "blind" && (
       <GlassCard className={completedCount < MIN_TESTS ? "relative opacity-75" : ""}>
         <h2 className="mb-4 text-section-heading">Personal Leaderboard</h2>
         {completedCount < MIN_TESTS && initialLeaderboard.length > 0 && (
@@ -324,6 +351,15 @@ export function MyResultsClient({
           data={initialLeaderboard.map((r, i) => ({ ...r, rank: i + 1 }))}
         />
       </GlassCard>
+      )}
+
+      {testType === "custom" && (
+        <GlassCard>
+          <p className="text-white/80">
+            Custom tests don&apos;t use ELO. View your comparison history below.
+          </p>
+        </GlassCard>
+      )}
 
       {/* Test History */}
       <GlassCard>

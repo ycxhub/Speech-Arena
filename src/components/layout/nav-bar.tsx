@@ -7,6 +7,7 @@ import { GlassTabs } from "@/components/ui/glass-tabs";
 
 const NAV_TABS = [
   { id: "blind-test", label: "Blind Test", href: "/blind-test" },
+  { id: "custom-test", label: "Custom Test", href: "/custom-test" },
   { id: "my-results", label: "My Results", href: "/my-results" },
   { id: "leaderboard", label: "Leaderboard", href: "/leaderboard" },
 ] as const;
@@ -18,6 +19,7 @@ export interface NavBarProps {
 
 function getActiveTab(pathname: string): string {
   if (pathname.startsWith("/blind-test")) return "blind-test";
+  if (pathname.startsWith("/custom-test")) return "custom-test";
   if (pathname.startsWith("/my-results")) return "my-results";
   if (pathname.startsWith("/leaderboard")) return "leaderboard";
   if (pathname.startsWith("/admin")) return "admin";

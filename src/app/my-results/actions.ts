@@ -42,22 +42,37 @@ export type MyResultsFilters = {
   toDate?: string;
 };
 
-export async function getCompletedTestCount(userId: string): Promise<number> {
+export type TestType = "blind" | "custom";
+
+export async function getCompletedTestCount(
+  userId: string,
+  testType?: TestType
+): Promise<number> {
   const admin = getAdminClient();
-  const { count, error } = await admin
+  let query = admin
     .from("test_events")
     .select("id", { count: "exact", head: true })
     .eq("user_id", userId)
     .eq("status", "completed");
 
+  if (testType === "blind") {
+    query = query.eq("test_type", "blind");
+  } else if (testType === "custom") {
+    query = query.eq("test_type", "custom");
+  }
+
+  const { count, error } = await query;
   if (error) return 0;
   return count ?? 0;
 }
 
 export async function getPersonalLeaderboard(
   userId: string,
-  filters?: MyResultsFilters
+  filters?: MyResultsFilters,
+  testType?: TestType
 ): Promise<PersonalLeaderboardRow[]> {
+  if (testType === "custom") return [];
+
   const admin = getAdminClient();
 
   let query = admin
@@ -74,6 +89,10 @@ export async function getPersonalLeaderboard(
     .eq("user_id", userId)
     .eq("status", "completed")
     .order("voted_at", { ascending: true });
+
+  if (testType === "blind" || !testType) {
+    query = query.eq("test_type", "blind");
+  }
 
   if (filters?.languageId) {
     query = query.eq("language_id", filters.languageId);
@@ -240,7 +259,8 @@ export async function getPersonalLeaderboard(
 export async function getTestHistory(
   userId: string,
   page: number,
-  filters?: MyResultsFilters
+  filters?: MyResultsFilters,
+  testType?: TestType
 ): Promise<{ rows: TestHistoryRow[]; total: number }> {
   const admin = getAdminClient();
 
@@ -260,6 +280,10 @@ export async function getTestHistory(
     .eq("user_id", userId)
     .eq("status", "completed")
     .order("voted_at", { ascending: false });
+
+  if (testType === "blind" || testType === "custom") {
+    query = query.eq("test_type", testType);
+  }
 
   if (filters?.languageId) query = query.eq("language_id", filters.languageId);
   if (filters?.providerId) {
@@ -336,7 +360,8 @@ export async function getSignedAudioUrl(audioFileId: string): Promise<{ url?: st
 }
 
 export async function exportMyResultsCsv(
-  filters?: MyResultsFilters
+  filters?: MyResultsFilters,
+  testType?: TestType
 ): Promise<{ csv?: string; filename?: string; error?: string; warning?: string }> {
   const supabase = await createClient();
   const {
@@ -359,6 +384,10 @@ export async function exportMyResultsCsv(
     .eq("user_id", userId)
     .eq("status", "completed")
     .order("voted_at", { ascending: false });
+
+  if (testType === "blind" || testType === "custom") {
+    query = query.eq("test_type", testType);
+  }
 
   if (filters?.languageId) query = query.eq("language_id", filters.languageId);
   if (filters?.fromDate) query = query.gte("voted_at", filters.fromDate);
@@ -388,7 +417,10 @@ export async function exportMyResultsCsv(
   });
 
   const csv = [header, ...csvRows].join("\n");
-  const filename = `my-results-${new Date().toISOString().slice(0, 10)}.csv`;
+  const filename =
+    testType === "custom"
+      ? `my-custom-tests-${new Date().toISOString().slice(0, 10)}.csv`
+      : `my-results-${new Date().toISOString().slice(0, 10)}.csv`;
 
   return {
     csv,
@@ -397,18 +429,27 @@ export async function exportMyResultsCsv(
   };
 }
 
-export async function getFilterOptions(userId: string): Promise<{
+export async function getFilterOptions(
+  userId: string,
+  testType?: TestType
+): Promise<{
   languages: { id: string; name: string }[];
   providers: { id: string; name: string }[];
   models: { id: string; name: string; providerId: string }[];
 }> {
   const admin = getAdminClient();
 
-  const { data: events } = await admin
+  let eventsQuery = admin
     .from("test_events")
     .select("language_id, model_a_id, model_b_id")
     .eq("user_id", userId)
     .eq("status", "completed");
+
+  if (testType === "blind" || testType === "custom") {
+    eventsQuery = eventsQuery.eq("test_type", testType);
+  }
+
+  const { data: events } = await eventsQuery;
 
   const languageIds = new Set<string>();
   const modelIds = new Set<string>();

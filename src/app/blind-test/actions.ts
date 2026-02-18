@@ -41,7 +41,7 @@ export async function getActiveLanguages(): Promise<LanguageOption[]> {
 
 export async function prepareNextRoundAction(
   languageId: string
-): Promise<{ data?: PrepareNextRoundResult; error?: string }> {
+): Promise<{ data?: PrepareNextRoundResult; error?: string; debug?: object }> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -52,7 +52,8 @@ export async function prepareNextRoundAction(
     const data = await prepareNextRound({ userId: user.id, languageId });
     return { data };
   } catch (err) {
-    return { error: err instanceof Error ? err.message : "Failed to prepare round" };
+    const errorMessage = err instanceof Error ? err.message : "Failed to prepare round";
+    return { error: errorMessage };
   }
 }
 
@@ -101,7 +102,7 @@ export async function submitVote(
   }
   const { data: testEvent, error: fetchError } = await admin
     .from("test_events")
-    .select("id, user_id, model_a_id, model_b_id, language_id, status")
+    .select("id, user_id, model_a_id, model_b_id, language_id, status, test_type")
     .eq("id", testEventId)
     .single();
 
@@ -118,16 +119,34 @@ export async function submitVote(
   const listenA = Math.floor(listenTimeAMs);
   const listenB = Math.floor(listenTimeBMs);
 
-  const { error: rpcError } = await admin.rpc("process_vote", {
-    p_test_event_id: testEventId,
-    p_winner_id: winnerId,
-    p_loser_id: loserId,
-    p_language_id: testEvent.language_id,
-    p_listen_time_a_ms: listenA,
-    p_listen_time_b_ms: listenB,
-  });
+  const testType = (testEvent as { test_type?: string }).test_type ?? "blind";
 
-  if (rpcError) return { error: rpcError.message };
+  if (testType === "custom") {
+    const { error: updateError } = await admin
+      .from("test_events")
+      .update({
+        winner_id: winnerId,
+        loser_id: loserId,
+        listen_time_a_ms: listenA,
+        listen_time_b_ms: listenB,
+        status: "completed",
+        voted_at: new Date().toISOString(),
+      })
+      .eq("id", testEventId);
+
+    if (updateError) return { error: updateError.message };
+  } else {
+    const { error: rpcError } = await admin.rpc("process_vote", {
+      p_test_event_id: testEventId,
+      p_winner_id: winnerId,
+      p_loser_id: loserId,
+      p_language_id: testEvent.language_id,
+      p_listen_time_a_ms: listenA,
+      p_listen_time_b_ms: listenB,
+    });
+
+    if (rpcError) return { error: rpcError.message };
+  }
   logger.info("Vote submitted", {
     testEventId,
     userId: user.id,
