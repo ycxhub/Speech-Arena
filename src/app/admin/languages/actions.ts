@@ -53,15 +53,12 @@ export async function createLanguage(
   if (authError || !admin) return { error: authError ?? "Not authenticated" };
 
   const trimmedName = name?.trim();
-  const trimmedCode = code?.trim().toLowerCase();
+  const trimmedCode = code?.trim();
 
   if (!trimmedName) return { error: "Language name is required" };
   if (!trimmedCode) return { error: "Language code is required" };
-  if (trimmedCode.length < 2 || trimmedCode.length > 5) {
-    return { error: "Language code must be 2–5 characters" };
-  }
-  if (!/^[a-z0-9]+$/.test(trimmedCode)) {
-    return { error: "Language code must be alphanumeric" };
+  if (trimmedCode.length < 2 || trimmedCode.length > 20) {
+    return { error: "Language code must be 2–20 characters" };
   }
 
   const { data: existing } = await admin
@@ -97,15 +94,12 @@ export async function updateLanguage(
   if (authError || !admin) return { error: authError ?? "Not authenticated" };
 
   const trimmedName = name?.trim();
-  const trimmedCode = code?.trim().toLowerCase();
+  const trimmedCode = code?.trim();
 
   if (!trimmedName) return { error: "Language name is required" };
   if (!trimmedCode) return { error: "Language code is required" };
-  if (trimmedCode.length < 2 || trimmedCode.length > 5) {
-    return { error: "Language code must be 2–5 characters" };
-  }
-  if (!/^[a-z0-9]+$/.test(trimmedCode)) {
-    return { error: "Language code must be alphanumeric" };
+  if (trimmedCode.length < 2 || trimmedCode.length > 20) {
+    return { error: "Language code must be 2–20 characters" };
   }
 
   const { data: existing } = await admin

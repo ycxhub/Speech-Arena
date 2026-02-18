@@ -96,18 +96,18 @@ function mapModelRowsToLeaderboard(
 }
 
 export async function getLeaderboardOptions(): Promise<{
-  languages: { id: string; name: string }[];
+  languages: { id: string; code: string }[];
   providers: { id: string; name: string }[];
 }> {
   const admin = getAdminClient();
 
   const [langRes, provRes] = await Promise.all([
-    admin.from("languages").select("id, name").eq("is_active", true).order("name"),
+    admin.from("languages").select("id, code").eq("is_active", true).order("code"),
     admin.from("providers").select("id, name").eq("is_active", true).order("name"),
   ]);
 
   return {
-    languages: (langRes.data ?? []).map((l) => ({ id: l.id, name: l.name })),
+    languages: (langRes.data ?? []).map((l) => ({ id: l.id, code: l.code })),
     providers: (provRes.data ?? []).map((p) => ({ id: p.id, name: p.name })),
   };
 }

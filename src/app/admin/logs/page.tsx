@@ -36,7 +36,7 @@ export default async function AdminLogsPage({
   const { rows, total } = await getTestLogs(page, null, filters);
 
   const { data: providers } = await admin.from("providers").select("id, name").eq("is_active", true);
-  const { data: languages } = await admin.from("languages").select("id, name").eq("is_active", true);
+  const { data: languages } = await admin.from("languages").select("id, code").eq("is_active", true);
   const { data: models } = await admin.from("models").select("id, name, provider_id").eq("is_active", true);
 
   return (

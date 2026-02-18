@@ -5,7 +5,9 @@ Compare TTS voices in blind tests. A Next.js app with Supabase auth, RBAC, and C
 ## Setup
 
 1. Copy `.env.local.example` to `.env.local` and fill in the values.
-2. Configure Supabase Auth redirect URLs in Dashboard → Authentication → URL Configuration (see `.env.local.example`).
+2. Configure Supabase Auth in Dashboard → [Authentication → URL Configuration](https://supabase.com/dashboard/project/_/auth/url-configuration):
+   - **Site URL:** your production URL (e.g. `https://speecharena.org`)
+   - **Redirect URLs:** add `http://localhost:3000/**`, `http://localhost:3001/**`, etc. (one per port you use) and `https://<your-domain>/**` for production
 3. (Optional) Enable Google OAuth — see [Google OAuth Setup](#google-oauth-setup) below.
 4. Run migrations: `npx supabase db push` (requires `supabase login` and `supabase link`).
 5. Generate types: `npm run db:types`.
@@ -40,8 +42,8 @@ To enable "Sign in with Google" and "Sign up with Google":
 1. Create a project at [Google Cloud Console](https://console.cloud.google.com/) (or use an existing one).
 2. Go to **APIs & Services** → **Credentials** → **Create Credentials** → **OAuth client ID**.
 3. Choose **Web application**.
-4. **Authorized JavaScript origins:**
-   - `http://localhost:3000` (dev)
+4. **Authorized JavaScript origins:** (add each origin where you run the app)
+   - `http://localhost:3000`, `http://localhost:3001`, … (or add ports as needed for dev)
    - Your production URL (e.g. `https://your-domain.com`)
 5. **Authorized redirect URIs:** Add the Supabase callback URL:
    - `https://<project-ref>.supabase.co/auth/v1/callback`

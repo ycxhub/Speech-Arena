@@ -41,15 +41,25 @@ export default async function VoicesPage({
 
   const { data: voices } = await admin
     .from("provider_voices")
-    .select("id, voice_id, gender, display_name, created_at")
+    .select("id, voice_id, gender, display_name, language_id, created_at")
     .eq("provider_id", providerId)
     .order("created_at", { ascending: false });
+
+  const { data: languages } = await admin
+    .from("languages")
+    .select("id, code")
+    .eq("is_active", true)
+    .order("code");
+
+  const langById = new Map((languages ?? []).map((l) => [l.id, l]));
 
   const tableData = (voices ?? []).map((v) => ({
     id: v.id,
     voice_id: v.voice_id,
     gender: v.gender,
     display_name: v.display_name ?? null,
+    language_id: v.language_id,
+    language_code: langById.get(v.language_id ?? "")?.code ?? "—",
     created_at: formatDate(v.created_at),
   }));
 
@@ -58,6 +68,7 @@ export default async function VoicesPage({
       providerId={providerId}
       providerName={provider.name}
       tableData={tableData}
+      languages={languages ?? []}
     />
   );
 }

@@ -203,7 +203,7 @@ export function BlindTestClient({
   const canVote = listenTimeA >= 3000 && listenTimeB >= 3000 && !voting;
   const showSkip = errorA || errorB;
 
-  const languageOptions = languages.map((l) => ({ value: l.id, label: l.name }));
+  const languageOptions = languages.map((l) => ({ value: l.id, label: l.code }));
   const hasLanguages = languages.length > 0;
 
   return (

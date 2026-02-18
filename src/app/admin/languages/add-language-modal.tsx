@@ -2,10 +2,19 @@
 
 import { useState, useEffect } from "react";
 import { GlassModal } from "@/components/ui/glass-modal";
-import { GlassInput } from "@/components/ui/glass-input";
+import { GlassSelect } from "@/components/ui/glass-select";
 import { GlassButton } from "@/components/ui/glass-button";
 import { createLanguage, updateLanguage } from "./actions";
 import { toast } from "sonner";
+
+const PREDEFINED_LANGUAGE_OPTIONS = [
+  { value: "en-US", label: "en-US" },
+  { value: "en-IN", label: "en-IN" },
+  { value: "en-UK", label: "en-UK" },
+  { value: "hi-IN", label: "hi-IN" },
+  { value: "Multilingual", label: "Multilingual" },
+  { value: "Codemixed", label: "Codemixed" },
+] as const;
 
 type Language = {
   id: string;
@@ -17,6 +26,7 @@ interface AddLanguageModalProps {
   open: boolean;
   onClose: () => void;
   language?: Language | null;
+  existingCodes?: string[];
   onSuccess?: () => void;
 }
 
@@ -24,46 +34,40 @@ export function AddLanguageModal({
   open,
   onClose,
   language,
+  existingCodes = [],
   onSuccess,
 }: AddLanguageModalProps) {
-  const [name, setName] = useState(language?.name ?? "");
   const [code, setCode] = useState(language?.code ?? "");
   const [loading, setLoading] = useState(false);
-  const [nameError, setNameError] = useState<string | null>(null);
   const [codeError, setCodeError] = useState<string | null>(null);
 
   const isEdit = !!language;
 
+  const options = [
+    ...PREDEFINED_LANGUAGE_OPTIONS,
+    ...(isEdit && language && !PREDEFINED_LANGUAGE_OPTIONS.some((o) => o.value === language.code)
+      ? [{ value: language.code, label: language.code }]
+      : []),
+  ];
+
   useEffect(() => {
-    if (language) {
-      setName(language.name);
-      setCode(language.code);
-    } else {
-      setName("");
-      setCode("");
+    if (open) {
+      setCode(language?.code ?? "");
+      setCodeError(null);
     }
-  }, [language, open]);
+  }, [open, language]);
 
   const validate = () => {
-    let valid = true;
-    if (!name.trim()) {
-      setNameError("Name is required");
-      valid = false;
-    } else setNameError(null);
     if (!code.trim()) {
-      setCodeError("Code is required");
-      valid = false;
-    } else {
-      const c = code.trim().toLowerCase();
-      if (c.length < 2 || c.length > 5) {
-        setCodeError("Code must be 2–5 characters");
-        valid = false;
-      } else if (!/^[a-z0-9]+$/.test(c)) {
-        setCodeError("Code must be alphanumeric");
-        valid = false;
-      } else setCodeError(null);
+      setCodeError("Language is required");
+      return false;
     }
-    return valid;
+    if (!isEdit && existingCodes.includes(code)) {
+      setCodeError("This language already exists");
+      return false;
+    }
+    setCodeError(null);
+    return true;
   };
 
   const handleSubmit = async () => {
@@ -71,8 +75,8 @@ export function AddLanguageModal({
     setLoading(true);
     try {
       const result = isEdit
-        ? await updateLanguage(language.id, name.trim(), code.trim().toLowerCase())
-        : await createLanguage(name.trim(), code.trim().toLowerCase());
+        ? await updateLanguage(language.id, code.trim(), code.trim())
+        : await createLanguage(code.trim(), code.trim());
       if (result.error) {
         toast.error(result.error);
         return;
@@ -80,7 +84,6 @@ export function AddLanguageModal({
       toast.success(isEdit ? "Language updated" : "Language added");
       onClose();
       onSuccess?.();
-      setName("");
       setCode("");
     } finally {
       setLoading(false);
@@ -88,9 +91,7 @@ export function AddLanguageModal({
   };
 
   const handleClose = () => {
-    setName(language?.name ?? "");
     setCode(language?.code ?? "");
-    setNameError(null);
     setCodeError(null);
     onClose();
   };
@@ -117,20 +118,12 @@ export function AddLanguageModal({
       }
     >
       <div className="space-y-4">
-        <GlassInput
-          label="Language name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          error={nameError ?? undefined}
-          placeholder="e.g. English"
-        />
-        <GlassInput
-          label="Language code"
+        <GlassSelect
+          label="Language / Locale"
+          options={options}
           value={code}
           onChange={(e) => setCode(e.target.value)}
           error={codeError ?? undefined}
-          placeholder="e.g. en"
-          helperText="2–5 character alphanumeric (e.g. en, es, hi)"
         />
       </div>
     </GlassModal>

@@ -96,7 +96,7 @@ export default async function SentencesPage({
   const totalPages = Math.ceil((count ?? 0) / PAGE_SIZE);
   const languageOptions = languages.map((l) => ({
     value: l.code,
-    label: `${l.name} (${l.code})`,
+    label: l.code,
   }));
 
   return (

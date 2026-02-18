@@ -73,7 +73,7 @@ export function AddSentenceModal({
 
   const options = languages.map((l) => ({
     value: l.id,
-    label: `${l.name} (${l.code})`,
+    label: l.code,
   }));
 
   return (
