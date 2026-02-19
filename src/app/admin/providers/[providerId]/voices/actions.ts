@@ -191,7 +191,13 @@ export async function bulkCreateVoicesFromCsv(
     .from("provider_model_definitions")
     .select("model_id")
     .eq("provider_id", providerId);
-  const validModelIds = new Set((modelDefs ?? []).map((d) => d.model_id));
+  const validModelIds = new Set((modelDefs ?? []).map((d) => d.model_id.toLowerCase()));
+
+  if (validModelIds.size === 0) {
+    return {
+      error: "Add model definitions first. Go to the Models tab and add model definitions (e.g. model_id: sonic-3, sonic-turbo) for this provider.",
+    };
+  }
 
   const { data: languages } = await admin
     .from("languages")
@@ -204,7 +210,10 @@ export async function bulkCreateVoicesFromCsv(
 
   let created = 0;
   let skipped = 0;
-  const reasons: string[] = [];
+  const unknownModelIds = new Set<string>();
+  const unknownLanguages = new Set<string>();
+  let insertError: string | null = null;
+  let skippedMissingFields = 0;
 
   for (const row of rows) {
     const voiceId = row.voice_id?.trim();
@@ -214,6 +223,7 @@ export async function bulkCreateVoicesFromCsv(
 
     if (!voiceId || !modelId || !langInput || !gender) {
       skipped++;
+      skippedMissingFields++;
       continue;
     }
     if (!GENDERS.includes(gender as (typeof GENDERS)[number])) {
@@ -230,16 +240,12 @@ export async function bulkCreateVoicesFromCsv(
 
     if (!languageId) {
       skipped++;
-      if (!reasons.includes(`Unknown language: ${langInput}`)) {
-        reasons.push(`Unknown language: ${langInput}`);
-      }
+      unknownLanguages.add(langInput);
       continue;
     }
-    if (!validModelIds.has(modelId)) {
+    if (!validModelIds.has(modelId.toLowerCase())) {
       skipped++;
-      if (!reasons.includes(`Unknown model_id: ${modelId}`)) {
-        reasons.push(`Unknown model_id: ${modelId}`);
-      }
+      unknownModelIds.add(modelId);
       continue;
     }
 
@@ -255,9 +261,7 @@ export async function bulkCreateVoicesFromCsv(
       created++;
     } else {
       skipped++;
-      if (error.code === "23505" && !reasons.includes("Duplicate voice_id+model_id+language")) {
-        reasons.push("Duplicate voice_id+model_id+language");
-      }
+      if (!insertError) insertError = error.message;
     }
   }
 
@@ -273,10 +277,20 @@ export async function bulkCreateVoicesFromCsv(
   revalidatePath(`/admin/providers/${providerId}/models`);
   revalidatePath("/admin/providers");
 
-  const details =
-    created === 0 && reasons.length > 0
-      ? reasons.slice(0, 5).join(". ")
-      : undefined;
+  const detailsParts: string[] = [];
+  if (unknownModelIds.size > 0) {
+    detailsParts.push(`Unknown model_id: ${[...unknownModelIds].join(", ")}. Add these in the Models tab (Model Definitions) first.`);
+  }
+  if (unknownLanguages.size > 0) {
+    detailsParts.push(`Unknown language_code: ${[...unknownLanguages].join(", ")}. Add these in Admin > Languages first.`);
+  }
+  if (insertError) {
+    detailsParts.push(`Database error: ${insertError}`);
+  }
+  if (skippedMissingFields === rows.length && rows.length > 0) {
+    detailsParts.push("All rows had missing or empty fields. Check CSV headers match: voice_name, voice_id, model_id, language_code, gender.");
+  }
+  const details = created === 0 && detailsParts.length > 0 ? detailsParts.join(" ") : undefined;
 
   return { created, skipped, details };
 }

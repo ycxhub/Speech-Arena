@@ -17,7 +17,8 @@ interface ImportCsvModalProps {
 const EXPECTED_HEADERS = ["voice_name", "voice_id", "model_id", "language_code", "gender"];
 
 function parseCsv(text: string): Record<string, string>[] {
-  const result = Papa.parse<Record<string, string>>(text, {
+  const cleaned = text.replace(/^\uFEFF/, "").trim();
+  const result = Papa.parse<Record<string, string>>(cleaned, {
     header: true,
     skipEmptyLines: true,
     transformHeader: (h) => h.trim().toLowerCase().replace(/\s+/g, "_"),
