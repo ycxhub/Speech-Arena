@@ -120,6 +120,12 @@ export default async function ModelsPage({
     .eq("provider_id", providerId)
     .order("created_at", { ascending: false });
 
+  const { data: modelDefinitions } = await admin
+    .from("provider_model_definitions")
+    .select("id, name, model_id, endpoint, created_at")
+    .eq("provider_id", providerId)
+    .order("created_at", { ascending: false });
+
   const { data: providerLangs } = await admin
     .from("provider_languages")
     .select("language_id")
@@ -131,10 +137,19 @@ export default async function ModelsPage({
       ? (languages ?? []).filter((l) => providerLangIds.has(l.id))
       : (languages ?? []);
 
+  const definitionRows = (modelDefinitions ?? []).map((d) => ({
+    id: d.id,
+    name: d.name,
+    model_id: d.model_id,
+    endpoint: d.endpoint ?? null,
+    created_at: formatDate(d.created_at),
+  }));
+
   return (
     <ModelsPageClient
       providerId={providerId}
       tableData={tableData}
+      modelDefinitions={definitionRows}
       languages={languagesForModels}
       providerVoices={providerVoices ?? []}
       filters={{

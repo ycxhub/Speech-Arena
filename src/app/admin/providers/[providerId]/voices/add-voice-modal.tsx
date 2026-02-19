@@ -14,6 +14,7 @@ type Voice = {
   gender: string;
   display_name: string | null;
   language_id?: string;
+  model_id?: string | null;
 };
 
 interface AddVoiceModalProps {
@@ -22,6 +23,7 @@ interface AddVoiceModalProps {
   providerId: string;
   voice?: Voice | null;
   languages: { id: string; code: string }[];
+  modelDefinitions: { id: string; model_id: string; name: string }[];
   onSuccess?: () => void;
 }
 
@@ -37,30 +39,36 @@ export function AddVoiceModal({
   providerId,
   voice,
   languages,
+  modelDefinitions,
   onSuccess,
 }: AddVoiceModalProps) {
   const [voiceId, setVoiceId] = useState(voice?.voice_id ?? "");
   const [gender, setGender] = useState(voice?.gender ?? "neutral");
   const [languageId, setLanguageId] = useState(voice?.language_id ?? "");
+  const [modelId, setModelId] = useState(voice?.model_id ?? "");
   const [displayName, setDisplayName] = useState(voice?.display_name ?? "");
   const [loading, setLoading] = useState(false);
   const [voiceIdError, setVoiceIdError] = useState<string | null>(null);
   const [languageError, setLanguageError] = useState<string | null>(null);
+  const [modelError, setModelError] = useState<string | null>(null);
 
-  const isEdit = !!voice;
+  const isEdit = !!voice?.id;
 
   const languageOptions = languages.map((l) => ({ value: l.id, label: l.code }));
+  const modelOptions = modelDefinitions.map((d) => ({ value: d.model_id, label: `${d.name} (${d.model_id})` }));
 
   useEffect(() => {
     if (open) {
       setVoiceId(voice?.voice_id ?? "");
       setGender(voice?.gender ?? "neutral");
       setLanguageId(voice?.language_id ?? languages[0]?.id ?? "");
+      setModelId(voice?.model_id ?? modelDefinitions[0]?.model_id ?? "");
       setDisplayName(voice?.display_name ?? "");
       setVoiceIdError(null);
       setLanguageError(null);
+      setModelError(null);
     }
-  }, [open, voice, languages]);
+  }, [open, voice, languages, modelDefinitions]);
 
   const validate = () => {
     let valid = true;
@@ -72,6 +80,10 @@ export function AddVoiceModal({
       setLanguageError("Language is required");
       valid = false;
     } else setLanguageError(null);
+    if (!modelId) {
+      setModelError("Model is required");
+      valid = false;
+    } else setModelError(null);
     return valid;
   };
 
@@ -80,8 +92,8 @@ export function AddVoiceModal({
     setLoading(true);
     try {
       const result = isEdit
-        ? await updateVoice(voice.id, providerId, voiceId.trim(), gender, languageId, displayName.trim() || undefined)
-        : await createVoice(providerId, voiceId.trim(), gender, languageId, displayName.trim() || undefined);
+        ? await updateVoice(voice.id, providerId, voiceId.trim(), gender, languageId, modelId, displayName.trim() || undefined)
+        : await createVoice(providerId, voiceId.trim(), gender, languageId, modelId, displayName.trim() || undefined);
       if (result.error) {
         toast.error(result.error);
         return;
@@ -125,10 +137,12 @@ export function AddVoiceModal({
           helperText="Required. The API identifier for this voice."
         />
         <GlassSelect
-          label="Gender"
-          options={GENDER_OPTIONS}
-          value={gender}
-          onChange={(e) => setGender(e.target.value)}
+          label="Model"
+          options={modelOptions}
+          value={modelId}
+          onChange={(e) => setModelId(e.target.value)}
+          error={modelError ?? undefined}
+          placeholder={modelDefinitions.length === 0 ? "Add model definitions first" : undefined}
         />
         <GlassSelect
           label="Language"
@@ -136,6 +150,12 @@ export function AddVoiceModal({
           value={languageId}
           onChange={(e) => setLanguageId(e.target.value)}
           error={languageError ?? undefined}
+        />
+        <GlassSelect
+          label="Gender"
+          options={GENDER_OPTIONS}
+          value={gender}
+          onChange={(e) => setGender(e.target.value)}
         />
         <GlassInput
           label="Display name"
