@@ -13,6 +13,8 @@ import { murfAdapter } from "./murf";
 import { deepgramAdapter } from "./deepgram";
 import { inworldAdapter } from "./inworld";
 import { minimaxAdapter } from "./minimax";
+import { sarvamAdapter } from "./sarvam";
+import { humeAdapter } from "./hume";
 
 registerProvider(elevenlabsAdapter);
 registerProvider(openaiTtsAdapter);
@@ -26,3 +28,7 @@ registerProvider({ ...murfAdapter, slug: "murf-ai", name: "Murf AI" }); // alias
 registerProvider(deepgramAdapter);
 registerProvider(inworldAdapter);
 registerProvider(minimaxAdapter);
+registerProvider(sarvamAdapter);
+registerProvider({ ...sarvamAdapter, slug: "sarvam-ai", name: "Sarvam AI" });
+registerProvider(humeAdapter);
+registerProvider({ ...humeAdapter, slug: "hume-ai", name: "Hume AI" });

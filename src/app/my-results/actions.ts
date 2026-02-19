@@ -32,7 +32,16 @@ export type TestHistoryRow = {
   loserProvider: string;
   audioAId: string;
   audioBId: string;
+  winnerWinRate?: number; // For custom tests: winner's overall win rate
 };
+
+export type CustomTestWinRateSummary = {
+  modelName: string;
+  providerName: string;
+  wins: number;
+  losses: number;
+  winRate: number;
+}[];
 
 export type MyResultsFilters = {
   languageId?: string;
@@ -376,7 +385,87 @@ export async function getTestHistory(
     };
   });
 
+  if (testType === "custom" && rows.length > 0) {
+    const { winRateByKey } = await getCustomTestWinRateSummary(userId, filters);
+    for (const r of rows) {
+      const key = `${r.winnerName}::${r.winnerProvider}`;
+      r.winnerWinRate = winRateByKey[key];
+    }
+  }
+
   return { rows, total: count ?? 0 };
+}
+
+export async function getCustomTestWinRateSummary(
+  userId: string,
+  filters?: MyResultsFilters
+): Promise<{ summary: CustomTestWinRateSummary; winRateByKey: Record<string, number> }> {
+  const admin = getAdminClient();
+
+  let query = admin
+    .from("test_events")
+    .select(
+      `
+      winner:models!winner_id(name, provider:providers(name)),
+      loser:models!loser_id(name, provider:providers(name))
+    `
+    )
+    .eq("user_id", userId)
+    .eq("status", "completed")
+    .eq("test_type", "custom");
+
+  if (filters?.languageId) query = query.eq("language_id", filters.languageId);
+  if (filters?.providerId) {
+    const providerModels = await admin.from("models").select("id").eq("provider_id", filters.providerId);
+    const ids = (providerModels.data ?? []).map((m) => m.id);
+    if (ids.length > 0) {
+      query = query.or(`model_a_id.in.(${ids.join(",")}),model_b_id.in.(${ids.join(",")})`);
+    }
+  }
+  if (filters?.modelId) {
+    query = query.or(`model_a_id.eq.${filters.modelId},model_b_id.eq.${filters.modelId}`);
+  }
+  if (filters?.fromDate) query = query.gte("voted_at", filters.fromDate);
+  if (filters?.toDate) query = query.lte("voted_at", filters.toDate + "T23:59:59.999Z");
+
+  const { data: events, error } = await query;
+  if (error || !events) return { summary: [], winRateByKey: {} };
+
+  const stats: Record<string, { modelName: string; providerName: string; wins: number; losses: number }> = {};
+  for (const e of events) {
+    const winner = e.winner as { name?: string; provider?: { name?: string } } | null;
+    const loser = e.loser as { name?: string; provider?: { name?: string } } | null;
+    const winnerName = winner?.name ?? "Unknown";
+    const winnerProvider = (winner?.provider as { name?: string })?.name ?? "";
+    const loserName = loser?.name ?? "Unknown";
+    const loserProvider = (loser?.provider as { name?: string })?.name ?? "";
+    const winnerKey = `${winnerName}::${winnerProvider}`;
+    const loserKey = `${loserName}::${loserProvider}`;
+
+    if (!stats[winnerKey]) {
+      stats[winnerKey] = { modelName: winnerName, providerName: winnerProvider, wins: 0, losses: 0 };
+    }
+    stats[winnerKey].wins++;
+
+    if (!stats[loserKey]) {
+      stats[loserKey] = { modelName: loserName, providerName: loserProvider, wins: 0, losses: 0 };
+    }
+    stats[loserKey].losses++;
+  }
+
+  const summary: CustomTestWinRateSummary = Object.values(stats).map((s) => {
+    const total = s.wins + s.losses;
+    const winRate = total > 0 ? (s.wins / total) * 100 : 0;
+    return { ...s, winRate };
+  });
+
+  const winRateByKey: Record<string, number> = {};
+  for (const s of summary) {
+    const key = `${s.modelName}::${s.providerName}`;
+    winRateByKey[key] = s.winRate;
+  }
+
+  return { summary, winRateByKey };
 }
 
 export async function getSignedAudioUrl(audioFileId: string): Promise<{ url?: string; error?: string }> {

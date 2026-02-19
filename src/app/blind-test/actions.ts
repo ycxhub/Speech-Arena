@@ -27,16 +27,20 @@ export async function getCompletedRoundsCount(): Promise<number> {
   return count ?? 0;
 }
 
+const MIN_MODEL_VOICE_PAIRS = 5;
+
 export async function getActiveLanguages(): Promise<LanguageOption[]> {
   const admin = getAdminClient();
-  const { data, error } = await admin
-    .from("languages")
-    .select("id, name, code")
-    .eq("is_active", true)
-    .order("name");
+  const { data, error } = await admin.rpc("get_active_languages_with_min_model_voices", {
+    p_min_count: MIN_MODEL_VOICE_PAIRS,
+  });
 
   if (error) return [];
-  return (data ?? []).map((r) => ({ id: r.id, name: r.name, code: r.code }));
+  return (data ?? []).map((r: { id: string; name: string; code: string }) => ({
+    id: r.id,
+    name: r.name,
+    code: r.code,
+  }));
 }
 
 export async function prepareNextRoundAction(

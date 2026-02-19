@@ -17,6 +17,7 @@ import {
   type TestHistoryRow,
   type MyResultsFilters,
   type TestType,
+  type CustomTestWinRateSummary,
 } from "./actions";
 import { toast } from "sonner";
 
@@ -32,6 +33,7 @@ type Props = {
   initialLeaderboard: PersonalLeaderboardRow[];
   initialHistory: { rows: TestHistoryRow[]; total: number };
   filterOptions: FilterOptions;
+  customWinRateSummary: CustomTestWinRateSummary | null;
 };
 
 const MIN_TESTS = 20;
@@ -99,6 +101,7 @@ export function MyResultsClient({
   initialLeaderboard,
   initialHistory,
   filterOptions,
+  customWinRateSummary,
 }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -355,9 +358,31 @@ export function MyResultsClient({
 
       {testType === "custom" && (
         <GlassCard>
-          <p className="text-white/80">
+          <p className="mb-4 text-white/80">
             Custom tests don&apos;t use ELO. View your comparison history below.
           </p>
+          {customWinRateSummary && customWinRateSummary.length > 0 && (
+            <div className="space-y-2">
+              <h3 className="text-sm font-medium text-white/80">Win Rate by Model</h3>
+              <div className="flex flex-wrap gap-3">
+                {customWinRateSummary
+                  .sort((a, b) => b.winRate - a.winRate)
+                  .map((s) => (
+                    <span
+                      key={`${s.modelName}-${s.providerName}`}
+                      className="rounded-lg bg-white/5 px-3 py-1.5 text-sm"
+                    >
+                      <span className="text-white">{s.modelName}</span>
+                      {s.providerName && (
+                        <span className="text-white/60"> ({s.providerName})</span>
+                      )}
+                      : {s.wins}W / {s.losses}L (
+                      <span className="text-accent-green">{s.winRate.toFixed(1)}%</span>)
+                    </span>
+                  ))}
+              </div>
+            </div>
+          )}
         </GlassCard>
       )}
 
@@ -393,6 +418,22 @@ export function MyResultsClient({
                 <span className="text-accent-red">{r.loserName}</span>
               ),
             },
+            ...(testType === "custom"
+              ? [
+                  {
+                    key: "winnerWinRate" as const,
+                    header: "Win Rate",
+                    render: (r: TestHistoryRow) =>
+                      r.winnerWinRate != null ? (
+                        <span className="text-accent-green">
+                          {r.winnerWinRate.toFixed(1)}%
+                        </span>
+                      ) : (
+                        <span className="text-white/50">—</span>
+                      ),
+                  },
+                ]
+              : []),
             {
               key: "audioA",
               header: "Audio A",

@@ -7,12 +7,19 @@ import { GlassButton } from "@/components/ui/glass-button";
 import { AddProviderModal } from "./add-provider-modal";
 import type { ProviderRow } from "./page";
 
-function StatusDot({ active }: { active: boolean }) {
+function StatusDot({ isActive, isReady }: { isActive: boolean; isReady: boolean }) {
+  const color =
+    !isActive
+      ? "rgb(249 115 22)" // orange = inactive
+      : !isReady
+        ? "rgb(234 179 8)" // yellow = not ready for blind tests
+        : "rgb(34 197 94)"; // green = active and ready
+  const title = !isActive ? "Inactive" : !isReady ? "Not ready for blind tests" : "Active";
   return (
     <span
       className="h-2 w-2 shrink-0 rounded-full"
-      style={{ backgroundColor: active ? "rgb(34 197 94)" : "rgb(249 115 22)" }}
-      title={active ? "Active" : "Inactive"}
+      style={{ backgroundColor: color }}
+      title={title}
       aria-hidden
     />
   );
@@ -71,7 +78,7 @@ export function ProvidersPageClient({
                 }}
                 className="group flex cursor-pointer items-center gap-3 rounded-lg px-4 py-3 transition-colors hover:bg-white/5"
               >
-                <StatusDot active={row.is_active} />
+                <StatusDot isActive={row.is_active} isReady={row.is_ready} />
                 <span className="flex-1 font-medium text-white">{row.name}</span>
                 <button
                   type="button"

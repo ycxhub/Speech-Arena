@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 interface AdminSidebarProps {
-  providers: { id: string; name: string; is_active: boolean }[];
+  providers: { id: string; name: string; is_active: boolean; is_ready: boolean }[];
 }
 
 const TOP_LEVEL_ITEMS = [
@@ -78,9 +78,11 @@ export function AdminSidebar({ providers }: AdminSidebarProps) {
                   <span
                     className="h-1.5 w-1.5 shrink-0 rounded-full"
                     style={{
-                      backgroundColor: provider.is_active
-                        ? "rgb(34 197 94)"
-                        : "rgb(249 115 22)",
+                      backgroundColor: !provider.is_active
+                        ? "rgb(249 115 22)"
+                        : !provider.is_ready
+                          ? "rgb(234 179 8)"
+                          : "rgb(34 197 94)",
                     }}
                     aria-hidden
                   />

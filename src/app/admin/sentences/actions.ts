@@ -187,6 +187,16 @@ export async function bulkImportSentences(
     .eq("is_active", true);
   const codeToId = new Map((languages ?? []).map((l) => [l.code.toLowerCase(), l.id]));
 
+  // Map "en" to first en-* variant (en-IN, en-US, en-UK) so CSV with "en" works
+  const enVariants = ["en-in", "en-us", "en-uk"];
+  for (const ev of enVariants) {
+    const id = codeToId.get(ev);
+    if (id) {
+      codeToId.set("en", id);
+      break;
+    }
+  }
+
   const errors: string[] = [];
   const toInsert: { language_id: string; text: string }[] = [];
   const seen = new Set<string>();

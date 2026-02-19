@@ -41,6 +41,10 @@ export function CsvUploadModal({
   const validateRows = useCallback(
     (rows: { language_code: string; text: string }[]): ParsedRow[] => {
       const codeSet = new Set(languages.map((l) => l.code.toLowerCase()));
+      // Accept "en" when any en-* variant exists (en-IN, en-US, en-UK)
+      if (["en-in", "en-us", "en-uk"].some((c) => codeSet.has(c))) {
+        codeSet.add("en");
+      }
       const seen = new Set<string>();
       return rows.map((r, i) => {
         const code = r.language_code?.trim().toLowerCase();

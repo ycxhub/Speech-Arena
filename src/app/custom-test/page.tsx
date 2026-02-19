@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { CustomTestClient } from "./custom-test-client";
-import { getActiveLanguages } from "../blind-test/actions";
+import { getActiveLanguages } from "./actions";
 
 export default async function CustomTestPage() {
   const supabase = await createClient();

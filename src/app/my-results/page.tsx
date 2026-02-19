@@ -6,6 +6,7 @@ import {
   getPersonalLeaderboard,
   getTestHistory,
   getFilterOptions,
+  getCustomTestWinRateSummary,
   type TestType,
 } from "./actions";
 
@@ -32,12 +33,16 @@ export default async function MyResultsPage({
   };
   const page = Math.max(1, parseInt(params.page ?? "1", 10));
 
-  const [completedCount, leaderboard, history, filterOptions] = await Promise.all([
-    getCompletedTestCount(user.id, testType),
-    getPersonalLeaderboard(user.id, filters, testType),
-    getTestHistory(user.id, page, filters, testType),
-    getFilterOptions(user.id, testType),
-  ]);
+  const [completedCount, leaderboard, history, filterOptions, customWinRateSummary] =
+    await Promise.all([
+      getCompletedTestCount(user.id, testType),
+      getPersonalLeaderboard(user.id, filters, testType),
+      getTestHistory(user.id, page, filters, testType),
+      getFilterOptions(user.id, testType),
+      testType === "custom"
+        ? getCustomTestWinRateSummary(user.id, filters)
+        : Promise.resolve(null),
+    ]);
 
   return (
     <MyResultsClient
@@ -46,6 +51,7 @@ export default async function MyResultsPage({
       initialLeaderboard={leaderboard}
       initialHistory={history}
       filterOptions={filterOptions}
+      customWinRateSummary={customWinRateSummary?.summary ?? null}
     />
   );
 }

@@ -11,7 +11,7 @@ import {
   type ModelOption,
 } from "./actions";
 import { submitVote, markRoundInvalid } from "../blind-test/actions";
-import type { LanguageOption } from "../blind-test/actions";
+import type { LanguageOption } from "./actions";
 import { toast } from "sonner";
 
 const LANGUAGE_STORAGE_KEY = "custom-test-language-id";
@@ -33,6 +33,8 @@ export function CustomTestClient({ languages }: CustomTestClientProps) {
   const [models, setModels] = useState<ModelOption[]>([]);
   const [modelAId, setModelAId] = useState<string>("");
   const [modelBId, setModelBId] = useState<string>("");
+  const [modelALabel, setModelALabel] = useState<string>("");
+  const [modelBLabel, setModelBLabel] = useState<string>("");
   const [round, setRound] = useState<RoundData | null>(null);
   const [loading, setLoading] = useState(false);
   const [listenTimeA, setListenTimeA] = useState(0);
@@ -76,6 +78,10 @@ export function CustomTestClient({ languages }: CustomTestClientProps) {
 
   const handleStartTest = async () => {
     if (!languageId || !modelAId || !modelBId || modelAId === modelBId) return;
+    const labelA = models.find((m) => m.id === modelAId)?.label ?? "";
+    const labelB = models.find((m) => m.id === modelBId)?.label ?? "";
+    setModelALabel(labelA);
+    setModelBLabel(labelB);
     setLoading(true);
     setRound(null);
     const { data, error } = await prepareCustomRound(languageId, modelAId, modelBId);
@@ -99,7 +105,7 @@ export function CustomTestClient({ languages }: CustomTestClientProps) {
     }
   };
 
-  const handleRunAnother = async () => {
+  const loadNextRound = useCallback(async () => {
     if (!languageId || !modelAId || !modelBId) return;
     setLoading(true);
     setRound(null);
@@ -121,7 +127,7 @@ export function CustomTestClient({ languages }: CustomTestClientProps) {
       setErrorA(false);
       setErrorB(false);
     }
-  };
+  }, [languageId, modelAId, modelBId]);
 
   const handleChangeModels = () => {
     setMode("setup");
@@ -170,7 +176,7 @@ export function CustomTestClient({ languages }: CustomTestClientProps) {
     setListenTimeB(0);
     setErrorA(false);
     setErrorB(false);
-    // Stay in testing mode; user can Run Another or Change Models
+    loadNextRound();
   };
 
   const handleSkipRound = async () => {
@@ -187,6 +193,7 @@ export function CustomTestClient({ languages }: CustomTestClientProps) {
       setListenTimeA(0);
       setListenTimeB(0);
       setVoting(false);
+      loadNextRound();
     }
   };
 
@@ -196,10 +203,13 @@ export function CustomTestClient({ languages }: CustomTestClientProps) {
     languageId && modelAId && modelBId && modelAId !== modelBId && !loading;
 
   const languageOptions = languages.map((l) => ({ value: l.id, label: l.code }));
-  const modelOptions = models.map((m) => ({
-    value: m.id,
-    label: m.label,
-  }));
+  const modelAOption = models.find((m) => m.id === modelAId);
+  const modelOptionsForA = models.map((m) => ({ value: m.id, label: m.label }));
+  const modelOptionsForB = modelAOption
+    ? models
+        .filter((m) => m.gender === modelAOption.gender && m.id !== modelAId)
+        .map((m) => ({ value: m.id, label: m.label }))
+    : models.map((m) => ({ value: m.id, label: m.label }));
 
   if (mode === "setup") {
     return (
@@ -221,23 +231,31 @@ export function CustomTestClient({ languages }: CustomTestClientProps) {
 
           <GlassSelect
             label="Model A"
-            options={modelOptions}
+            options={modelOptionsForA}
             value={modelAId}
-            onChange={(e) => setModelAId(e.target.value)}
+            onChange={(e) => {
+              setModelAId(e.target.value);
+              setModelBId("");
+            }}
             placeholder="Select model..."
           />
 
           <GlassSelect
             label="Model B"
-            options={modelOptions}
+            options={modelOptionsForB}
             value={modelBId}
             onChange={(e) => setModelBId(e.target.value)}
-            placeholder="Select model..."
+            placeholder={modelAId ? "Select model (same gender)..." : "Select Model A first..."}
           />
 
           {modelAId && modelBId && modelAId === modelBId && (
             <p className="text-sm text-accent-red">
               Model A and Model B must be different.
+            </p>
+          )}
+          {modelAId && modelOptionsForB.length === 0 && (
+            <p className="text-sm text-accent-yellow">
+              No models with the same gender as Model A available for this language.
             </p>
           )}
 
@@ -258,30 +276,29 @@ export function CustomTestClient({ languages }: CustomTestClientProps) {
     <div className="relative mx-auto max-w-6xl space-y-6 px-4 py-6">
       <h1 className="text-page-title">Custom Test</h1>
 
-      <div className="flex flex-wrap items-center gap-4">
-        <GlassButton
-          variant="secondary"
-          size="md"
-          onClick={handleChangeModels}
-          disabled={voting || loading}
-        >
-          Change Models
-        </GlassButton>
-        {!round && !loading && (
+      <div className="flex flex-col gap-2">
+        <div className="flex flex-wrap items-center gap-4">
           <GlassButton
+            variant="secondary"
             size="md"
-            accent="blue"
-            onClick={handleRunAnother}
-            disabled={voting}
+            onClick={handleChangeModels}
+            disabled={voting || loading}
           >
-            Run Another (same models, new sentence)
+            Change Models
           </GlassButton>
+        </div>
+        {modelALabel && modelBLabel && (
+          <p className="text-sm text-white/70">
+            Comparing: <span className="text-accent-blue">{modelALabel}</span>
+            {" vs "}
+            <span className="text-accent-purple">{modelBLabel}</span>
+          </p>
         )}
       </div>
 
       <GlassCard>
         <p className="text-center text-lg text-white">
-          {loading ? "Loading..." : round?.sentence ?? "Pick an option above to continue."}
+          {loading ? "Loading..." : round?.sentence ?? "—"}
         </p>
       </GlassCard>
 

@@ -5,9 +5,28 @@ import { getAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
 import { generateAndStoreAudioPair } from "@/lib/tts";
 
+const MIN_MODEL_VOICE_PAIRS = 5;
+
+export type LanguageOption = { id: string; name: string; code: string };
+
+export async function getActiveLanguages(): Promise<LanguageOption[]> {
+  const admin = getAdminClient();
+  const { data, error } = await admin.rpc("get_active_languages_with_min_model_voices", {
+    p_min_count: MIN_MODEL_VOICE_PAIRS,
+  });
+
+  if (error) return [];
+  return (data ?? []).map((r: { id: string; name: string; code: string }) => ({
+    id: r.id,
+    name: r.name,
+    code: r.code,
+  }));
+}
+
 export type ModelOption = {
   id: string;
   label: string; // "Provider Name - Model ID"
+  gender: string;
 };
 
 export async function getModelsForLanguage(
@@ -25,7 +44,7 @@ export async function getModelsForLanguage(
 
   const { data: models, error: modelsError } = await admin
     .from("models")
-    .select("id, provider_id, model_id")
+    .select("id, provider_id, model_id, gender")
     .in("id", modelIds)
     .eq("is_active", true);
 
@@ -68,6 +87,7 @@ export async function getModelsForLanguage(
     result.push({
       id: m.id,
       label: `${providerName} - ${defName}`,
+      gender: m.gender ?? "unknown",
     });
   }
 
@@ -99,6 +119,21 @@ export async function prepareCustomRound(
   }
 
   const admin = getAdminClient();
+
+  // Validate both models have the same gender
+  const { data: modelA } = await admin
+    .from("models")
+    .select("gender")
+    .eq("id", modelAId)
+    .single();
+  const { data: modelB } = await admin
+    .from("models")
+    .select("gender")
+    .eq("id", modelBId)
+    .single();
+  if (modelA?.gender && modelB?.gender && modelA.gender !== modelB.gender) {
+    return { error: "Model A and Model B must have the same gender" };
+  }
 
   // Validate both models support the language
   const { data: mlA } = await admin

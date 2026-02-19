@@ -89,7 +89,15 @@ export function TestApiPageClient({
       } else if (result.audioDataUrl) {
         setAudioDataUrl(result.audioDataUrl);
         toast.success("Audio generated successfully");
+      } else {
+        const msg = "No audio or error returned. Check provider configuration.";
+        setError(msg);
+        toast.error(msg);
       }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      setError(message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }

@@ -871,6 +871,10 @@ export type Database = {
           matches_played: number
         }[]
       }
+      get_active_languages_with_min_model_voices: {
+        Args: { p_min_count?: number }
+        Returns: { id: string; name: string; code: string }[]
+      }
       get_matchmaking_candidates_by_model: {
         Args: { p_language_id: string }
         Returns: {
