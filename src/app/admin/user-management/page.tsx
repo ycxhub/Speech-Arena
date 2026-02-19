@@ -37,10 +37,26 @@ export default async function UserManagementPage() {
     .select("id, email, role, created_at")
     .order("created_at", { ascending: false });
 
+  const { data: testEvents } = await adminClient
+    .from("test_events")
+    .select("user_id, test_type");
+
+  const blindCountByUser: Record<string, number> = {};
+  const customCountByUser: Record<string, number> = {};
+  for (const te of testEvents ?? []) {
+    if (te.test_type === "blind") {
+      blindCountByUser[te.user_id] = (blindCountByUser[te.user_id] ?? 0) + 1;
+    } else if (te.test_type === "custom") {
+      customCountByUser[te.user_id] = (customCountByUser[te.user_id] ?? 0) + 1;
+    }
+  }
+
   const tableData = (profiles ?? []).map((p) => ({
     id: p.id,
     email: p.email ?? "",
     role: p.role === "admin" ? "admin" : "user",
+    blind_count: blindCountByUser[p.id] ?? 0,
+    custom_count: customCountByUser[p.id] ?? 0,
     created_at: formatDate(p.created_at ?? new Date().toISOString()),
   }));
 

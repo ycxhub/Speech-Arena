@@ -42,17 +42,6 @@ export default async function Home() {
           </Link>
         </div>
       </div>
-
-      <div className="relative flex w-full items-center justify-center overflow-hidden border-t border-white/10 py-8 min-h-[6rem]">
-        <Image
-          src="/speech-arena-footer-logo.png"
-          alt="speecharena.org"
-          fill
-          className="object-contain opacity-100"
-          style={{ bottom: "-80%", position: "absolute" }}
-          sizes="100vw"
-        />
-      </div>
     </>
   );
 }
