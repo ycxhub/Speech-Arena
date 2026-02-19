@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { GlassCard } from "@/components/ui/glass-card";
 import { GlassInput } from "@/components/ui/glass-input";
@@ -11,7 +11,7 @@ import { toast } from "sonner";
 
 const DEFAULT_TEXT = "Hi there, run a quick test to confirm it works";
 
-type Model = { id: string; name: string; model_id: string };
+type Model = { id: string; name: string; model_id: string; voice_id: string | null; display_name: string | null };
 type Language = { id: string; code: string; name: string };
 
 interface TestApiPageClientProps {
@@ -30,22 +30,32 @@ export function TestApiPageClient({
   missingItems,
 }: TestApiPageClientProps) {
   const [text, setText] = useState(DEFAULT_TEXT);
-  const [modelId, setModelId] = useState(models[0]?.id ?? "");
+  const uniqueModelIds = [...new Set(models.map((m) => m.model_id))];
+  const firstModelId = uniqueModelIds[0] ?? "";
+  const [selectedModelId, setSelectedModelId] = useState(firstModelId);
+  const modelsForSelectedModel = models.filter((m) => m.model_id === selectedModelId);
+  const [selectedModelRowId, setSelectedModelRowId] = useState(modelsForSelectedModel[0]?.id ?? "");
   const [languageCode, setLanguageCode] = useState(languages[0]?.code ?? "");
+
+  useEffect(() => {
+    const forModel = models.filter((m) => m.model_id === selectedModelId);
+    const firstId = forModel[0]?.id ?? "";
+    setSelectedModelRowId((prev) => (forModel.some((m) => m.id === prev) ? prev : firstId));
+  }, [selectedModelId, models]);
   const [loading, setLoading] = useState(false);
   const [audioDataUrl, setAudioDataUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const handleTest = async () => {
-    if (!modelId || !languageCode) {
-      toast.error("Select a model and language");
+    if (!selectedModelRowId || !languageCode) {
+      toast.error("Select a model, voice, and language");
       return;
     }
     setLoading(true);
     setError(null);
     setAudioDataUrl(null);
     try {
-      const result = await testProviderApi(providerId, modelId, languageCode, text);
+      const result = await testProviderApi(providerId, selectedModelRowId, languageCode, text);
       if (result.error) {
         setError(result.error);
         toast.error(result.error);
@@ -82,9 +92,13 @@ export function TestApiPageClient({
     );
   }
 
-  const modelOptions = models.map((m) => ({
+  const modelOptions = uniqueModelIds.map((modelId) => {
+    const m = models.find((x) => x.model_id === modelId)!;
+    return { value: modelId, label: `${m.name} (${m.model_id})` };
+  });
+  const voiceOptions = modelsForSelectedModel.map((m) => ({
     value: m.id,
-    label: `${m.name} (${m.model_id})`,
+    label: m.display_name ?? m.voice_id ?? m.name,
   }));
   const languageOptions = languages.map((l) => ({
     value: l.code,
@@ -95,8 +109,8 @@ export function TestApiPageClient({
     <GlassCard>
       <h2 className="mb-4 text-section-heading">Test API Call</h2>
       <p className="mb-6 text-sm text-white/60">
-        Enter text and select a model and language. Click Test to generate audio
-        and verify your provider configuration.
+        Enter text and select a model, voice, and language. Click Test to generate
+        audio and verify your provider configuration.
       </p>
 
       <div className="space-y-4 max-w-xl">
@@ -109,8 +123,14 @@ export function TestApiPageClient({
         <GlassSelect
           label="Model"
           options={modelOptions}
-          value={modelId}
-          onChange={(e) => setModelId(e.target.value)}
+          value={selectedModelId}
+          onChange={(e) => setSelectedModelId(e.target.value)}
+        />
+        <GlassSelect
+          label="Voice Name (Display Name)"
+          options={voiceOptions}
+          value={selectedModelRowId}
+          onChange={(e) => setSelectedModelRowId(e.target.value)}
         />
         <GlassSelect
           label="Language"

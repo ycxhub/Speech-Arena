@@ -35,17 +35,17 @@ export default async function TestApiPage({
     { count: keyCount },
     { data: models },
     { data: providerLangs },
-    { count: voiceCount },
+    { data: providerVoices },
   ] = await Promise.all([
     admin.from("api_keys").select("id", { count: "exact", head: true }).eq("provider_id", providerId).eq("status", "active"),
-    admin.from("models").select("id, name, model_id").eq("provider_id", providerId).eq("is_active", true).order("name"),
+    admin.from("models").select("id, name, model_id, voice_id").eq("provider_id", providerId).eq("is_active", true).order("name"),
     admin.from("provider_languages").select("language_id").eq("provider_id", providerId),
-    admin.from("provider_voices").select("id", { count: "exact", head: true }).eq("provider_id", providerId),
+    admin.from("provider_voices").select("voice_id, display_name").eq("provider_id", providerId),
   ]);
 
   const hasKeys = (keyCount ?? 0) > 0;
   const hasModels = (models ?? []).length > 0;
-  const hasVoices = (voiceCount ?? 0) > 0;
+  const hasVoices = (providerVoices ?? []).length > 0;
   const isReady = hasKeys && hasModels && hasVoices;
 
   const missingItems: { label: string; href: string }[] = [];
@@ -72,11 +72,24 @@ export default async function TestApiPage({
     languages = allLangs ?? [];
   }
 
+  const voiceByVoiceId = new Map(
+    (providerVoices ?? []).map((v) => [v.voice_id, v.display_name ?? v.voice_id])
+  );
+  const modelsWithDisplayName = (models ?? []).map((m) => ({
+    id: m.id,
+    name: m.name,
+    model_id: m.model_id,
+    voice_id: m.voice_id ?? null,
+    display_name: m.voice_id
+      ? (voiceByVoiceId.get(m.voice_id) ?? m.voice_id)
+      : m.name,
+  }));
+
   return (
     <div className="space-y-6">
       <TestApiPageClient
         providerId={providerId}
-        models={(models ?? []).map((m) => ({ id: m.id, name: m.name, model_id: m.model_id }))}
+        models={modelsWithDisplayName}
         languages={languages}
         isReady={isReady}
         missingItems={missingItems}
