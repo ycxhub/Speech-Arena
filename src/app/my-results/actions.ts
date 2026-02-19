@@ -89,10 +89,10 @@ export async function getPersonalLeaderboard(
     .select(
       `
       id, voted_at, model_a_id, model_b_id, winner_id, loser_id,
-      model_a:models!model_a_id(name, provider_id, model_id, provider:providers(name)),
-      model_b:models!model_b_id(name, provider_id, model_id, provider:providers(name)),
-      winner:models!winner_id(id, provider_id, model_id),
-      loser:models!loser_id(id, provider_id, model_id)
+      model_a:models!model_a_id(name, definition_id, provider_id, model_id, provider:providers(name)),
+      model_b:models!model_b_id(name, definition_id, provider_id, model_id, provider:providers(name)),
+      winner:models!winner_id(id, definition_id, provider_id, model_id),
+      loser:models!loser_id(id, definition_id, provider_id, model_id)
     `
     )
     .eq("user_id", userId)
@@ -116,25 +116,40 @@ export async function getPersonalLeaderboard(
   const { data: events, error } = await query;
   if (error || !events) return [];
 
-  // Resolve (provider_id, model_id) -> definition_name for all models in events
+  // Resolve definition_id and (provider_id, model_id) -> definition_name for all models in events
+  const definitionIds = new Set<string>();
   const providerModelPairs = new Set<string>();
   for (const e of events) {
-    const winner = e.winner as { provider_id?: string; model_id?: string } | null;
-    const loser = e.loser as { provider_id?: string; model_id?: string } | null;
-    if (winner?.provider_id && winner?.model_id) providerModelPairs.add(`${winner.provider_id}:${winner.model_id}`);
-    if (loser?.provider_id && loser?.model_id) providerModelPairs.add(`${loser.provider_id}:${loser.model_id}`);
+    const winner = e.winner as { definition_id?: string; provider_id?: string; model_id?: string } | null;
+    const loser = e.loser as { definition_id?: string; provider_id?: string; model_id?: string } | null;
+    if (winner?.definition_id) definitionIds.add(winner.definition_id);
+    else if (winner?.provider_id && winner?.model_id) providerModelPairs.add(`${winner.provider_id}:${winner.model_id}`);
+    if (loser?.definition_id) definitionIds.add(loser.definition_id);
+    else if (loser?.provider_id && loser?.model_id) providerModelPairs.add(`${loser.provider_id}:${loser.model_id}`);
   }
-  const defMap = new Map<string, string>();
+  const defByIdMap = new Map<string, string>();
+  const defByProviderModelMap = new Map<string, string>();
+  if (definitionIds.size > 0) {
+    const { data: defs } = await admin
+      .from("provider_model_definitions")
+      .select("id, name")
+      .in("id", Array.from(definitionIds));
+    for (const d of defs ?? []) defByIdMap.set(d.id, d.name);
+  }
   if (providerModelPairs.size > 0) {
     const { data: defs } = await admin
       .from("provider_model_definitions")
       .select("provider_id, model_id, name");
-    for (const d of defs ?? []) {
-      defMap.set(`${d.provider_id}:${d.model_id}`, d.name);
-    }
+    for (const d of defs ?? []) defByProviderModelMap.set(`${d.provider_id}:${d.model_id}`, d.name);
   }
-  function toDefinitionName(providerId: string, modelId: string): string {
-    return defMap.get(`${providerId}:${modelId}`) ?? modelId;
+  function toDefinitionName(
+    definitionId: string | undefined,
+    providerId: string,
+    modelId: string
+  ): string {
+    if (definitionId && defByIdMap.has(definitionId)) return defByIdMap.get(definitionId)!;
+    if (defByProviderModelMap.has(`${providerId}:${modelId}`)) return defByProviderModelMap.get(`${providerId}:${modelId}`)!;
+    return modelId;
   }
 
   // Build model-level stats (group by provider_id:definition_name) and replay ELO
@@ -181,8 +196,16 @@ export async function getPersonalLeaderboard(
 
     if (!winnerProviderId || !winnerModelId || !loserProviderId || !loserModelId) continue;
 
-    const winnerDefName = toDefinitionName(winnerProviderId, winnerModelId);
-    const loserDefName = toDefinitionName(loserProviderId, loserModelId);
+    const winnerDefName = toDefinitionName(
+      (winner as { definition_id?: string }).definition_id,
+      winnerProviderId,
+      winnerModelId
+    );
+    const loserDefName = toDefinitionName(
+      (loser as { definition_id?: string }).definition_id,
+      loserProviderId,
+      loserModelId
+    );
 
     // Skip same-definition pairs (different voices of same model)
     if (winnerProviderId === loserProviderId && winnerDefName === loserDefName) continue;
@@ -191,7 +214,7 @@ export async function getPersonalLeaderboard(
     const loserKey = modelKey(loserProviderId, loserDefName);
 
     if (!modelStats[winnerKey]) {
-      const winnerModel = winnerKey === modelKey(modelA?.provider_id ?? "", toDefinitionName(modelA?.provider_id ?? "", modelA?.model_id ?? ""))
+      const winnerModel = winnerKey === modelKey(modelA?.provider_id ?? "", toDefinitionName((modelA as { definition_id?: string })?.definition_id, modelA?.provider_id ?? "", modelA?.model_id ?? ""))
         ? modelA
         : modelB;
       modelStats[winnerKey] = {
@@ -205,7 +228,7 @@ export async function getPersonalLeaderboard(
       };
     }
     if (!modelStats[loserKey]) {
-      const loserModel = loserKey === modelKey(modelA?.provider_id ?? "", toDefinitionName(modelA?.provider_id ?? "", modelA?.model_id ?? ""))
+      const loserModel = loserKey === modelKey(modelA?.provider_id ?? "", toDefinitionName((modelA as { definition_id?: string })?.definition_id, modelA?.provider_id ?? "", modelA?.model_id ?? ""))
         ? modelA
         : modelB;
       modelStats[loserKey] = {

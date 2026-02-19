@@ -6,6 +6,7 @@ import { GlassSelect } from "@/components/ui/glass-select";
 import { GlassButton } from "@/components/ui/glass-button";
 import { createSentence } from "./actions";
 import { toast } from "sonner";
+import { SENTENCE_LABEL_OPTIONS } from "./constants";
 
 type Language = { id: string; code: string; name: string };
 
@@ -23,9 +24,11 @@ export function AddSentenceModal({
   onSuccess,
 }: AddSentenceModalProps) {
   const [languageId, setLanguageId] = useState("");
+  const [sentenceLabel, setSentenceLabel] = useState("");
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(false);
   const [languageError, setLanguageError] = useState<string | null>(null);
+  const [sentenceLabelError, setSentenceLabelError] = useState<string | null>(null);
   const [textError, setTextError] = useState<string | null>(null);
 
   const validate = () => {
@@ -34,6 +37,10 @@ export function AddSentenceModal({
       setLanguageError("Language is required");
       valid = false;
     } else setLanguageError(null);
+    if (!sentenceLabel) {
+      setSentenceLabelError("Sentence Label is required");
+      valid = false;
+    } else setSentenceLabelError(null);
     if (!text.trim()) {
       setTextError("Sentence text is required");
       valid = false;
@@ -48,13 +55,14 @@ export function AddSentenceModal({
     if (!validate()) return;
     setLoading(true);
     try {
-      const result = await createSentence(languageId, text.trim());
+      const result = await createSentence(languageId, sentenceLabel, text.trim());
       if (result.error) {
         toast.error(result.error);
         return;
       }
       toast.success("Sentence added");
       setLanguageId("");
+      setSentenceLabel("");
       setText("");
       onClose();
       onSuccess?.();
@@ -65,8 +73,10 @@ export function AddSentenceModal({
 
   const handleClose = () => {
     setLanguageId("");
+    setSentenceLabel("");
     setText("");
     setLanguageError(null);
+    setSentenceLabelError(null);
     setTextError(null);
     onClose();
   };
@@ -103,6 +113,16 @@ export function AddSentenceModal({
           value={languageId}
           onChange={(e) => setLanguageId(e.target.value)}
           error={languageError ?? undefined}
+        />
+        <GlassSelect
+          label="Sentence Label"
+          options={[
+            { value: "", label: "Select label" },
+            ...SENTENCE_LABEL_OPTIONS.map((l) => ({ value: l, label: l })),
+          ]}
+          value={sentenceLabel}
+          onChange={(e) => setSentenceLabel(e.target.value)}
+          error={sentenceLabelError ?? undefined}
         />
         <div className="w-full">
           <label className="mb-1.5 block text-sm font-medium text-white/80">

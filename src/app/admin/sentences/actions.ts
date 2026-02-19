@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
+import { normalizeSentenceLabel } from "./constants";
 
 type AdminClient = ReturnType<typeof getAdminClient>;
 
@@ -56,10 +57,14 @@ async function logAudit(
 
 export async function createSentence(
   languageId: string,
+  sentenceLabel: string,
   text: string
 ): Promise<{ error?: string }> {
   const { error: authError, admin, userId } = await ensureAdmin();
   if (authError || !admin) return { error: authError ?? "Not authenticated" };
+
+  const normalized = normalizeSentenceLabel(sentenceLabel ?? "");
+  if (!normalized) return { error: "Sentence Label is required and must be one of: Social Media, Narration, Story Telling, Outbound Calls, Personal Assistants, Customer Service, News, Others" };
 
   const trimmed = text?.trim();
   if (!trimmed) return { error: "Sentence text is required" };
@@ -67,7 +72,7 @@ export async function createSentence(
 
   const { data: inserted, error } = await admin
     .from("sentences")
-    .insert({ language_id: languageId, text: trimmed, version: 1 })
+    .insert({ language_id: languageId, sentence_label: normalized, text: trimmed, version: 1 })
     .select("id")
     .single();
 
@@ -75,6 +80,7 @@ export async function createSentence(
 
   void logAudit(admin, userId, "create_sentence", "sentences", inserted?.id, {
     language_id: languageId,
+    sentence_label: normalized,
     text_preview: trimmed.slice(0, 50),
   }).catch(() => {});
 
@@ -91,10 +97,14 @@ export async function createSentence(
 
 export async function updateSentence(
   id: string,
+  sentenceLabel: string,
   text: string
 ): Promise<{ error?: string }> {
   const { error: authError, admin, userId } = await ensureAdmin();
   if (authError || !admin) return { error: authError ?? "Not authenticated" };
+
+  const normalized = normalizeSentenceLabel(sentenceLabel ?? "");
+  if (!normalized) return { error: "Sentence Label is required and must be one of: Social Media, Narration, Story Telling, Outbound Calls, Personal Assistants, Customer Service, News, Others" };
 
   const trimmed = text?.trim();
   if (!trimmed) return { error: "Sentence text is required" };
@@ -112,6 +122,7 @@ export async function updateSentence(
   const { error } = await admin
     .from("sentences")
     .update({
+      sentence_label: normalized,
       text: trimmed,
       version: newVersion,
       updated_at: new Date().toISOString(),
@@ -175,7 +186,7 @@ export type BulkImportResult = {
 };
 
 export async function bulkImportSentences(
-  rows: { language_code: string; text: string }[]
+  rows: { language_code: string; text: string; sentence_label: string }[]
 ): Promise<BulkImportResult & { error?: string }> {
   const { error: authError, admin, userId } = await ensureAdmin();
   if (authError || !admin)
@@ -198,16 +209,21 @@ export async function bulkImportSentences(
   }
 
   const errors: string[] = [];
-  const toInsert: { language_id: string; text: string }[] = [];
+  const toInsert: { language_id: string; text: string; sentence_label: string }[] = [];
   const seen = new Set<string>();
 
   for (let i = 0; i < rows.length; i++) {
-    const { language_code, text } = rows[i];
+    const { language_code, text, sentence_label } = rows[i];
     const code = language_code?.trim().toLowerCase();
     const trimmed = text?.trim();
+    const normalizedLabel = normalizeSentenceLabel(sentence_label ?? "");
 
     if (!code) {
       errors.push(`Row ${i + 1}: language_code is required`);
+      continue;
+    }
+    if (!normalizedLabel) {
+      errors.push(`Row ${i + 1}: invalid sentence_label "${sentence_label ?? ""}" (must be one of: Social Media, Narration, Story Telling, Outbound Calls, Personal Assistants, Customer Service, News, Others)`);
       continue;
     }
     if (!trimmed) {
@@ -231,7 +247,7 @@ export async function bulkImportSentences(
       continue;
     }
     seen.add(key);
-    toInsert.push({ language_id: languageId, text: trimmed });
+    toInsert.push({ language_id: languageId, text: trimmed, sentence_label: normalizedLabel });
   }
 
   if (toInsert.length === 0) {
@@ -241,7 +257,12 @@ export async function bulkImportSentences(
   const { data: inserted, error } = await admin
     .from("sentences")
     .insert(
-      toInsert.map((r) => ({ language_id: r.language_id, text: r.text, version: 1 }))
+      toInsert.map((r) => ({
+        language_id: r.language_id,
+        text: r.text,
+        sentence_label: r.sentence_label,
+        version: 1,
+      }))
     )
     .select("id");
 

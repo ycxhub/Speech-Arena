@@ -8,6 +8,7 @@ export type SentenceRow = {
   text: string;
   language_code: string;
   language_name: string;
+  sentence_label: string | null;
   version: number;
   is_active: boolean;
   created_at: string;
@@ -61,7 +62,7 @@ export default async function SentencesPage({
 
   let query = admin
     .from("sentences")
-    .select("id, text, language_id, version, is_active, created_at, updated_at", {
+    .select("id, text, language_id, sentence_label, version, is_active, created_at, updated_at", {
       count: "exact",
     })
     .order("created_at", { ascending: false })
@@ -86,6 +87,7 @@ export default async function SentencesPage({
       text: s.text,
       language_code: lang?.code ?? "",
       language_name: lang?.name ?? "",
+      sentence_label: s.sentence_label ?? null,
       version: s.version,
       is_active: s.is_active,
       created_at: formatDate(s.created_at),

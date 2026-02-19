@@ -112,6 +112,157 @@ export async function getLeaderboardOptions(): Promise<{
   };
 }
 
+export type PairwiseMatrixModel = {
+  modelId: string;
+  modelName: string;
+  providerName: string;
+};
+
+export type PairwiseMatrixResult = {
+  models: PairwiseMatrixModel[];
+  matrix: Record<string, Record<string, { winPct: number; n: number }>>;
+};
+
+export async function getPairwiseWinRateMatrix(
+  filters?: LeaderboardFilters
+): Promise<PairwiseMatrixResult> {
+  const admin = getAdminClient();
+
+  // Get leaderboard to determine model order and filter (participated only)
+  const leaderboard = await getGlobalLeaderboard(filters);
+  const participated = leaderboard.filter((r) => r.matchesPlayed > 0);
+  const participatedIds = new Set(participated.map((r) => r.modelId));
+
+  if (participated.length === 0) {
+    return { models: [], matrix: {} };
+  }
+
+  let query = admin
+    .from("test_events")
+    .select(
+      `
+      winner_id, loser_id, language_id,
+      winner:models!winner_id(definition_id, provider_id, model_id, provider:providers(name)),
+      loser:models!loser_id(definition_id, provider_id, model_id, provider:providers(name))
+    `
+    )
+    .eq("status", "completed")
+    .eq("test_type", "blind")
+    .not("winner_id", "is", null)
+    .not("loser_id", "is", null);
+
+  if (filters?.languageId) {
+    query = query.eq("language_id", filters.languageId);
+  }
+
+  const { data: events, error } = await query;
+  if (error || !events || events.length === 0) {
+    return {
+      models: participated.map((r) => ({
+        modelId: r.modelId,
+        modelName: r.modelName,
+        providerName: r.providerName,
+      })),
+      matrix: {},
+    };
+  }
+
+  // Resolve definition_id and (provider_id, model_id) -> definition_name
+  const definitionIds = new Set<string>();
+  const providerModelPairs = new Set<string>();
+  for (const e of events) {
+    const winner = e.winner as { definition_id?: string; provider_id?: string; model_id?: string } | null;
+    const loser = e.loser as { definition_id?: string; provider_id?: string; model_id?: string } | null;
+    if (winner?.definition_id) definitionIds.add(winner.definition_id);
+    else if (winner?.provider_id && winner?.model_id) providerModelPairs.add(`${winner.provider_id}:${winner.model_id}`);
+    if (loser?.definition_id) definitionIds.add(loser.definition_id);
+    else if (loser?.provider_id && loser?.model_id) providerModelPairs.add(`${loser.provider_id}:${loser.model_id}`);
+  }
+  const defByIdMap = new Map<string, string>();
+  const defByProviderModelMap = new Map<string, string>();
+  if (definitionIds.size > 0) {
+    const { data: defs } = await admin
+      .from("provider_model_definitions")
+      .select("id, name")
+      .in("id", Array.from(definitionIds));
+    for (const d of defs ?? []) defByIdMap.set(d.id, d.name);
+  }
+  if (providerModelPairs.size > 0) {
+    const { data: defs } = await admin
+      .from("provider_model_definitions")
+      .select("provider_id, model_id, name");
+    for (const d of defs ?? []) defByProviderModelMap.set(`${d.provider_id}:${d.model_id}`, d.name);
+  }
+  function toDefinitionName(
+    definitionId: string | undefined,
+    providerId: string,
+    modelId: string
+  ): string {
+    if (definitionId && defByIdMap.has(definitionId)) return defByIdMap.get(definitionId)!;
+    if (defByProviderModelMap.has(`${providerId}:${modelId}`)) return defByProviderModelMap.get(`${providerId}:${modelId}`)!;
+    return modelId;
+  }
+
+  // Build pairwise matrix: (rowKey, colKey) -> { rowWins, total }
+  const matrixData = new Map<string, Map<string, { rowWins: number; total: number }>>();
+
+  for (const e of events) {
+    const winner = e.winner as { definition_id?: string; provider_id?: string; model_id?: string; provider?: { name?: string } } | null;
+    const loser = e.loser as { definition_id?: string; provider_id?: string; model_id?: string; provider?: { name?: string } } | null;
+    if (!winner?.provider_id || !winner?.model_id || !loser?.provider_id || !loser?.model_id) continue;
+
+    const winnerDefName = toDefinitionName(winner.definition_id, winner.provider_id, winner.model_id);
+    const loserDefName = toDefinitionName(loser.definition_id, loser.provider_id, loser.model_id);
+    const winnerKey = `${winner.provider_id}:${winnerDefName}`;
+    const loserKey = `${loser.provider_id}:${loserDefName}`;
+
+    if (winnerKey === loserKey) continue;
+
+    // Filter by provider when set
+    if (filters?.providerId) {
+      if (!winnerKey.startsWith(`${filters.providerId}:`) || !loserKey.startsWith(`${filters.providerId}:`)) continue;
+    }
+
+    if (!participatedIds.has(winnerKey) || !participatedIds.has(loserKey)) continue;
+
+    if (!matrixData.has(winnerKey)) matrixData.set(winnerKey, new Map());
+    const rowMap = matrixData.get(winnerKey)!;
+    const cell = rowMap.get(loserKey) ?? { rowWins: 0, total: 0 };
+    cell.rowWins += 1;
+    cell.total += 1;
+    rowMap.set(loserKey, cell);
+
+    if (!matrixData.has(loserKey)) matrixData.set(loserKey, new Map());
+    const loserRowMap = matrixData.get(loserKey)!;
+    const loserCell = loserRowMap.get(winnerKey) ?? { rowWins: 0, total: 0 };
+    loserCell.total += 1;
+    loserRowMap.set(winnerKey, loserCell);
+  }
+
+  // Build result: models in leaderboard order, matrix as Record
+  const models: PairwiseMatrixModel[] = participated.map((r) => ({
+    modelId: r.modelId,
+    modelName: r.modelName,
+    providerName: r.providerName,
+  }));
+
+  const matrix: Record<string, Record<string, { winPct: number; n: number }>> = {};
+  for (const rowId of models.map((m) => m.modelId)) {
+    matrix[rowId] = {};
+    const rowMap = matrixData.get(rowId);
+    if (!rowMap) continue;
+    for (const [colId, { rowWins, total }] of rowMap) {
+      if (!participatedIds.has(colId)) continue;
+      matrix[rowId][colId] = {
+        winPct: total > 0 ? (rowWins / total) * 100 : 0,
+        n: total,
+      };
+    }
+  }
+
+  return { models, matrix };
+}
+
 export async function getLeaderboardSummary(): Promise<{
   totalModels: number;
   totalMatches: number;

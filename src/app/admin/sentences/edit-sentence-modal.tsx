@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { GlassModal } from "@/components/ui/glass-modal";
+import { GlassSelect } from "@/components/ui/glass-select";
 import { GlassButton } from "@/components/ui/glass-button";
 import { updateSentence } from "./actions";
+import { SENTENCE_LABEL_OPTIONS } from "./constants";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import type { SentenceRow } from "./page";
@@ -28,15 +30,19 @@ export function EditSentenceModal({
   sentence,
   onSuccess,
 }: EditSentenceModalProps) {
+  const [sentenceLabel, setSentenceLabel] = useState("");
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(false);
+  const [sentenceLabelError, setSentenceLabelError] = useState<string | null>(null);
   const [textError, setTextError] = useState<string | null>(null);
   const [versions, setVersions] = useState<VersionRow[]>([]);
 
   useEffect(() => {
     if (sentence && open) {
       setText(sentence.text);
+      setSentenceLabel(sentence.sentence_label ?? "");
       setTextError(null);
+      setSentenceLabelError(null);
     }
   }, [sentence, open]);
 
@@ -80,23 +86,26 @@ export function EditSentenceModal({
   }, [sentence?.id, open]);
 
   const validate = () => {
+    let valid = true;
+    if (!sentenceLabel) {
+      setSentenceLabelError("Sentence Label is required");
+      valid = false;
+    } else setSentenceLabelError(null);
     if (!text.trim()) {
       setTextError("Sentence text is required");
-      return false;
-    }
-    if (text.trim().length > 500) {
+      valid = false;
+    } else if (text.trim().length > 500) {
       setTextError("Sentence must be 500 characters or less");
-      return false;
-    }
-    setTextError(null);
-    return true;
+      valid = false;
+    } else setTextError(null);
+    return valid;
   };
 
   const handleSubmit = async () => {
     if (!sentence || !validate()) return;
     setLoading(true);
     try {
-      const result = await updateSentence(sentence.id, text.trim());
+      const result = await updateSentence(sentence.id, sentenceLabel, text.trim());
       if (result.error) {
         toast.error(result.error);
         return;
@@ -111,7 +120,9 @@ export function EditSentenceModal({
 
   const handleClose = () => {
     setText("");
+    setSentenceLabel("");
     setTextError(null);
+    setSentenceLabelError(null);
     onClose();
   };
 
@@ -145,6 +156,16 @@ export function EditSentenceModal({
       }
     >
       <div className="space-y-4">
+        <GlassSelect
+          label="Sentence Label"
+          options={[
+            { value: "", label: "Select label" },
+            ...SENTENCE_LABEL_OPTIONS.map((l) => ({ value: l, label: l })),
+          ]}
+          value={sentenceLabel}
+          onChange={(e) => setSentenceLabel(e.target.value)}
+          error={sentenceLabelError ?? undefined}
+        />
         <div className="w-full">
           <label className="mb-1.5 block text-sm font-medium text-white/80">
             Sentence text

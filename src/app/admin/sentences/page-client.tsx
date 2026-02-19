@@ -54,6 +54,13 @@ export function SentencesPageClient({
         <span>{row.language_name} ({row.language_code})</span>
       ),
     },
+    {
+      key: "sentence_label",
+      header: "Sentence Label",
+      render: (row: SentenceRow) => (
+        <span>{row.sentence_label ?? "—"}</span>
+      ),
+    },
     { key: "version", header: "Version" },
     {
       key: "is_active",
@@ -98,7 +105,7 @@ export function SentencesPageClient({
         </div>
 
         <p className="mb-2 text-xs text-white/50">
-          CSV format: language_code,text (header required). Example: en,The quick brown fox jumps over the lazy dog.
+          CSV format: language_code,text,sentence_label (header required). Example: en,The quick brown fox jumps over the lazy dog.,Social Media
         </p>
 
         <GlassTable<SentenceRow>

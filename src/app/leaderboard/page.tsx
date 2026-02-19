@@ -3,6 +3,7 @@ import {
   getGlobalLeaderboard,
   getLeaderboardOptions,
   getLeaderboardSummary,
+  getPairwiseWinRateMatrix,
 } from "./actions";
 
 export const revalidate = 300; // ISR: revalidate every 5 minutes
@@ -19,10 +20,11 @@ export default async function LeaderboardPage({
     minMatches: params.min_matches ? parseInt(params.min_matches, 10) : undefined,
   };
 
-  const [data, options, summary] = await Promise.all([
+  const [data, options, summary, pairwiseMatrix] = await Promise.all([
     getGlobalLeaderboard(filters),
     getLeaderboardOptions(),
     getLeaderboardSummary(),
+    getPairwiseWinRateMatrix(filters),
   ]);
 
   return (
@@ -31,6 +33,7 @@ export default async function LeaderboardPage({
       summary={summary}
       languages={options.languages}
       providers={options.providers}
+      pairwiseMatrix={pairwiseMatrix}
     />
   );
 }

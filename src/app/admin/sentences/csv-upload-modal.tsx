@@ -6,6 +6,7 @@ import { GlassModal } from "@/components/ui/glass-modal";
 import { GlassButton } from "@/components/ui/glass-button";
 import { bulkImportSentences } from "./actions";
 import { toast } from "sonner";
+import { isValidSentenceLabel } from "./constants";
 
 type Language = { id: string; code: string; name: string };
 
@@ -19,6 +20,7 @@ interface CsvUploadModalProps {
 type ParsedRow = {
   language_code: string;
   text: string;
+  sentence_label: string;
   index: number;
   error?: string;
   isDuplicate?: boolean;
@@ -39,7 +41,7 @@ export function CsvUploadModal({
   } | null>(null);
 
   const validateRows = useCallback(
-    (rows: { language_code: string; text: string }[]): ParsedRow[] => {
+    (rows: { language_code: string; text: string; sentence_label: string }[]): ParsedRow[] => {
       const codeSet = new Set(languages.map((l) => l.code.toLowerCase()));
       // Accept "en" when any en-* variant exists (en-IN, en-US, en-UK)
       if (["en-in", "en-us", "en-uk"].some((c) => codeSet.has(c))) {
@@ -49,11 +51,15 @@ export function CsvUploadModal({
       return rows.map((r, i) => {
         const code = r.language_code?.trim().toLowerCase();
         const text = r.text?.trim();
+        const label = r.sentence_label?.trim() ?? "";
         let error: string | undefined;
         let isDuplicate = false;
 
         if (!code) error = "Missing language_code";
         else if (!codeSet.has(code)) error = `Unknown language "${code}"`;
+        if (!label) error = (error ? `${error}; ` : "") + "Missing sentence_label";
+        else if (!isValidSentenceLabel(label))
+          error = (error ? `${error}; ` : "") + `Invalid sentence_label "${label}"`;
         if (!text) error = (error ? `${error}; ` : "") + "Missing text";
         else if (text.length > 500)
           error = (error ? `${error}; ` : "") + "Text exceeds 500 chars";
@@ -67,6 +73,7 @@ export function CsvUploadModal({
         return {
           language_code: code ?? "",
           text: text ?? "",
+          sentence_label: label,
           index: i + 1,
           error,
           isDuplicate,
@@ -87,13 +94,15 @@ export function CsvUploadModal({
     const reader = new FileReader();
     reader.onload = () => {
       const text = reader.result as string;
-      const parsedResult = Papa.parse<{ language_code?: string; text?: string }>(
-        text,
-        { header: true, skipEmptyLines: true }
-      );
+      const parsedResult = Papa.parse<{
+        language_code?: string;
+        text?: string;
+        sentence_label?: string;
+      }>(text, { header: true, skipEmptyLines: true });
       const rows = (parsedResult.data ?? []).map((r) => ({
         language_code: r.language_code ?? "",
         text: r.text ?? "",
+        sentence_label: r.sentence_label ?? "",
       }));
       setParsed(validateRows(rows));
     };
@@ -107,8 +116,13 @@ export function CsvUploadModal({
     }
     setImporting(true);
     try {
+      const validRows = parsed.filter((p) => !p.error);
       const res = await bulkImportSentences(
-        parsed.map((p) => ({ language_code: p.language_code, text: p.text }))
+        validRows.map((p) => ({
+          language_code: p.language_code,
+          text: p.text,
+          sentence_label: p.sentence_label,
+        }))
       );
       if (res.error) {
         toast.error(res.error);
@@ -171,7 +185,7 @@ export function CsvUploadModal({
             className="block w-full text-sm text-white/80 file:mr-4 file:rounded-lg file:border-0 file:bg-accent-blue/20 file:px-4 file:py-2 file:text-accent-blue"
           />
           <p className="mt-1.5 text-xs text-white/60">
-            Format: language_code,text (header required). Example: en,The quick brown fox...
+            Format: language_code,text,sentence_label (header required). Valid labels: Social Media, Narration, Story Telling, Outbound Calls, Personal Assistants, Customer Service, News, Others. Example: en,The quick brown fox...,Social Media
           </p>
         </div>
 
@@ -203,6 +217,7 @@ export function CsvUploadModal({
                     <th className="px-3 py-2">#</th>
                     <th className="px-3 py-2">Code</th>
                     <th className="px-3 py-2">Text</th>
+                    <th className="px-3 py-2">Label</th>
                     <th className="px-3 py-2">Status</th>
                   </tr>
                 </thead>
@@ -219,6 +234,7 @@ export function CsvUploadModal({
                       <td className="max-w-[200px] truncate px-3 py-2">
                         {row.text}
                       </td>
+                      <td className="px-3 py-2">{row.sentence_label || "—"}</td>
                       <td className="px-3 py-2">
                         {row.error ? (
                           <span className="text-accent-red">{row.error}</span>

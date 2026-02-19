@@ -647,6 +647,7 @@ export type Database = {
           id: string
           is_active: boolean
           language_id: string
+          sentence_label: string | null
           text: string
           updated_at: string
           version: number
@@ -656,6 +657,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           language_id: string
+          sentence_label?: string | null
           text: string
           updated_at?: string
           version?: number
@@ -665,6 +667,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           language_id?: string
+          sentence_label?: string | null
           text?: string
           updated_at?: string
           version?: number

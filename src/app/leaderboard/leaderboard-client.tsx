@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { cn } from "@/lib/utils";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { GlassCard } from "@/components/ui/glass-card";
@@ -8,13 +9,14 @@ import { GlassTable } from "@/components/ui/glass-table";
 import { GlassSelect } from "@/components/ui/glass-select";
 import { GlassInput } from "@/components/ui/glass-input";
 import { GlassBadge } from "@/components/ui/glass-badge";
-import type { LeaderboardRow } from "./actions";
+import type { LeaderboardRow, PairwiseMatrixResult } from "./actions";
 
 type Props = {
   initialData: LeaderboardRow[];
   summary: { totalModels: number; totalMatches: number; activeLanguages: number };
   languages: { id: string; code: string }[];
   providers: { id: string; name: string }[];
+  pairwiseMatrix: PairwiseMatrixResult;
 };
 
 function formatRelativeTime(iso: string): string {
@@ -37,6 +39,7 @@ export function LeaderboardClient({
   summary,
   languages,
   providers,
+  pairwiseMatrix,
 }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -75,6 +78,21 @@ export function LeaderboardClient({
     rank: i + 1,
     rankDisplay: i + 1,
   }));
+
+  // Filter pairwise matrix to models in participated (respects search) and preserve leaderboard order
+  const pairwiseModels = useMemo(() => {
+    const pmIds = new Set(pairwiseMatrix.models.map((m) => m.modelId));
+    const pmMap = new Map(pairwiseMatrix.models.map((m) => [m.modelId, m]));
+    return participated.filter((p) => pmIds.has(p.modelId)).map((p) => pmMap.get(p.modelId)!);
+  }, [participated, pairwiseMatrix.models]);
+
+  const hasPairwiseData = useMemo(() => {
+    for (const row of pairwiseModels) {
+      const rowData = pairwiseMatrix.matrix[row.modelId];
+      if (rowData && Object.keys(rowData).length > 0) return true;
+    }
+    return false;
+  }, [pairwiseModels, pairwiseMatrix.matrix]);
 
   return (
     <div className="space-y-8">
@@ -219,6 +237,96 @@ export function LeaderboardClient({
               ]}
               data={notYetParticipated}
             />
+          </div>
+        </GlassCard>
+      )}
+
+      {participated.length > 0 && pairwiseModels.length > 0 && hasPairwiseData && (
+        <GlassCard>
+          <h2 className="mb-2 text-lg font-medium text-white/80">
+            Pairwise Win Rate Matrix
+          </h2>
+          <p className="mb-4 text-sm text-white/50">
+            Head-to-head win % (row model preferred over column model). n =
+            number of comparisons.
+          </p>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-max border-collapse">
+              <thead>
+                <tr>
+                  <th className="sticky left-0 z-10 min-w-[180px] border-b border-white/10 bg-white/10 px-3 py-2 text-left text-xs font-medium uppercase tracking-wide text-white/40">
+                    Model
+                  </th>
+                  {pairwiseModels.map((col) => (
+                    <th
+                      key={col.modelId}
+                      className="min-w-[70px] border-b border-white/10 px-2 py-2 text-center text-xs font-medium uppercase tracking-wide text-white/40"
+                    >
+                      <span
+                        className="block truncate max-w-[70px]"
+                        title={`${col.modelName} (${col.providerName})`}
+                      >
+                        {col.modelName}
+                      </span>
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {pairwiseModels.map((row, rowIdx) => (
+                  <tr
+                    key={row.modelId}
+                    className={cn(
+                      "border-b border-white/5 hover:bg-white/5",
+                      rowIdx % 2 === 0 ? "bg-white/[0.02]" : "bg-white/[0.05]"
+                    )}
+                  >
+                    <td className="sticky left-0 z-10 border-r border-white/10 bg-white/10 px-3 py-2 text-sm text-white">
+                      <span className="font-medium">{row.modelName}</span>
+                      <span className="ml-1 text-white/50">({row.providerName})</span>
+                    </td>
+                    {pairwiseModels.map((col) => {
+                      if (row.modelId === col.modelId) {
+                        return (
+                          <td
+                            key={col.modelId}
+                            className="px-2 py-2 text-center text-sm text-white/30"
+                          >
+                            —
+                          </td>
+                        );
+                      }
+                      const cell = pairwiseMatrix.matrix[row.modelId]?.[col.modelId];
+                      if (!cell) {
+                        return (
+                          <td
+                            key={col.modelId}
+                            className="px-2 py-2 text-center text-sm text-white/30"
+                          >
+                            —
+                          </td>
+                        );
+                      }
+                      const rowWins = Math.round((cell.winPct / 100) * cell.n);
+                      return (
+                        <td
+                          key={col.modelId}
+                          className="px-2 py-2 text-center text-sm text-white"
+                          title={`${row.modelName} won ${rowWins} of ${cell.n} comparisons vs ${col.modelName}`}
+                        >
+                          <span className="block font-medium">
+                            {cell.winPct.toFixed(1)}%
+                          </span>
+                          <span className="block text-xs text-white/60">
+                            n={cell.n}
+                          </span>
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </GlassCard>
       )}
