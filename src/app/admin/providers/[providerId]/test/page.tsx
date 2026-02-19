@@ -38,7 +38,12 @@ export default async function TestApiPage({
     { data: providerVoices },
   ] = await Promise.all([
     admin.from("api_keys").select("id", { count: "exact", head: true }).eq("provider_id", providerId).eq("status", "active"),
-    admin.from("models").select("id, name, model_id, voice_id").eq("provider_id", providerId).eq("is_active", true).order("name"),
+    admin
+      .from("models")
+      .select("id, name, model_id, voice_id, model_languages (languages (code))")
+      .eq("provider_id", providerId)
+      .eq("is_active", true)
+      .order("name"),
     admin.from("provider_languages").select("language_id").eq("provider_id", providerId),
     admin.from("provider_voices").select("voice_id, display_name").eq("provider_id", providerId),
   ]);
@@ -75,15 +80,20 @@ export default async function TestApiPage({
   const voiceByVoiceId = new Map(
     (providerVoices ?? []).map((v) => [v.voice_id, v.display_name ?? v.voice_id])
   );
-  const modelsWithDisplayName = (models ?? []).map((m) => ({
-    id: m.id,
-    name: m.name,
-    model_id: m.model_id,
-    voice_id: m.voice_id ?? null,
-    display_name: m.voice_id
-      ? (voiceByVoiceId.get(m.voice_id) ?? m.voice_id)
-      : m.name,
-  }));
+  const modelsWithDisplayName = (models ?? []).map((m) => {
+    const ml = m.model_languages as { languages: { code: string } | null }[] | null;
+    const languageCodes = (ml ?? []).map((x) => x?.languages?.code).filter(Boolean) as string[];
+    return {
+      id: m.id,
+      name: m.name,
+      model_id: m.model_id,
+      voice_id: m.voice_id ?? null,
+      display_name: m.voice_id
+        ? (voiceByVoiceId.get(m.voice_id) ?? m.voice_id)
+        : m.name,
+      languageCodes,
+    };
+  });
 
   return (
     <div className="space-y-6">

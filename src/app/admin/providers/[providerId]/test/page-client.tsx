@@ -11,7 +11,14 @@ import { toast } from "sonner";
 
 const DEFAULT_TEXT = "Hi there, run a quick test to confirm it works";
 
-type Model = { id: string; name: string; model_id: string; voice_id: string | null; display_name: string | null };
+type Model = {
+  id: string;
+  name: string;
+  model_id: string;
+  voice_id: string | null;
+  display_name: string | null;
+  languageCodes: string[];
+};
 type Language = { id: string; code: string; name: string };
 
 interface TestApiPageClientProps {
@@ -34,14 +41,33 @@ export function TestApiPageClient({
   const firstModelId = uniqueModelIds[0] ?? "";
   const [selectedModelId, setSelectedModelId] = useState(firstModelId);
   const modelsForSelectedModel = models.filter((m) => m.model_id === selectedModelId);
-  const [selectedModelRowId, setSelectedModelRowId] = useState(modelsForSelectedModel[0]?.id ?? "");
-  const [languageCode, setLanguageCode] = useState(languages[0]?.code ?? "");
+  const languageCodesForSelectedModel = [
+    ...new Set(modelsForSelectedModel.flatMap((m) => m.languageCodes)),
+  ];
+  const [languageCode, setLanguageCode] = useState(
+    languageCodesForSelectedModel[0] ?? languages[0]?.code ?? ""
+  );
+  const modelsForSelectedModelAndLanguage = modelsForSelectedModel.filter((m) =>
+    m.languageCodes.includes(languageCode)
+  );
+  const [selectedModelRowId, setSelectedModelRowId] = useState(
+    modelsForSelectedModelAndLanguage[0]?.id ?? ""
+  );
 
   useEffect(() => {
-    const forModel = models.filter((m) => m.model_id === selectedModelId);
-    const firstId = forModel[0]?.id ?? "";
-    setSelectedModelRowId((prev) => (forModel.some((m) => m.id === prev) ? prev : firstId));
+    const codes = [...new Set(modelsForSelectedModel.flatMap((m) => m.languageCodes))];
+    setLanguageCode((prev) => (codes.includes(prev) ? prev : codes[0] ?? ""));
   }, [selectedModelId, models]);
+
+  useEffect(() => {
+    const forModelAndLang = modelsForSelectedModel.filter((m) =>
+      m.languageCodes.includes(languageCode)
+    );
+    const firstId = forModelAndLang[0]?.id ?? "";
+    setSelectedModelRowId((prev) =>
+      forModelAndLang.some((m) => m.id === prev) ? prev : firstId
+    );
+  }, [selectedModelId, languageCode, models]);
   const [loading, setLoading] = useState(false);
   const [audioDataUrl, setAudioDataUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -96,13 +122,12 @@ export function TestApiPageClient({
     const m = models.find((x) => x.model_id === modelId)!;
     return { value: modelId, label: `${m.name} (${m.model_id})` };
   });
-  const voiceOptions = modelsForSelectedModel.map((m) => ({
+  const languageOptions = languages
+    .filter((l) => languageCodesForSelectedModel.includes(l.code))
+    .map((l) => ({ value: l.code, label: l.code }));
+  const voiceOptions = modelsForSelectedModelAndLanguage.map((m) => ({
     value: m.id,
     label: m.display_name ?? m.voice_id ?? m.name,
-  }));
-  const languageOptions = languages.map((l) => ({
-    value: l.code,
-    label: l.code,
   }));
 
   return (
@@ -127,16 +152,16 @@ export function TestApiPageClient({
           onChange={(e) => setSelectedModelId(e.target.value)}
         />
         <GlassSelect
-          label="Voice Name (Display Name)"
-          options={voiceOptions}
-          value={selectedModelRowId}
-          onChange={(e) => setSelectedModelRowId(e.target.value)}
-        />
-        <GlassSelect
           label="Language"
           options={languageOptions}
           value={languageCode}
           onChange={(e) => setLanguageCode(e.target.value)}
+        />
+        <GlassSelect
+          label="Voice Name (Display Name)"
+          options={voiceOptions}
+          value={selectedModelRowId}
+          onChange={(e) => setSelectedModelRowId(e.target.value)}
         />
         <GlassButton
           onClick={handleTest}
