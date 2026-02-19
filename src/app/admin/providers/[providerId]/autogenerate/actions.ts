@@ -45,22 +45,28 @@ export async function getAutogeneratePreview(
 
   const { data: existingModels } = await admin
     .from("models")
-    .select("model_id, voice_id")
+    .select("id, model_id, voice_id, model_languages(language_id)")
     .eq("provider_id", providerId);
 
   const { data: languages } = await admin.from("languages").select("id, code");
   const langById = new Map((languages ?? []).map((l) => [l.id, l.code]));
 
-  const validModelIds = new Set((modelDefs ?? []).map((d) => d.model_id));
-  const existingSet = new Set(
-    (existingModels ?? []).map((m) => `${m.model_id}:${m.voice_id ?? ""}`)
-  );
+  const validModelIdsLower = new Set((modelDefs ?? []).map((d) => d.model_id.toLowerCase()));
+  const existingModelLangSet = new Set<string>();
+  for (const m of existingModels ?? []) {
+    const modelKey = `${(m.model_id ?? "").toLowerCase()}:${m.voice_id ?? ""}`;
+    const ml = m.model_languages as { language_id: string }[] | null;
+    const langIds = (ml ?? []).map((x) => x.language_id);
+    for (const lid of langIds) {
+      existingModelLangSet.add(`${modelKey}:${lid}`);
+    }
+  }
 
   const preview: AutogeneratePreviewRow[] = (voices ?? [])
-    .filter((v): v is typeof v & { model_id: string } => !!v.model_id && validModelIds.has(v.model_id))
+    .filter((v): v is typeof v & { model_id: string } => !!v.model_id && validModelIdsLower.has(v.model_id.toLowerCase()))
     .map((v) => {
-      const key = `${v.model_id}:${v.voice_id ?? ""}`;
-      const will_create = !existingSet.has(key);
+      const key = `${(v.model_id ?? "").toLowerCase()}:${v.voice_id ?? ""}:${v.language_id ?? ""}`;
+      const will_create = !existingModelLangSet.has(key);
       return {
         model_id: v.model_id,
         voice_id: v.voice_id,
@@ -91,59 +97,81 @@ export async function runAutogenerate(
     .select("id, model_id, name")
     .eq("provider_id", providerId);
 
-  const defByModelId = new Map((modelDefs ?? []).map((d) => [d.model_id, d]));
-  const validModelIds = new Set((modelDefs ?? []).map((d) => d.model_id));
+  const defByModelIdLower = new Map(
+    (modelDefs ?? []).map((d) => [d.model_id.toLowerCase(), d])
+  );
+  const validModelIdsLower = new Set((modelDefs ?? []).map((d) => d.model_id.toLowerCase()));
 
   let created = 0;
 
   for (const voice of voices ?? []) {
-    if (!voice.model_id || !validModelIds.has(voice.model_id)) continue;
+    if (!voice.model_id || !validModelIdsLower.has(voice.model_id.toLowerCase())) continue;
     if (!voice.language_id) continue;
 
-    const def = defByModelId.get(voice.model_id);
+    const def = defByModelIdLower.get(voice.model_id.toLowerCase());
     if (!def) continue;
+
+    const canonicalModelId = def.model_id;
 
     const { data: existing } = await admin
       .from("models")
       .select("id")
       .eq("provider_id", providerId)
-      .eq("model_id", voice.model_id)
+      .eq("model_id", canonicalModelId)
       .eq("voice_id", voice.voice_id)
       .maybeSingle();
 
-    if (existing) continue;
+    let modelId: string;
+    let isNewModel = false;
 
-    const { data: inserted, error: insertErr } = await admin
-      .from("models")
-      .insert({
-        provider_id: providerId,
-        definition_id: def.id,
-        name: def.name,
-        model_id: voice.model_id,
-        voice_id: voice.voice_id,
-        gender: voice.gender,
-      })
-      .select("id")
-      .single();
+    if (existing) {
+      const { data: existingLang } = await admin
+        .from("model_languages")
+        .select("language_id")
+        .eq("model_id", existing.id)
+        .eq("language_id", voice.language_id)
+        .maybeSingle();
+      if (existingLang) continue;
+      modelId = existing.id;
+    } else {
+      const { data: inserted, error: insertErr } = await admin
+        .from("models")
+        .insert({
+          provider_id: providerId,
+          definition_id: def.id,
+          name: def.name,
+          model_id: canonicalModelId,
+          voice_id: voice.voice_id,
+          gender: voice.gender,
+        })
+        .select("id")
+        .single();
 
-    if (insertErr) continue;
+      if (insertErr) continue;
+      modelId = inserted!.id;
+      isNewModel = true;
+    }
 
-    await admin.from("model_languages").insert({
-      model_id: inserted.id,
+    const { error: langErr } = await admin.from("model_languages").insert({
+      model_id: modelId,
       language_id: voice.language_id,
     });
 
-    await admin.from("elo_ratings_global_model").upsert(
-      {
-        provider_id: providerId,
-        definition_name: def.name,
-        rating: 1500,
-        matches_played: 0,
-        wins: 0,
-        losses: 0,
-      },
-      { onConflict: "provider_id,definition_name", ignoreDuplicates: true }
-    );
+    if (langErr) continue;
+
+    if (isNewModel) {
+      await admin.from("elo_ratings_global_model").upsert(
+        {
+          provider_id: providerId,
+          definition_name: def.name,
+          rating: 1500,
+          matches_played: 0,
+          wins: 0,
+          losses: 0,
+        },
+        { onConflict: "provider_id,definition_name", ignoreDuplicates: true }
+      );
+    }
 
     await admin.from("elo_ratings_by_language_model").upsert(
       {

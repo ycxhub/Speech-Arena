@@ -192,6 +192,9 @@ export async function bulkCreateVoicesFromCsv(
     .select("model_id")
     .eq("provider_id", providerId);
   const validModelIds = new Set((modelDefs ?? []).map((d) => d.model_id.toLowerCase()));
+  const canonicalModelIdByLower = new Map(
+    (modelDefs ?? []).map((d) => [d.model_id.toLowerCase(), d.model_id])
+  );
 
   if (validModelIds.size === 0) {
     return {
@@ -249,10 +252,12 @@ export async function bulkCreateVoicesFromCsv(
       continue;
     }
 
+    const canonicalModelId = canonicalModelIdByLower.get(modelId.toLowerCase()) ?? modelId;
+
     const { error } = await admin.from("provider_voices").insert({
       provider_id: providerId,
       voice_id: voiceId,
-      model_id: modelId,
+      model_id: canonicalModelId,
       language_id: languageId,
       gender,
       display_name: row.voice_name?.trim() || null,

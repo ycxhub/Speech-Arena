@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { GlassCard } from "@/components/ui/glass-card";
 import { GlassTable } from "@/components/ui/glass-table";
@@ -14,6 +15,7 @@ interface AutogeneratePageClientProps {
 }
 
 export function AutogeneratePageClient({ providerId, providerName: _providerName }: AutogeneratePageClientProps) {
+  const router = useRouter();
   const [preview, setPreview] = useState<AutogeneratePreviewRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [running, setRunning] = useState(false);
@@ -45,6 +47,7 @@ export function AutogeneratePageClient({ providerId, providerName: _providerName
       } else {
         toast.success(`Created ${result.created ?? 0} model(s)`);
         loadPreview();
+        router.refresh();
       }
     } finally {
       setRunning(false);
