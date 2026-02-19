@@ -10,6 +10,21 @@ import { TTSError } from "../errors";
 const BASE_URL = "https://api.cartesia.ai";
 const CARTESIA_VERSION = "2025-04-16";
 
+/** Cartesia expects ISO 639-1 codes (en, fr, hi), not BCP 47 (en-US, hi-IN). */
+const CARTESIA_LANGUAGES = new Set([
+  "en", "fr", "de", "es", "pt", "zh", "ja", "hi", "it", "ko", "nl", "pl", "ru", "sv", "tr", "tl",
+  "bg", "ro", "ar", "cs", "el", "fi", "hr", "ms", "sk", "da", "ta", "uk", "hu", "no", "vi", "bn",
+  "th", "he", "ka", "id", "te", "gu", "kn", "ml", "mr", "pa",
+]);
+
+function toCartesiaLanguage(locale: string | undefined): string | undefined {
+  if (!locale?.trim()) return undefined;
+  const code = locale.trim().toLowerCase();
+  if (CARTESIA_LANGUAGES.has(code)) return code;
+  const base = code.split("-")[0];
+  return CARTESIA_LANGUAGES.has(base) ? base : undefined;
+}
+
 export const cartesiaAdapter: TTSProviderAdapter = {
   slug: "cartesia",
   name: "Cartesia",
@@ -43,7 +58,7 @@ export const cartesiaAdapter: TTSProviderAdapter = {
         model_id: model,
         transcript: text,
         voice: { mode: "id", id: voiceId.trim() },
-        language: language || undefined,
+        language: toCartesiaLanguage(language),
         output_format: {
           container: "mp3",
           sample_rate: 44100,
