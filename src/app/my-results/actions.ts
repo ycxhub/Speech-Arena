@@ -196,7 +196,7 @@ export async function getPersonalLeaderboard(
         : modelB;
       modelStats[winnerKey] = {
         modelId: winnerKey,
-        modelName: winnerModel?.name ?? winnerDefName,
+        modelName: winnerDefName,
         providerName: (winnerModel?.provider as { name?: string })?.name ?? "Unknown",
         matchesPlayed: 0,
         wins: 0,
@@ -210,7 +210,7 @@ export async function getPersonalLeaderboard(
         : modelB;
       modelStats[loserKey] = {
         modelId: loserKey,
-        modelName: loserModel?.name ?? loserDefName,
+        modelName: loserDefName,
         providerName: (loserModel?.provider as { name?: string })?.name ?? "Unknown",
         matchesPlayed: 0,
         wins: 0,
@@ -312,8 +312,8 @@ export async function getTestHistory(
       sentence:sentences(text, language:languages(name)),
       model_a:models!model_a_id(name, provider:providers(name)),
       model_b:models!model_b_id(name, provider:providers(name)),
-      winner:models!winner_id(name, provider:providers(name)),
-      loser:models!loser_id(name, provider:providers(name))
+      winner:models!winner_id(name, definition_id, provider_id, model_id, provider:providers(name)),
+      loser:models!loser_id(name, definition_id, provider_id, model_id, provider:providers(name))
     `,
       { count: "exact" }
     )
@@ -366,19 +366,59 @@ export async function getTestHistory(
 
   if (error) return { rows: [], total: 0 };
 
+  // Resolve definition_id and (provider_id, model_id) -> definition display name
+  const definitionIds = new Set<string>();
+  const providerModelPairs = new Set<string>();
+  for (const e of data ?? []) {
+    const winner = e.winner as { definition_id?: string; provider_id?: string; model_id?: string } | null;
+    const loser = e.loser as { definition_id?: string; provider_id?: string; model_id?: string } | null;
+    if (winner?.definition_id) definitionIds.add(winner.definition_id);
+    else if (winner?.provider_id && winner?.model_id) providerModelPairs.add(`${winner.provider_id}:${winner.model_id}`);
+    if (loser?.definition_id) definitionIds.add(loser.definition_id);
+    else if (loser?.provider_id && loser?.model_id) providerModelPairs.add(`${loser.provider_id}:${loser.model_id}`);
+  }
+  const defByIdMap = new Map<string, string>();
+  const defByProviderModelMap = new Map<string, string>();
+  if (definitionIds.size > 0) {
+    const { data: defs } = await admin
+      .from("provider_model_definitions")
+      .select("id, name")
+      .in("id", Array.from(definitionIds));
+    for (const d of defs ?? []) defByIdMap.set(d.id, d.name);
+  }
+  if (providerModelPairs.size > 0) {
+    const { data: defs } = await admin
+      .from("provider_model_definitions")
+      .select("provider_id, model_id, name");
+    for (const d of defs ?? []) defByProviderModelMap.set(`${d.provider_id}:${d.model_id}`, d.name);
+  }
+  function toDisplayName(
+    definitionId: string | undefined,
+    providerId: string | undefined,
+    modelId: string | undefined,
+    fallback: string
+  ): string {
+    if (definitionId && defByIdMap.has(definitionId)) return defByIdMap.get(definitionId)!;
+    if (providerId && modelId && defByProviderModelMap.has(`${providerId}:${modelId}`))
+      return defByProviderModelMap.get(`${providerId}:${modelId}`)!;
+    return fallback;
+  }
+
   const rows: TestHistoryRow[] = (data ?? []).map((e) => {
     const row = e as { voted_at: string | null; created_at: string };
     const sentence = e.sentence as { text?: string; language?: { name?: string } } | null;
-    const winner = e.winner as { name?: string; provider?: { name?: string } } | null;
-    const loser = e.loser as { name?: string; provider?: { name?: string } } | null;
+    const winner = e.winner as { name?: string; definition_id?: string; provider_id?: string; model_id?: string; provider?: { name?: string } } | null;
+    const loser = e.loser as { name?: string; definition_id?: string; provider_id?: string; model_id?: string; provider?: { name?: string } } | null;
+    const winnerName = toDisplayName(winner?.definition_id, winner?.provider_id, winner?.model_id, winner?.name ?? "Unknown");
+    const loserName = toDisplayName(loser?.definition_id, loser?.provider_id, loser?.model_id, loser?.name ?? "Unknown");
     return {
       id: e.id,
       votedAt: row.voted_at ?? row.created_at,
       languageName: (sentence?.language as { name?: string })?.name ?? "Unknown",
       sentenceText: (sentence as { text?: string })?.text ?? "",
-      winnerName: winner?.name ?? "Unknown",
+      winnerName,
       winnerProvider: (winner?.provider as { name?: string })?.name ?? "",
-      loserName: loser?.name ?? "Unknown",
+      loserName,
       loserProvider: (loser?.provider as { name?: string })?.name ?? "",
       audioAId: e.audio_a_id,
       audioBId: e.audio_b_id,
@@ -406,8 +446,8 @@ export async function getCustomTestWinRateSummary(
     .from("test_events")
     .select(
       `
-      winner:models!winner_id(name, provider:providers(name)),
-      loser:models!loser_id(name, provider:providers(name))
+      winner:models!winner_id(name, definition_id, provider_id, model_id, provider:providers(name)),
+      loser:models!loser_id(name, definition_id, provider_id, model_id, provider:providers(name))
     `
     )
     .eq("user_id", userId)
@@ -431,13 +471,51 @@ export async function getCustomTestWinRateSummary(
   const { data: events, error } = await query;
   if (error || !events) return { summary: [], winRateByKey: {} };
 
+  // Resolve definition_id and (provider_id, model_id) -> definition display name
+  const definitionIds = new Set<string>();
+  const providerModelPairs = new Set<string>();
+  for (const e of events) {
+    const winner = e.winner as { definition_id?: string; provider_id?: string; model_id?: string } | null;
+    const loser = e.loser as { definition_id?: string; provider_id?: string; model_id?: string } | null;
+    if (winner?.definition_id) definitionIds.add(winner.definition_id);
+    else if (winner?.provider_id && winner?.model_id) providerModelPairs.add(`${winner.provider_id}:${winner.model_id}`);
+    if (loser?.definition_id) definitionIds.add(loser.definition_id);
+    else if (loser?.provider_id && loser?.model_id) providerModelPairs.add(`${loser.provider_id}:${loser.model_id}`);
+  }
+  const defByIdMap = new Map<string, string>();
+  const defByProviderModelMap = new Map<string, string>();
+  if (definitionIds.size > 0) {
+    const { data: defs } = await admin
+      .from("provider_model_definitions")
+      .select("id, name")
+      .in("id", Array.from(definitionIds));
+    for (const d of defs ?? []) defByIdMap.set(d.id, d.name);
+  }
+  if (providerModelPairs.size > 0) {
+    const { data: defs } = await admin
+      .from("provider_model_definitions")
+      .select("provider_id, model_id, name");
+    for (const d of defs ?? []) defByProviderModelMap.set(`${d.provider_id}:${d.model_id}`, d.name);
+  }
+  function toDisplayName(
+    definitionId: string | undefined,
+    providerId: string | undefined,
+    modelId: string | undefined,
+    fallback: string
+  ): string {
+    if (definitionId && defByIdMap.has(definitionId)) return defByIdMap.get(definitionId)!;
+    if (providerId && modelId && defByProviderModelMap.has(`${providerId}:${modelId}`))
+      return defByProviderModelMap.get(`${providerId}:${modelId}`)!;
+    return fallback;
+  }
+
   const stats: Record<string, { modelName: string; providerName: string; wins: number; losses: number }> = {};
   for (const e of events) {
-    const winner = e.winner as { name?: string; provider?: { name?: string } } | null;
-    const loser = e.loser as { name?: string; provider?: { name?: string } } | null;
-    const winnerName = winner?.name ?? "Unknown";
+    const winner = e.winner as { name?: string; definition_id?: string; provider_id?: string; model_id?: string; provider?: { name?: string } } | null;
+    const loser = e.loser as { name?: string; definition_id?: string; provider_id?: string; model_id?: string; provider?: { name?: string } } | null;
+    const winnerName = toDisplayName(winner?.definition_id, winner?.provider_id, winner?.model_id, winner?.name ?? "Unknown");
     const winnerProvider = (winner?.provider as { name?: string })?.name ?? "";
-    const loserName = loser?.name ?? "Unknown";
+    const loserName = toDisplayName(loser?.definition_id, loser?.provider_id, loser?.model_id, loser?.name ?? "Unknown");
     const loserProvider = (loser?.provider as { name?: string })?.name ?? "";
     const winnerKey = `${winnerName}::${winnerProvider}`;
     const loserKey = `${loserName}::${loserProvider}`;
@@ -519,8 +597,8 @@ export async function exportMyResultsCsv(
       `
       voted_at, listen_time_a_ms, listen_time_b_ms,
       sentence:sentences(text, language:languages(name)),
-      winner:models!winner_id(name, provider:providers(name)),
-      loser:models!loser_id(name, provider:providers(name))
+      winner:models!winner_id(name, definition_id, provider_id, model_id, provider:providers(name)),
+      loser:models!loser_id(name, definition_id, provider_id, model_id, provider:providers(name))
     `
     )
     .eq("user_id", userId)
@@ -543,17 +621,55 @@ export async function exportMyResultsCsv(
   const exceeded = rows.length > MAX_EXPORT_ROWS;
   const exportRows = rows.slice(0, MAX_EXPORT_ROWS);
 
+  // Resolve definition_id and (provider_id, model_id) -> definition display name
+  const definitionIds = new Set<string>();
+  const providerModelPairs = new Set<string>();
+  for (const e of exportRows) {
+    const winner = e.winner as { definition_id?: string; provider_id?: string; model_id?: string } | null;
+    const loser = e.loser as { definition_id?: string; provider_id?: string; model_id?: string } | null;
+    if (winner?.definition_id) definitionIds.add(winner.definition_id);
+    else if (winner?.provider_id && winner?.model_id) providerModelPairs.add(`${winner.provider_id}:${winner.model_id}`);
+    if (loser?.definition_id) definitionIds.add(loser.definition_id);
+    else if (loser?.provider_id && loser?.model_id) providerModelPairs.add(`${loser.provider_id}:${loser.model_id}`);
+  }
+  const defByIdMap = new Map<string, string>();
+  const defByProviderModelMap = new Map<string, string>();
+  if (definitionIds.size > 0) {
+    const { data: defs } = await admin
+      .from("provider_model_definitions")
+      .select("id, name")
+      .in("id", Array.from(definitionIds));
+    for (const d of defs ?? []) defByIdMap.set(d.id, d.name);
+  }
+  if (providerModelPairs.size > 0) {
+    const { data: defs } = await admin
+      .from("provider_model_definitions")
+      .select("provider_id, model_id, name");
+    for (const d of defs ?? []) defByProviderModelMap.set(`${d.provider_id}:${d.model_id}`, d.name);
+  }
+  function toDisplayName(
+    definitionId: string | undefined,
+    providerId: string | undefined,
+    modelId: string | undefined,
+    fallback: string
+  ): string {
+    if (definitionId && defByIdMap.has(definitionId)) return defByIdMap.get(definitionId)!;
+    if (providerId && modelId && defByProviderModelMap.has(`${providerId}:${modelId}`))
+      return defByProviderModelMap.get(`${providerId}:${modelId}`)!;
+    return fallback;
+  }
+
   const header = "timestamp,language,sentence_text,winner_model,winner_provider,loser_model,loser_provider,listen_time_a_ms,listen_time_b_ms";
   const csvRows = exportRows.map((e) => {
     const sentence = e.sentence as { text?: string; language?: { name?: string } } | null;
-    const winner = e.winner as { name?: string; provider?: { name?: string } } | null;
-    const loser = e.loser as { name?: string; provider?: { name?: string } } | null;
+    const winner = e.winner as { name?: string; definition_id?: string; provider_id?: string; model_id?: string; provider?: { name?: string } } | null;
+    const loser = e.loser as { name?: string; definition_id?: string; provider_id?: string; model_id?: string; provider?: { name?: string } } | null;
     const timestamp = e.voted_at ? new Date(e.voted_at).toISOString() : "";
     const text = (sentence?.text ?? "").replace(/"/g, '""');
     const languageName = (sentence?.language as { name?: string })?.name ?? "";
-    const winnerName = (winner?.name ?? "").replace(/"/g, '""');
+    const winnerName = toDisplayName(winner?.definition_id, winner?.provider_id, winner?.model_id, winner?.name ?? "").replace(/"/g, '""');
     const winnerProvider = ((winner?.provider as { name?: string })?.name ?? "").replace(/"/g, '""');
-    const loserName = (loser?.name ?? "").replace(/"/g, '""');
+    const loserName = toDisplayName(loser?.definition_id, loser?.provider_id, loser?.model_id, loser?.name ?? "").replace(/"/g, '""');
     const loserProvider = ((loser?.provider as { name?: string })?.name ?? "").replace(/"/g, '""');
     return `"${timestamp}","${languageName}","${text}","${winnerName}","${winnerProvider}","${loserName}","${loserProvider}",${e.listen_time_a_ms ?? ""},${e.listen_time_b_ms ?? ""}`;
   });

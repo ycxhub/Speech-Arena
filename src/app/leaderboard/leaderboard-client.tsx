@@ -73,22 +73,7 @@ export function LeaderboardClient({
   const tableData = participated.map((r, i) => ({
     ...r,
     rank: i + 1,
-    rankDisplay:
-      i < 3 ? (
-        <span
-          className={
-            i === 0
-              ? "text-amber-400"
-              : i === 1
-                ? "text-slate-300"
-                : "text-amber-700"
-          }
-        >
-          {i + 1}
-        </span>
-      ) : (
-        i + 1
-      ),
+    rankDisplay: i + 1,
   }));
 
   return (
