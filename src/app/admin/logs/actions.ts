@@ -292,6 +292,21 @@ export async function exportLogsCsv(
   const csv = [header, ...csvRows].join("\n");
   const filename = `test-logs-${new Date().toISOString().slice(0, 10)}.csv`;
 
+  void Promise.resolve(
+    admin.from("admin_audit_log").insert({
+      admin_id: user.id,
+      action: "export_test_logs_csv",
+      entity_type: "test_events",
+      entity_id: null,
+      details: {
+        row_count: exportRows.length,
+        anonymize,
+        filters: filters ?? {},
+        exceeded_limit: exceeded,
+      } as import("@/types/database").Json,
+    })
+  ).catch(() => {});
+
   return {
     csv,
     filename,

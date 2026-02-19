@@ -111,11 +111,11 @@ export async function createProvider(
 
   if (error) return { error: error.message };
 
-  await logAudit(admin, userId, "create_provider", "providers", inserted?.id, {
+  void logAudit(admin, userId, "create_provider", "providers", inserted?.id, {
     name: trimmedName,
     slug: trimmedSlug,
     base_url: baseUrl?.trim() || null,
-  });
+  }).catch(() => {});
 
   revalidatePath("/admin/providers");
   revalidatePath("/admin");
@@ -170,11 +170,11 @@ export async function updateProvider(
 
   if (error) return { error: error.message };
 
-  await logAudit(admin, userId, "update_provider", "providers", id, {
+  void logAudit(admin, userId, "update_provider", "providers", id, {
     name: trimmedName,
     slug: trimmedSlug,
     base_url: baseUrl?.trim() || null,
-  });
+  }).catch(() => {});
 
   revalidatePath("/admin/providers");
   revalidatePath(`/admin/providers/${id}`);
@@ -201,9 +201,9 @@ export async function toggleProviderActive(id: string): Promise<{ error?: string
 
   if (error) return { error: error.message };
 
-  await logAudit(admin, userId, "toggle_provider_active", "providers", id, {
+  void logAudit(admin, userId, "toggle_provider_active", "providers", id, {
     is_active: newActive,
-  });
+  }).catch(() => {});
 
   revalidatePath("/admin/providers");
   revalidatePath(`/admin/providers/${id}`);

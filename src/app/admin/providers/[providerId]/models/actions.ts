@@ -91,11 +91,11 @@ export async function createModelDefinition(
 
   if (error) return { error: error.message };
 
-  await logAudit(admin, userId, "create_model_definition", "provider_model_definitions", undefined, {
+  void logAudit(admin, userId, "create_model_definition", "provider_model_definitions", undefined, {
     provider_id: providerId,
     name: trimmedName,
     model_id: trimmedModelId,
-  });
+  }).catch(() => {});
 
   revalidatePath(`/admin/providers/${providerId}/models`);
   revalidatePath("/admin/providers");
@@ -140,10 +140,10 @@ export async function updateModelDefinition(
 
   if (error) return { error: error.message };
 
-  await logAudit(admin, userId, "update_model_definition", "provider_model_definitions", definitionId, {
+  void logAudit(admin, userId, "update_model_definition", "provider_model_definitions", definitionId, {
     name: trimmedName,
     model_id: trimmedModelId,
-  });
+  }).catch(() => {});
 
   revalidatePath(`/admin/providers/${providerId}/models`);
   revalidatePath("/admin/providers");
@@ -165,7 +165,7 @@ export async function deleteModelDefinition(
 
   if (error) return { error: error.message };
 
-  await logAudit(admin, userId, "delete_model_definition", "provider_model_definitions", definitionId);
+  void logAudit(admin, userId, "delete_model_definition", "provider_model_definitions", definitionId).catch(() => {});
 
   revalidatePath(`/admin/providers/${providerId}/models`);
   revalidatePath("/admin/providers");
@@ -261,14 +261,14 @@ export async function createModel(
     );
   }
 
-  await logAudit(admin, userId, "create_model", "models", modelUuid, {
+  void logAudit(admin, userId, "create_model", "models", modelUuid, {
     provider_id: providerId,
     name: trimmedName,
     model_id: trimmedModelId,
     gender: trimmedGender,
     language_ids: languageIds,
     tags,
-  });
+  }).catch(() => {});
 
   revalidatePath(`/admin/providers/${providerId}/models`);
   revalidatePath("/admin/providers");
@@ -340,13 +340,13 @@ export async function updateModel(
     );
   }
 
-  await logAudit(admin, userId, "update_model", "models", modelUuid, {
+  void logAudit(admin, userId, "update_model", "models", modelUuid, {
     name: trimmedName,
     model_id: trimmedModelId,
     gender: trimmedGender,
     language_ids: languageIds,
     tags,
-  });
+  }).catch(() => {});
 
   revalidatePath(`/admin/providers/${providerId}/models`);
   revalidatePath("/admin/providers");
@@ -375,9 +375,9 @@ export async function toggleModelActive(
 
   if (error) return { error: error.message };
 
-  await logAudit(admin, userId, "toggle_model_active", "models", modelUuid, {
+  void logAudit(admin, userId, "toggle_model_active", "models", modelUuid, {
     is_active: newActive,
-  });
+  }).catch(() => {});
 
   revalidatePath(`/admin/providers/${providerId}/models`);
   revalidatePath("/admin/providers");
@@ -401,10 +401,10 @@ export async function bulkUpdateModelStatus(
 
   if (error) return { error: error.message };
 
-  await logAudit(admin, userId, "bulk_update_model_status", "models", undefined, {
+  void logAudit(admin, userId, "bulk_update_model_status", "models", undefined, {
     model_ids: modelIds,
     is_active: active,
-  });
+  }).catch(() => {});
 
   revalidatePath(`/admin/providers/${providerId}/models`);
   revalidatePath("/admin/providers");
@@ -423,7 +423,7 @@ export async function deleteModel(modelUuid: string, providerId: string): Promis
 
   if (error) return { error: error.message };
 
-  await logAudit(admin, userId, "delete_model", "models", modelUuid);
+  void logAudit(admin, userId, "delete_model", "models", modelUuid).catch(() => {});
 
   revalidatePath(`/admin/providers/${providerId}/models`);
   revalidatePath("/admin/providers");

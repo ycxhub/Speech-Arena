@@ -5,7 +5,8 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
 async function ensureAdmin(): Promise<
-  { error: string; admin: null } | { error: null; admin: ReturnType<typeof getAdminClient> }
+  | { error: string; admin: null; userId?: undefined }
+  | { error: null; admin: ReturnType<typeof getAdminClient>; userId: string }
 > {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -14,7 +15,7 @@ async function ensureAdmin(): Promise<
   const admin = getAdminClient();
   const { data: profile } = await admin.from("profiles").select("role").eq("id", user.id).single();
   if (profile?.role !== "admin") return { error: "Forbidden: admin access required", admin: null };
-  return { error: null, admin };
+  return { error: null, admin, userId: user.id };
 }
 
 export type AutogeneratePreviewRow = {
@@ -84,7 +85,7 @@ export async function getAutogeneratePreview(
 export async function runAutogenerate(
   providerId: string
 ): Promise<{ error?: string; created?: number }> {
-  const { error: authError, admin } = await ensureAdmin();
+  const { error: authError, admin, userId } = await ensureAdmin();
   if (authError || !admin) return { error: authError ?? "Not authenticated" };
 
   const { data: voices } = await admin
@@ -188,6 +189,16 @@ export async function runAutogenerate(
 
     created++;
   }
+
+  void Promise.resolve(
+    admin.from("admin_audit_log").insert({
+      admin_id: userId,
+      action: "autogenerate_models",
+      entity_type: "models",
+      entity_id: null,
+      details: { provider_id: providerId, created } as import("@/types/database").Json,
+    })
+  ).catch(() => {});
 
   revalidatePath(`/admin/providers/${providerId}/models`);
   revalidatePath(`/admin/providers/${providerId}/autogenerate`);

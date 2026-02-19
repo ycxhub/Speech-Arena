@@ -94,6 +94,7 @@ export function AudioCard({
   }, [audioUrl, onListenTimeUpdate, onError]);
 
   useEffect(() => {
+    setIsPlaying(false); // Reset when URL changes; browser may not fire pause/ended on src change
     if (audioUrl && audioRef.current) {
       audioRef.current.src = audioUrl;
       setCanPlay(false);
@@ -105,8 +106,14 @@ export function AudioCard({
   const togglePlay = () => {
     const audio = audioRef.current;
     if (!audio) return;
-    if (isPlaying) audio.pause();
-    else audio.play();
+    // Use actual audio state so button works even if React state got out of sync
+    if (audio.paused) {
+      audio.play();
+      setIsPlaying(true);
+    } else {
+      audio.pause();
+      setIsPlaying(false);
+    }
   };
 
   const listenProgress = Math.min(100, (listenTimeMs / MIN_LISTEN_MS) * 100);

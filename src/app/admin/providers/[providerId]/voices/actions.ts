@@ -85,11 +85,11 @@ export async function createVoice(
 
   if (error) return { error: error.message };
 
-  await logAudit(admin, userId, "create_voice", "provider_voices", inserted?.id, {
+  void logAudit(admin, userId, "create_voice", "provider_voices", inserted?.id, {
     provider_id: providerId,
     voice_id: trimmedVoiceId,
     gender: trimmedGender,
-  });
+  }).catch(() => {});
 
   revalidatePath(`/admin/providers/${providerId}/voices`);
   revalidatePath(`/admin/providers/${providerId}/models`);
@@ -135,10 +135,10 @@ export async function updateVoice(
 
   if (error) return { error: error.message };
 
-  await logAudit(admin, userId, "update_voice", "provider_voices", voiceUuid, {
+  void logAudit(admin, userId, "update_voice", "provider_voices", voiceUuid, {
     voice_id: trimmedVoiceId,
     gender: trimmedGender,
-  });
+  }).catch(() => {});
 
   revalidatePath(`/admin/providers/${providerId}/voices`);
   revalidatePath(`/admin/providers/${providerId}/models`);
@@ -161,7 +161,7 @@ export async function deleteVoice(
 
   if (error) return { error: error.message };
 
-  await logAudit(admin, userId, "delete_voice", "provider_voices", voiceUuid, {});
+  void logAudit(admin, userId, "delete_voice", "provider_voices", voiceUuid, {}).catch(() => {});
 
   revalidatePath(`/admin/providers/${providerId}/voices`);
   revalidatePath(`/admin/providers/${providerId}/models`);
@@ -271,11 +271,11 @@ export async function bulkCreateVoicesFromCsv(
   }
 
   if (created > 0) {
-    await logAudit(admin, userId, "bulk_create_voices_csv", "provider_voices", undefined, {
+    void logAudit(admin, userId, "bulk_create_voices_csv", "provider_voices", undefined, {
       provider_id: providerId,
       created,
       total_rows: rows.length,
-    });
+    }).catch(() => {});
   }
 
   revalidatePath(`/admin/providers/${providerId}/voices`);

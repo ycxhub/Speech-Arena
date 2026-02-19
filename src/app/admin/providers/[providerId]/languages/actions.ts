@@ -61,10 +61,10 @@ export async function updateProviderLanguages(
     if (error) return { error: error.message };
   }
 
-  await logAudit(admin, userId, "update_provider_languages", "provider_languages", {
+  void logAudit(admin, userId, "update_provider_languages", "provider_languages", {
     provider_id: providerId,
     language_ids: languageIds,
-  });
+  }).catch(() => {});
 
   revalidatePath(`/admin/providers/${providerId}/languages`);
   revalidatePath(`/admin/providers/${providerId}/models`);

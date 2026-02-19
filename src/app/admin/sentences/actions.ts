@@ -73,10 +73,10 @@ export async function createSentence(
 
   if (error) return { error: error.message };
 
-  await logAudit(admin, userId, "create_sentence", "sentences", inserted?.id, {
+  void logAudit(admin, userId, "create_sentence", "sentences", inserted?.id, {
     language_id: languageId,
     text_preview: trimmed.slice(0, 50),
-  });
+  }).catch(() => {});
 
   await admin.from("sentence_versions").insert({
     sentence_id: inserted!.id,
@@ -120,10 +120,10 @@ export async function updateSentence(
 
   if (error) return { error: error.message };
 
-  await logAudit(admin, userId, "update_sentence", "sentences", id, {
+  void logAudit(admin, userId, "update_sentence", "sentences", id, {
     version: newVersion,
     text_preview: trimmed.slice(0, 50),
-  });
+  }).catch(() => {});
 
   await admin.from("sentence_versions").insert({
     sentence_id: id,
@@ -160,9 +160,9 @@ export async function toggleSentenceActive(
 
   if (error) return { error: error.message };
 
-  await logAudit(admin, userId, "toggle_sentence_active", "sentences", id, {
+  void logAudit(admin, userId, "toggle_sentence_active", "sentences", id, {
     is_active: newActive,
-  });
+  }).catch(() => {});
 
   revalidatePath("/admin/sentences");
   return {};
@@ -254,11 +254,11 @@ export async function bulkImportSentences(
     };
   }
 
-  await logAudit(admin, userId, "bulk_import_sentences", "sentences", undefined, {
+  void logAudit(admin, userId, "bulk_import_sentences", "sentences", undefined, {
     inserted: inserted?.length ?? 0,
     skipped: rows.length - (inserted?.length ?? 0),
     total_rows: rows.length,
-  });
+  }).catch(() => {});
 
   const insertedIds = inserted ?? [];
   for (let i = 0; i < insertedIds.length && i < toInsert.length; i++) {

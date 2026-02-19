@@ -65,13 +65,13 @@ export function FilterBar({
 
   return (
     <GlassCard className="mb-4">
-      <div className="flex flex-wrap items-center gap-4">
+      <div className="flex flex-nowrap items-end gap-3 overflow-x-auto pb-2">
         <GlassSelect
           label="Language"
           options={[{ value: "", label: "All languages" }, ...languages]}
           value={language}
           onChange={handleLanguageChange}
-          className="w-40"
+          className="w-36 shrink-0"
         />
         <GlassSelect
           label="Status"
@@ -82,14 +82,14 @@ export function FilterBar({
           ]}
           value={status}
           onChange={handleStatusChange}
-          className="w-32"
+          className="w-28 shrink-0"
         />
         <GlassInput
           label="Search"
           placeholder="Search in sentence text..."
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          className="min-w-[200px]"
+          className="min-w-[180px] shrink-0"
         />
       </div>
     </GlassCard>

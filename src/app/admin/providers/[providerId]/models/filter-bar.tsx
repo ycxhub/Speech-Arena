@@ -74,54 +74,54 @@ export function FilterBar({ languages, filters }: FilterBarProps) {
 
   return (
     <GlassCard className="mb-4">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div className="flex flex-wrap items-end gap-4">
-        <div className="min-w-[180px]">
-          <GlassInput
-            label="Search"
-            placeholder="Name or Model ID"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-          />
-        </div>
-        <div className="min-w-[120px]">
-          <GlassSelect
-            label="Gender"
-            options={genderOptions}
-            value={filters.gender}
-            onChange={(e) => updateFilter("gender", e.target.value)}
-          />
-        </div>
-        <div className="min-w-[140px]">
-          <GlassSelect
-            label="Language"
-            options={languageOptions}
-            value={filters.language}
-            onChange={(e) => updateFilter("language", e.target.value)}
-          />
-        </div>
-        <div className="min-w-[120px]">
-          <GlassSelect
-            label="Status"
-            options={statusOptions}
-            value={filters.status}
-            onChange={(e) => updateFilter("status", e.target.value)}
-          />
-        </div>
-        <div className="min-w-[140px]">
-          <GlassInput
-            label="Tag"
-            placeholder="e.g. neural"
-            value={filters.tag}
-            onChange={(e) => updateFilter("tag", e.target.value)}
-          />
-        </div>
+      <div className="flex flex-nowrap items-end justify-between gap-3 overflow-x-auto pb-2">
+        <div className="flex shrink-0 items-end gap-3">
+          <div className="min-w-[160px] shrink-0">
+            <GlassInput
+              label="Search"
+              placeholder="Name or Model ID"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+            />
+          </div>
+          <div className="min-w-[100px] shrink-0">
+            <GlassSelect
+              label="Gender"
+              options={genderOptions}
+              value={filters.gender}
+              onChange={(e) => updateFilter("gender", e.target.value)}
+            />
+          </div>
+          <div className="min-w-[120px] shrink-0">
+            <GlassSelect
+              label="Language"
+              options={languageOptions}
+              value={filters.language}
+              onChange={(e) => updateFilter("language", e.target.value)}
+            />
+          </div>
+          <div className="min-w-[100px] shrink-0">
+            <GlassSelect
+              label="Status"
+              options={statusOptions}
+              value={filters.status}
+              onChange={(e) => updateFilter("status", e.target.value)}
+            />
+          </div>
+          <div className="min-w-[120px] shrink-0">
+            <GlassInput
+              label="Tag"
+              placeholder="e.g. neural"
+              value={filters.tag}
+              onChange={(e) => updateFilter("tag", e.target.value)}
+            />
+          </div>
         </div>
         {hasActiveFilters && (
           <button
             type="button"
             onClick={clearFilters}
-            className="rounded-lg px-3 py-2 text-sm font-medium text-white/60 hover:bg-white/10 hover:text-white transition-colors"
+            className="shrink-0 rounded-lg px-3 py-2 text-sm font-medium text-white/60 hover:bg-white/10 hover:text-white transition-colors"
           >
             Clear filters
           </button>

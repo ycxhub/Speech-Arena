@@ -230,69 +230,73 @@ export function MyResultsClient({
 
       {/* Filter bar */}
       <GlassCard>
-        <div className="mb-4 flex flex-wrap items-end gap-4">
-          <GlassSelect
-            label="Language"
-            options={[
-              { value: "", label: "All languages" },
-              ...filterOptions.languages.map((l) => ({ value: l.id, label: l.name })),
-            ]}
-            value={languageId}
-            onChange={(e) => updateUrl({ language: e.target.value })}
-            className="w-40"
-          />
-          <GlassSelect
-            label="Provider"
-            options={[
-              { value: "", label: "All providers" },
-              ...filterOptions.providers.map((p) => ({ value: p.id, label: p.name })),
-            ]}
-            value={providerId}
-            onChange={(e) => {
-              updateUrl({ provider: e.target.value, model: "" });
-            }}
-            className="w-40"
-          />
-          <GlassSelect
-            label="Model"
-            options={[
-              { value: "", label: "All models" },
-              ...filterOptions.models
-                .filter((m) => !providerId || m.providerId === providerId)
-                .map((m) => ({ value: m.id, label: m.name })),
-            ]}
-            value={modelId}
-            onChange={(e) => updateUrl({ model: e.target.value })}
-            className="w-40"
-          />
-          <GlassInput
-            label="From"
-            type="date"
-            value={fromDate}
-            onChange={(e) => updateUrl({ from: e.target.value })}
-            className="w-40"
-          />
-          <GlassInput
-            label="To"
-            type="date"
-            value={toDate}
-            onChange={(e) => updateUrl({ to: e.target.value })}
-            className="w-40"
-          />
-          <GlassButton
-            size="sm"
-            variant="secondary"
-            onClick={() => {
-              const params = new URLSearchParams();
-              if (testType) params.set("type", testType);
-              router.push(`/my-results${params.toString() ? `?${params.toString()}` : ""}`);
-            }}
-          >
-            Clear
-          </GlassButton>
-          <GlassButton size="sm" onClick={handleExport} loading={exporting}>
-            Export CSV
-          </GlassButton>
+        <div className="flex flex-nowrap items-end gap-3 overflow-x-auto pb-2">
+          <div className="flex shrink-0 items-end gap-3">
+            <GlassSelect
+              label="Language"
+              options={[
+                { value: "", label: "All languages" },
+                ...filterOptions.languages.map((l) => ({ value: l.id, label: l.name })),
+              ]}
+              value={languageId}
+              onChange={(e) => updateUrl({ language: e.target.value })}
+              className="w-36 shrink-0"
+            />
+            <GlassSelect
+              label="Provider"
+              options={[
+                { value: "", label: "All providers" },
+                ...filterOptions.providers.map((p) => ({ value: p.id, label: p.name })),
+              ]}
+              value={providerId}
+              onChange={(e) => {
+                updateUrl({ provider: e.target.value, model: "" });
+              }}
+              className="w-36 shrink-0"
+            />
+            <GlassSelect
+              label="Model"
+              options={[
+                { value: "", label: "All models" },
+                ...filterOptions.models
+                  .filter((m) => !providerId || m.providerId === providerId)
+                  .map((m) => ({ value: m.id, label: m.name })),
+              ]}
+              value={modelId}
+              onChange={(e) => updateUrl({ model: e.target.value })}
+              className="w-36 shrink-0"
+            />
+            <GlassInput
+              label="From"
+              type="date"
+              value={fromDate}
+              onChange={(e) => updateUrl({ from: e.target.value })}
+              className="w-32 shrink-0"
+            />
+            <GlassInput
+              label="To"
+              type="date"
+              value={toDate}
+              onChange={(e) => updateUrl({ to: e.target.value })}
+              className="w-32 shrink-0"
+            />
+          </div>
+          <div className="flex shrink-0 items-end gap-2">
+            <GlassButton
+              size="sm"
+              variant="secondary"
+              onClick={() => {
+                const params = new URLSearchParams();
+                if (testType) params.set("type", testType);
+                router.push(`/my-results${params.toString() ? `?${params.toString()}` : ""}`);
+              }}
+            >
+              Clear
+            </GlassButton>
+            <GlassButton size="sm" onClick={handleExport} loading={exporting}>
+              Export CSV
+            </GlassButton>
+          </div>
         </div>
       </GlassCard>
 

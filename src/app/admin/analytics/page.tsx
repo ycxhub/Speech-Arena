@@ -1,7 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { GlassCard } from "@/components/ui/glass-card";
-import { GlassTable } from "@/components/ui/glass-table";
+import { AnalyticsClient } from "./page-client";
 import { getAdminClient } from "@/lib/supabase/admin";
 
 export default async function AdminAnalyticsPage() {
@@ -13,137 +12,70 @@ export default async function AdminAnalyticsPage() {
   const { data: profile } = await admin.from("profiles").select("role").eq("id", user.id).single();
   if (profile?.role !== "admin") redirect("/blind-test");
 
-  const [
-    totalRoundsRes,
-    completedRoundsRes,
-    testsPerDayData,
-    latencyRes,
-    errorRatesRes,
-    matchupRes,
-    activeModelsRes,
-    activeUsersRes,
-  ] = await Promise.all([
-    admin.from("test_events").select("id", { count: "exact", head: true }),
-    admin.from("test_events").select("id", { count: "exact", head: true }).eq("status", "completed"),
-    admin
-      .from("test_events")
-      .select("voted_at")
-      .eq("status", "completed")
-      .not("voted_at", "is", null),
-    getMedianLatencyByProvider(admin),
-    getErrorRatesByProvider(admin),
-    getMatchupDistribution(admin),
-    admin.from("models").select("id", { count: "exact", head: true }).eq("is_active", true),
-    admin.from("profiles").select("id", { count: "exact", head: true }),
-  ]);
+  try {
+    const [
+      totalRoundsRes,
+      completedRoundsRes,
+      testsPerDayData,
+      latencyRes,
+      errorRatesRes,
+      matchupRes,
+      activeModelsRes,
+      activeUsersRes,
+    ] = await Promise.all([
+      admin.from("test_events").select("id", { count: "exact", head: true }),
+      admin.from("test_events").select("id", { count: "exact", head: true }).eq("status", "completed"),
+      admin
+        .from("test_events")
+        .select("voted_at")
+        .eq("status", "completed")
+        .not("voted_at", "is", null),
+      getMedianLatencyByProvider(admin),
+      getErrorRatesByProvider(admin),
+      getMatchupDistribution(admin),
+      admin.from("models").select("id", { count: "exact", head: true }).eq("is_active", true),
+      admin.from("profiles").select("id", { count: "exact", head: true }),
+    ]);
 
-  const totalRounds = totalRoundsRes.count ?? 0;
-  const completedRounds = completedRoundsRes.count ?? 0;
-  const completionRate = totalRounds > 0 ? ((completedRounds / totalRounds) * 100).toFixed(1) : "0";
-  const activeModels = activeModelsRes.count ?? 0;
-  const activeUsers = activeUsersRes.count ?? 0;
+    const totalRounds = totalRoundsRes.count ?? 0;
+    const completedRounds = completedRoundsRes.count ?? 0;
+    const completionRate = totalRounds > 0 ? ((completedRounds / totalRounds) * 100).toFixed(1) : "0";
+    const activeModels = activeModelsRes.count ?? 0;
+    const activeUsers = activeUsersRes.count ?? 0;
 
-  const byDay: Record<string, number> = {};
-  for (const r of testsPerDayData.data ?? []) {
-    const day = (r.voted_at as string).slice(0, 10);
-    byDay[day] = (byDay[day] ?? 0) + 1;
-  }
-  const testsPerDay = Object.entries(byDay)
-    .sort((a, b) => b[0].localeCompare(a[0]))
-    .slice(0, 30)
-    .map(([day, count]) => ({ day, count }));
+    const byDay: Record<string, number> = {};
+    for (const r of testsPerDayData.data ?? []) {
+      const day = (r.voted_at as string).slice(0, 10);
+      byDay[day] = (byDay[day] ?? 0) + 1;
+    }
+    const testsPerDay = Object.entries(byDay)
+      .sort((a, b) => b[0].localeCompare(a[0]))
+      .slice(0, 30)
+      .map(([day, count]) => ({ day, count }));
 
-  const latency = latencyRes;
-  const errorRates = errorRatesRes;
-  const matchups = matchupRes;
-
-  return (
-    <div className="space-y-8">
-      <h1 className="text-page-title">Analytics</h1>
-
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <GlassCard>
-          <p className="text-2xl font-bold text-white">{completedRounds.toLocaleString()}</p>
-          <p className="text-sm text-white/60">Total Tests</p>
-        </GlassCard>
-        <GlassCard>
-          <p className="text-2xl font-bold text-white">{completionRate}%</p>
-          <p className="text-sm text-white/60">
-            Completion Rate ({completedRounds.toLocaleString()} / {totalRounds.toLocaleString()})
-          </p>
-        </GlassCard>
-        <GlassCard>
-          <p className="text-2xl font-bold text-white">{activeModels}</p>
-          <p className="text-sm text-white/60">Active Models</p>
-        </GlassCard>
-        <GlassCard>
-          <p className="text-2xl font-bold text-white">{activeUsers}</p>
-          <p className="text-sm text-white/60">Active Users</p>
-        </GlassCard>
+    return (
+      <AnalyticsClient
+        summary={{
+          completedRounds,
+          totalRounds,
+          completionRate,
+          activeModels,
+          activeUsers,
+        }}
+        testsPerDay={testsPerDay}
+        latency={latencyRes}
+        errorRates={errorRatesRes}
+        matchups={matchupRes}
+      />
+    );
+  } catch {
+    return (
+      <div className="space-y-8">
+        <h1 className="text-page-title">Analytics</h1>
+        <p className="text-accent-red">Failed to load analytics.</p>
       </div>
-
-      <GlassCard>
-        <h2 className="mb-4 text-section-heading">Tests per Day (last 30 days)</h2>
-        <GlassTable<{ day: string; count: number }>
-          columns={[
-            { key: "day", header: "Date" },
-            { key: "count", header: "Completed Tests" },
-          ]}
-          data={testsPerDay}
-        />
-      </GlassCard>
-
-      <GlassCard>
-        <h2 className="mb-4 text-section-heading">Median Generation Latency by Provider</h2>
-        <GlassTable<{ provider: string; medianMs: number }>
-          columns={[
-            { key: "provider", header: "Provider" },
-            {
-              key: "medianMs",
-              header: "Median (ms)",
-              render: (r) => (
-                <span className={r.medianMs > 5000 ? "text-accent-orange" : ""}>
-                  {r.medianMs.toFixed(0)}
-                </span>
-              ),
-            },
-          ]}
-          data={latency}
-        />
-      </GlassCard>
-
-      <GlassCard>
-        <h2 className="mb-4 text-section-heading">Error Rates by Provider</h2>
-        <GlassTable<{ provider: string; total: number; invalid: number; rate: number }>
-          columns={[
-            { key: "provider", header: "Provider" },
-            { key: "total", header: "Total" },
-            { key: "invalid", header: "Invalid" },
-            {
-              key: "rate",
-              header: "Error Rate",
-              render: (r) => `${r.rate.toFixed(1)}%`,
-            },
-          ]}
-          data={errorRates}
-        />
-      </GlassCard>
-
-      <GlassCard>
-        <h2 className="mb-4 text-section-heading">Top Matchup Pairs</h2>
-        <GlassTable<{ modelA: string; modelB: string; matches: number; aWins: number; bWins: number }>
-          columns={[
-            { key: "modelA", header: "Model A" },
-            { key: "modelB", header: "Model B" },
-            { key: "matches", header: "Matches" },
-            { key: "aWins", header: "A Wins" },
-            { key: "bWins", header: "B Wins" },
-          ]}
-          data={matchups}
-        />
-      </GlassCard>
-    </div>
-  );
+    );
+  }
 }
 
 async function getMedianLatencyByProvider(

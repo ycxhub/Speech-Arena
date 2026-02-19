@@ -93,10 +93,10 @@ export async function addApiKey(
 
   if (error) return { error: error.message };
 
-  await logAudit(admin, userId, "add_api_key", "api_keys", inserted?.id, {
+  void logAudit(admin, userId, "add_api_key", "api_keys", inserted?.id, {
     provider_id: providerId,
     key_name: trimmedName,
-  });
+  }).catch(() => {});
 
   revalidatePath(`/admin/providers/${providerId}/keys`);
   revalidatePath("/admin/providers");
@@ -119,9 +119,9 @@ export async function updateKeyStatus(
 
   if (error) return { error: error.message };
 
-  await logAudit(admin, userId, "update_key_status", "api_keys", keyId, {
+  void logAudit(admin, userId, "update_key_status", "api_keys", keyId, {
     status,
-  });
+  }).catch(() => {});
 
   revalidatePath(`/admin/providers/${providerId}/keys`);
   revalidatePath("/admin/providers");

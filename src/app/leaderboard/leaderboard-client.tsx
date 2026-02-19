@@ -46,7 +46,7 @@ export function LeaderboardClient({
   const providerId = searchParams.get("provider") ?? "";
   const minMatches = searchParams.get("min_matches") ?? "";
 
-  const filteredData = useMemo(() => {
+  const { participated, notYetParticipated } = useMemo(() => {
     let data = initialData;
     if (search.trim()) {
       const q = search.toLowerCase();
@@ -56,7 +56,9 @@ export function LeaderboardClient({
           r.providerName.toLowerCase().includes(q)
       );
     }
-    return data;
+    const participated = data.filter((r) => r.matchesPlayed > 0);
+    const notYetParticipated = data.filter((r) => r.matchesPlayed === 0);
+    return { participated, notYetParticipated };
   }, [initialData, search]);
 
   const updateUrl = (updates: Record<string, string>) => {
@@ -68,7 +70,7 @@ export function LeaderboardClient({
     router.push(`/leaderboard?${params.toString()}`);
   };
 
-  const tableData = filteredData.map((r, i) => ({
+  const tableData = participated.map((r, i) => ({
     ...r,
     rank: i + 1,
     rankDisplay:
@@ -118,7 +120,7 @@ export function LeaderboardClient({
       </div>
 
       <GlassCard>
-        <div className="mb-4 flex flex-wrap items-end gap-4">
+        <div className="mb-4 flex flex-nowrap items-end gap-3 overflow-x-auto pb-2">
           <GlassSelect
             label="Language"
             options={[
@@ -127,7 +129,7 @@ export function LeaderboardClient({
             ]}
             value={languageId}
             onChange={(e) => updateUrl({ language: e.target.value })}
-            className="w-40"
+            className="w-36 shrink-0"
           />
           <GlassSelect
             label="Provider"
@@ -137,7 +139,7 @@ export function LeaderboardClient({
             ]}
             value={providerId}
             onChange={(e) => updateUrl({ provider: e.target.value })}
-            className="w-40"
+            className="w-36 shrink-0"
           />
           <GlassInput
             label="Min Matches"
@@ -146,18 +148,18 @@ export function LeaderboardClient({
             placeholder="0"
             value={minMatches}
             onChange={(e) => updateUrl({ min_matches: e.target.value })}
-            className="w-32"
+            className="w-28 shrink-0"
           />
           <GlassInput
             label="Search"
             placeholder="Model or provider..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="min-w-[200px]"
+            className="min-w-[180px] shrink-0"
           />
         </div>
 
-        {filteredData.length === 0 ? (
+        {participated.length === 0 ? (
           <div className="py-12 text-center">
             <p className="mb-4 text-white/60">
               {initialData.length === 0
@@ -215,6 +217,26 @@ export function LeaderboardClient({
           </div>
         )}
       </GlassCard>
+
+      {notYetParticipated.length > 0 && (
+        <GlassCard>
+          <h2 className="mb-4 text-lg font-medium text-white/80">
+            Not Yet Participated
+          </h2>
+          <p className="mb-4 text-sm text-white/50">
+            Models that have not completed any blind tests yet.
+          </p>
+          <div className="overflow-x-auto">
+            <GlassTable<LeaderboardRow>
+              columns={[
+                { key: "modelName", header: "Model" },
+                { key: "providerName", header: "Provider" },
+              ]}
+              data={notYetParticipated}
+            />
+          </div>
+        </GlassCard>
+      )}
     </div>
   );
 }

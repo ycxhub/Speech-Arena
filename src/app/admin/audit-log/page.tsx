@@ -32,13 +32,17 @@ export default async function AdminAuditLogPage({
     )
     .order("created_at", { ascending: false });
 
-  if (params.admin) {
+  if (params.admin?.trim()) {
     const { data: admins } = await admin
       .from("profiles")
       .select("id")
-      .ilike("email", `%${params.admin}%`);
+      .ilike("email", `%${params.admin.trim()}%`);
     const ids = (admins ?? []).map((a) => a.id);
-    if (ids.length > 0) query = query.in("admin_id", ids);
+    if (ids.length > 0) {
+      query = query.in("admin_id", ids);
+    } else {
+      query = query.eq("admin_id", "00000000-0000-0000-0000-000000000000");
+    }
   }
   if (params.action) query = query.eq("action", params.action);
   if (params.entity_type) query = query.eq("entity_type", params.entity_type);
@@ -66,6 +70,22 @@ export default async function AdminAuditLogPage({
     details: r.details ? JSON.stringify(r.details) : "",
   }));
 
+  const actions = [
+    "create_sentence", "update_sentence", "toggle_sentence_active", "bulk_import_sentences",
+    "create_voice", "update_voice", "delete_voice", "bulk_create_voices_csv",
+    "create_model_definition", "update_model_definition", "delete_model_definition",
+    "create_model", "update_model", "toggle_model_active", "bulk_update_model_status", "delete_model",
+    "create_language", "update_language", "toggle_language_active",
+    "update_provider_languages", "add_api_key", "update_key_status",
+    "create_provider", "update_provider", "toggle_provider_active", "abuse_flag",
+    "update_user_role", "autogenerate_models", "export_test_logs_csv",
+  ];
+  const entityTypes = [
+    "sentences", "provider_voices", "provider_model_definitions", "models",
+    "languages", "provider_languages", "api_keys", "providers", "user",
+    "profiles", "test_events",
+  ];
+
   return (
     <div className="space-y-8">
       <h1 className="text-page-title">Audit Log</h1>
@@ -75,6 +95,8 @@ export default async function AdminAuditLogPage({
         total={count ?? 0}
         page={page}
         pageSize={pageSize}
+        actions={actions}
+        entityTypes={entityTypes}
       />
     </div>
   );

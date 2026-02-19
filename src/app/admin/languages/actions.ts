@@ -76,10 +76,10 @@ export async function createLanguage(
 
   if (error) return { error: error.message };
 
-  await logAudit(admin, userId, "create_language", "languages", inserted?.id, {
+  void logAudit(admin, userId, "create_language", "languages", inserted?.id, {
     name: trimmedName,
     code: trimmedCode,
-  });
+  }).catch(() => {});
 
   revalidatePath("/admin/languages");
   return {};
@@ -117,10 +117,10 @@ export async function updateLanguage(
 
   if (error) return { error: error.message };
 
-  await logAudit(admin, userId, "update_language", "languages", id, {
+  void logAudit(admin, userId, "update_language", "languages", id, {
     name: trimmedName,
     code: trimmedCode,
-  });
+  }).catch(() => {});
 
   revalidatePath("/admin/languages");
   return {};
@@ -145,9 +145,9 @@ export async function toggleLanguageActive(id: string): Promise<{ error?: string
 
   if (error) return { error: error.message };
 
-  await logAudit(admin, userId, "toggle_language_active", "languages", id, {
+  void logAudit(admin, userId, "toggle_language_active", "languages", id, {
     is_active: newActive,
-  });
+  }).catch(() => {});
 
   revalidatePath("/admin/languages");
   return {};

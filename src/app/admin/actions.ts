@@ -39,6 +39,16 @@ export async function updateUserRole(
 
   if (error) return { error: error.message };
 
+  void Promise.resolve(
+    admin.from("admin_audit_log").insert({
+      admin_id: user.id,
+      action: "update_user_role",
+      entity_type: "profiles",
+      entity_id: userId,
+      details: { role, target_user_id: userId } as import("@/types/database").Json,
+    })
+  ).catch(() => {});
+
   revalidatePath("/admin");
   return {};
 }

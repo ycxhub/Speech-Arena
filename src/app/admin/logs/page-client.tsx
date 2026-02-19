@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { GlassCard } from "@/components/ui/glass-card";
 import { GlassTable } from "@/components/ui/glass-table";
@@ -128,90 +128,102 @@ export function LogsClient({
     }
   };
 
+  // Poll for real-time updates when there are pending rows
+  const hasPendingRows = initialRows.some((r) => r.status === "pending");
+  useEffect(() => {
+    if (!hasPendingRows) return;
+    const interval = setInterval(() => router.refresh(), 4000);
+    return () => clearInterval(interval);
+  }, [hasPendingRows, router]);
+
   const filters = (
     <GlassCard className="mb-4">
-      <div className="mb-4 flex flex-wrap items-end gap-4">
-        <GlassInput
-          label="User / Email"
-          placeholder="Search..."
-          value={userQuery}
-          onChange={(e) => updateUrl({ user: e.target.value })}
-          className="w-48"
-        />
-        <GlassSelect
-          label="Provider"
-          options={[
-            { value: "", label: "All" },
-            ...providers.map((p) => ({ value: p.id, label: p.name })),
-          ]}
-          value={providerId}
-          onChange={(e) => updateUrl({ provider: e.target.value, model: "" })}
-          className="w-36"
-        />
-        <GlassSelect
-          label="Model"
-          options={[
-            { value: "", label: "All" },
-            ...models
-              .filter((m) => !providerId || m.provider_id === providerId)
-              .map((m) => ({ value: m.id, label: m.name })),
-          ]}
-          value={modelId}
-          onChange={(e) => updateUrl({ model: e.target.value })}
-          className="w-36"
-        />
-        <GlassSelect
-          label="Language"
-          options={[
-            { value: "", label: "All" },
-            ...languages.map((l) => ({ value: l.id, label: l.code })),
-          ]}
-          value={languageId}
-          onChange={(e) => updateUrl({ language: e.target.value })}
-          className="w-36"
-        />
-        <GlassSelect
-          label="Status"
-          options={[
-            { value: "all", label: "All" },
-            { value: "completed", label: "Completed" },
-            { value: "pending", label: "Pending" },
-            { value: "invalid", label: "Invalid" },
-          ]}
-          value={status}
-          onChange={(e) => updateUrl({ status: e.target.value })}
-          className="w-32"
-        />
-        <GlassInput
-          label="From"
-          type="date"
-          value={fromDate}
-          onChange={(e) => updateUrl({ from: e.target.value })}
-          className="w-36"
-        />
-        <GlassInput
-          label="To"
-          type="date"
-          value={toDate}
-          onChange={(e) => updateUrl({ to: e.target.value })}
-          className="w-36"
-        />
-        <GlassButton size="sm" variant="secondary" onClick={() => router.push("/admin/logs")}>
-          Clear
-        </GlassButton>
-        <label className="flex items-center gap-2 text-sm text-white/80">
-          <input
-            type="checkbox"
-            checked={anonymize}
-            onChange={(e) => setAnonymize(e.target.checked)}
+      <div className="flex flex-nowrap items-end gap-3 overflow-x-auto pb-2">
+        <div className="flex shrink-0 items-end gap-3">
+          <GlassInput
+            label="User / Email"
+            placeholder="Search..."
+            value={userQuery}
+            onChange={(e) => updateUrl({ user: e.target.value })}
+            className="w-40 shrink-0"
           />
-          Anonymize users
-        </label>
-        <GlassButton size="sm" onClick={handleExport} loading={exporting}>
-          Export CSV
-        </GlassButton>
+          <GlassSelect
+            label="Provider"
+            options={[
+              { value: "", label: "All" },
+              ...providers.map((p) => ({ value: p.id, label: p.name })),
+            ]}
+            value={providerId}
+            onChange={(e) => updateUrl({ provider: e.target.value, model: "" })}
+            className="w-32 shrink-0"
+          />
+          <GlassSelect
+            label="Model"
+            options={[
+              { value: "", label: "All" },
+              ...models
+                .filter((m) => !providerId || m.provider_id === providerId)
+                .map((m) => ({ value: m.id, label: m.name })),
+            ]}
+            value={modelId}
+            onChange={(e) => updateUrl({ model: e.target.value })}
+            className="w-32 shrink-0"
+          />
+          <GlassSelect
+            label="Language"
+            options={[
+              { value: "", label: "All" },
+              ...languages.map((l) => ({ value: l.id, label: l.code })),
+            ]}
+            value={languageId}
+            onChange={(e) => updateUrl({ language: e.target.value })}
+            className="w-28 shrink-0"
+          />
+          <GlassSelect
+            label="Status"
+            options={[
+              { value: "all", label: "All" },
+              { value: "completed", label: "Completed" },
+              { value: "pending", label: "Pending" },
+              { value: "invalid", label: "Invalid" },
+            ]}
+            value={status}
+            onChange={(e) => updateUrl({ status: e.target.value })}
+            className="w-28 shrink-0"
+          />
+          <GlassInput
+            label="From"
+            type="date"
+            value={fromDate}
+            onChange={(e) => updateUrl({ from: e.target.value })}
+            className="w-32 shrink-0"
+          />
+          <GlassInput
+            label="To"
+            type="date"
+            value={toDate}
+            onChange={(e) => updateUrl({ to: e.target.value })}
+            className="w-32 shrink-0"
+          />
+        </div>
+        <div className="flex shrink-0 items-end gap-2">
+          <GlassButton size="sm" variant="secondary" onClick={() => router.push("/admin/logs")}>
+            Clear
+          </GlassButton>
+          <label className="flex shrink-0 items-center gap-2 text-sm text-white/80">
+            <input
+              type="checkbox"
+              checked={anonymize}
+              onChange={(e) => setAnonymize(e.target.checked)}
+            />
+            Anonymize
+          </label>
+          <GlassButton size="sm" onClick={handleExport} loading={exporting}>
+            Export CSV
+          </GlassButton>
+        </div>
       </div>
-      <div className="flex gap-2 text-sm">
+      <div className="mt-2 flex flex-wrap gap-2 text-sm">
         <button
           type="button"
           onClick={() => updateUrl({ status: "invalid" })}
