@@ -49,7 +49,7 @@ export async function GET(request: Request) {
 
     console.log(`[ELO verify] Fetched ${events?.length ?? 0} completed events`);
 
-    // Build model_id -> (provider_id, model_id) lookup
+    // Build models.id -> (provider_id, definition_name) lookup
     const modelIds = new Set<string>();
     for (const ev of events ?? []) {
       modelIds.add(ev.winner_id as string);
@@ -59,8 +59,18 @@ export async function GET(request: Request) {
       .from("models")
       .select("id, provider_id, model_id")
       .in("id", Array.from(modelIds));
+    const { data: defs } = await admin
+      .from("provider_model_definitions")
+      .select("provider_id, model_id, name");
+    const defMap = new Map<string, string>();
+    for (const d of defs ?? []) {
+      defMap.set(`${d.provider_id}:${d.model_id}`, d.name);
+    }
     const modelToKey = new Map(
-      (models ?? []).map((m) => [m.id, `${m.provider_id}:${m.model_id}`])
+      (models ?? []).map((m) => {
+        const defName = defMap.get(`${m.provider_id}:${m.model_id}`) ?? m.model_id;
+        return [m.id, `${m.provider_id}:${defName}`];
+      })
     );
 
     // Replay events at model level; skip same-model pairs
@@ -108,19 +118,19 @@ export async function GET(request: Request) {
       lLang.losses += 1;
     }
 
-    // Fetch stored model-level ratings for comparison
+    // Fetch stored model-level ratings for comparison (keyed by definition_name)
     const { data: storedGlobal } = await admin
       .from("elo_ratings_global_model")
-      .select("provider_id, model_id, rating, matches_played, wins, losses");
+      .select("provider_id, definition_name, rating, matches_played, wins, losses");
     const { data: storedLang } = await admin
       .from("elo_ratings_by_language_model")
-      .select("provider_id, model_id, language_id, rating, matches_played, wins, losses");
+      .select("provider_id, definition_name, language_id, rating, matches_played, wins, losses");
 
     const storedGlobalMap = new Map(
-      (storedGlobal ?? []).map((r) => [`${r.provider_id}:${r.model_id}`, { rating: r.rating, matches_played: r.matches_played, wins: r.wins, losses: r.losses }])
+      (storedGlobal ?? []).map((r) => [`${r.provider_id}:${r.definition_name}`, { rating: r.rating, matches_played: r.matches_played, wins: r.wins, losses: r.losses }])
     );
     const storedLangMap = new Map(
-      (storedLang ?? []).map((r) => [`${r.provider_id}:${r.model_id}:${r.language_id}`, { rating: r.rating, matches_played: r.matches_played, wins: r.wins, losses: r.losses }])
+      (storedLang ?? []).map((r) => [`${r.provider_id}:${r.definition_name}:${r.language_id}`, { rating: r.rating, matches_played: r.matches_played, wins: r.wins, losses: r.losses }])
     );
 
     const RATING_TOLERANCE = 1;

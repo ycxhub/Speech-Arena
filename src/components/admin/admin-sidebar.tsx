@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 interface AdminSidebarProps {
-  providers: { id: string; name: string }[];
+  providers: { id: string; name: string; is_active: boolean }[];
 }
 
 const TOP_LEVEL_ITEMS = [
@@ -27,7 +27,7 @@ export function AdminSidebar({ providers }: AdminSidebarProps) {
     return pathname.startsWith(href);
   };
 
-  const isProviderChildActive = (providerId: string) =>
+  const isProviderActive = (providerId: string) =>
     pathname.includes(`/admin/providers/${providerId}`);
 
   return (
@@ -66,32 +66,26 @@ export function AdminSidebar({ providers }: AdminSidebarProps) {
           <ul className="mt-1 space-y-0.5 border-l border-white/10 pl-4 ml-2">
             {providers.map((provider) => (
               <li key={provider.id}>
-                <span className="block px-2 py-1 text-xs font-medium text-white/40 truncate">
-                  {provider.name}
-                </span>
-                <ul className="space-y-0.5">
-                  {[
-                    { href: "languages", label: "Languages" },
-                    { href: "voices", label: "Voices" },
-                    { href: "models", label: "Models" },
-                    { href: "keys", label: "Keys" },
-                    { href: "test", label: "Test API" },
-                  ].map(({ href, label }) => (
-                    <li key={href}>
-                      <Link
-                        href={`/admin/providers/${provider.id}/${href}`}
-                        className={cn(
-                          "block rounded px-2 py-1.5 text-sm transition-colors",
-                          pathname === `/admin/providers/${provider.id}/${href}`
-                            ? "text-accent-blue"
-                            : "text-white/60 hover:text-white"
-                        )}
-                      >
-                        {label}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
+                <Link
+                  href={`/admin/providers/${provider.id}/models`}
+                  className={cn(
+                    "flex items-center gap-2 rounded px-2 py-1.5 text-sm transition-colors",
+                    isProviderActive(provider.id)
+                      ? "text-accent-blue"
+                      : "text-white/60 hover:text-white"
+                  )}
+                >
+                  <span
+                    className="h-1.5 w-1.5 shrink-0 rounded-full"
+                    style={{
+                      backgroundColor: provider.is_active
+                        ? "rgb(34 197 94)"
+                        : "rgb(249 115 22)",
+                    }}
+                    aria-hidden
+                  />
+                  <span className="truncate">{provider.name}</span>
+                </Link>
               </li>
             ))}
           </ul>

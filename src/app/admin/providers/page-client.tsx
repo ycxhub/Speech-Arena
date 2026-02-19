@@ -2,14 +2,21 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { GlassCard } from "@/components/ui/glass-card";
-import { GlassTable } from "@/components/ui/glass-table";
 import { GlassButton } from "@/components/ui/glass-button";
-import { GlassBadge } from "@/components/ui/glass-badge";
 import { AddProviderModal } from "./add-provider-modal";
-import { ProviderToggle } from "./provider-toggle";
 import type { ProviderRow } from "./page";
+
+function StatusDot({ active }: { active: boolean }) {
+  return (
+    <span
+      className="h-2 w-2 shrink-0 rounded-full"
+      style={{ backgroundColor: active ? "rgb(34 197 94)" : "rgb(249 115 22)" }}
+      title={active ? "Active" : "Inactive"}
+      aria-hidden
+    />
+  );
+}
 
 export function ProvidersPageClient({
   tableData,
@@ -20,92 +27,19 @@ export function ProvidersPageClient({
   const [modalOpen, setModalOpen] = useState(false);
   const [editingProvider, setEditingProvider] = useState<ProviderRow | null>(null);
 
-  const columns = [
-    { key: "name", header: "Name", sortable: true },
-    { key: "slug", header: "Slug", sortable: true },
-    {
-      key: "readiness",
-      header: "Readiness",
-      render: (row: ProviderRow) => (
-        <GlassBadge color={row.is_ready ? "green" : "orange"}>
-          {row.is_ready ? "Ready" : "Setup incomplete"}
-        </GlassBadge>
-      ),
-    },
-    {
-      key: "next_step",
-      header: "Next step",
-      render: (row: ProviderRow) =>
-        row.next_step && row.next_step_href ? (
-          <Link
-            href={row.next_step_href}
-            className="text-sm text-accent-blue hover:text-accent-blue/80 hover:underline"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {row.next_step}
-          </Link>
-        ) : (
-          <span className="text-sm text-white/40">—</span>
-        ),
-    },
-    {
-      key: "base_url",
-      header: "Base URL",
-      render: (row: ProviderRow) => (
-        <span className="truncate max-w-[200px] block" title={row.base_url ?? ""}>
-          {row.base_url || "—"}
-        </span>
-      ),
-    },
-    {
-      key: "is_active",
-      header: "Status",
-      render: (row: ProviderRow) => (
-        <ProviderToggle providerId={row.id} isActive={row.is_active} />
-      ),
-    },
-    {
-      key: "model_count",
-      header: "Models",
-      render: (row: ProviderRow) => (
-        <span>
-          {row.model_count_active}/{row.model_count_total}
-        </span>
-      ),
-    },
-    { key: "created_at", header: "Created" },
-    {
-      key: "actions",
-      header: "",
-      render: (row: ProviderRow) => (
-        <GlassButton
-          variant="ghost"
-          size="sm"
-          onClick={(e) => handleEditClick(e, row)}
-        >
-          Edit
-        </GlassButton>
-      ),
-    },
-  ];
-
   const openAdd = () => {
     setEditingProvider(null);
     setModalOpen(true);
   };
 
-  const openEdit = (row: ProviderRow) => {
+  const openEdit = (e: React.MouseEvent, row: ProviderRow) => {
+    e.stopPropagation();
     setEditingProvider(row);
     setModalOpen(true);
   };
 
-  const handleRowClick = (row: ProviderRow) => {
+  const handleProviderClick = (row: ProviderRow) => {
     router.push(`/admin/providers/${row.id}/models`);
-  };
-
-  const handleEditClick = (e: React.MouseEvent, row: ProviderRow) => {
-    e.stopPropagation();
-    openEdit(row);
   };
 
   const handleModalClose = () => {
@@ -118,16 +52,38 @@ export function ProvidersPageClient({
       <GlassCard>
         <div className="mb-4 flex items-center justify-between">
           <p className="text-sm text-white/60">
-            Manage TTS providers. Deactivating a provider removes all its models from matchmaking.
+            Manage TTS providers. Click a provider to manage its models, voices, and keys.
           </p>
           <GlassButton onClick={openAdd}>Add provider</GlassButton>
         </div>
-        <GlassTable<ProviderRow>
-          columns={columns}
-          data={tableData}
-          loading={false}
-          onRowClick={handleRowClick}
-        />
+        <ul className="space-y-1">
+          {tableData.map((row) => (
+            <li key={row.id}>
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={() => handleProviderClick(row)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    handleProviderClick(row);
+                  }
+                }}
+                className="group flex cursor-pointer items-center gap-3 rounded-lg px-4 py-3 transition-colors hover:bg-white/5"
+              >
+                <StatusDot active={row.is_active} />
+                <span className="flex-1 font-medium text-white">{row.name}</span>
+                <button
+                  type="button"
+                  onClick={(e) => openEdit(e, row)}
+                  className="rounded px-2 py-1 text-sm text-white/40 opacity-0 transition-opacity hover:bg-white/5 hover:text-white group-hover:opacity-100"
+                >
+                  Edit
+                </button>
+              </div>
+            </li>
+          ))}
+        </ul>
       </GlassCard>
 
       <AddProviderModal

@@ -51,7 +51,7 @@ export async function getGlobalLeaderboard(
 
 type ModelLeaderboardRow = {
   provider_id: string;
-  model_id: string;
+  definition_name: string;
   model_name: string | null;
   provider_name: string;
   provider_slug: string;
@@ -71,8 +71,8 @@ function mapModelRowsToLeaderboard(
     const winRate =
       r.matches_played > 0 ? (r.wins / r.matches_played) * 100 : 0;
     return {
-      modelId: `${r.provider_id}:${r.model_id}`,
-      modelName: r.model_name ?? "Unknown",
+      modelId: `${r.provider_id}:${r.definition_name}`,
+      modelName: r.model_name ?? r.definition_name ?? "Unknown",
       providerName: r.provider_name,
       providerSlug: r.provider_slug,
       rating: Math.round(r.rating),

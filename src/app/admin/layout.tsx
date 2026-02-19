@@ -27,7 +27,7 @@ export default async function AdminLayout({
 
   const { data: providers } = await adminClient
     .from("providers")
-    .select("id, name")
+    .select("id, name, is_active")
     .order("name");
 
   return (

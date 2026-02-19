@@ -10,7 +10,7 @@ const MAX_EXPORT_ROWS = 10_000;
 const SIGNED_URL_EXPIRY_SECONDS = 300; // 5 minutes
 
 export type PersonalLeaderboardRow = {
-  modelId: string; // composite: provider_id:model_id for model-level
+  modelId: string; // composite: provider_id:definition_name for model-level
   modelName: string;
   providerName: string;
   matchesPlayed: number;
@@ -107,8 +107,29 @@ export async function getPersonalLeaderboard(
   const { data: events, error } = await query;
   if (error || !events) return [];
 
-  // Build model-level stats (group by provider_id:model_id) and replay ELO
-  // Skip same-model pairs (different voices of same model)
+  // Resolve (provider_id, model_id) -> definition_name for all models in events
+  const providerModelPairs = new Set<string>();
+  for (const e of events) {
+    const winner = e.winner as { provider_id?: string; model_id?: string } | null;
+    const loser = e.loser as { provider_id?: string; model_id?: string } | null;
+    if (winner?.provider_id && winner?.model_id) providerModelPairs.add(`${winner.provider_id}:${winner.model_id}`);
+    if (loser?.provider_id && loser?.model_id) providerModelPairs.add(`${loser.provider_id}:${loser.model_id}`);
+  }
+  const defMap = new Map<string, string>();
+  if (providerModelPairs.size > 0) {
+    const { data: defs } = await admin
+      .from("provider_model_definitions")
+      .select("provider_id, model_id, name");
+    for (const d of defs ?? []) {
+      defMap.set(`${d.provider_id}:${d.model_id}`, d.name);
+    }
+  }
+  function toDefinitionName(providerId: string, modelId: string): string {
+    return defMap.get(`${providerId}:${modelId}`) ?? modelId;
+  }
+
+  // Build model-level stats (group by provider_id:definition_name) and replay ELO
+  // Skip same-model pairs (different voices of same definition)
   const modelStats: Record<
     string,
     {
@@ -122,8 +143,8 @@ export async function getPersonalLeaderboard(
     }
   > = {};
 
-  function modelKey(providerId: string, modelId: string): string {
-    return `${providerId}:${modelId}`;
+  function modelKey(providerId: string, definitionName: string): string {
+    return `${providerId}:${definitionName}`;
   }
 
   for (const e of events) {
@@ -151,19 +172,22 @@ export async function getPersonalLeaderboard(
 
     if (!winnerProviderId || !winnerModelId || !loserProviderId || !loserModelId) continue;
 
-    // Skip same-model pairs (different voices of same TTS model)
-    if (winnerProviderId === loserProviderId && winnerModelId === loserModelId) continue;
+    const winnerDefName = toDefinitionName(winnerProviderId, winnerModelId);
+    const loserDefName = toDefinitionName(loserProviderId, loserModelId);
 
-    const winnerKey = modelKey(winnerProviderId, winnerModelId);
-    const loserKey = modelKey(loserProviderId, loserModelId);
+    // Skip same-definition pairs (different voices of same model)
+    if (winnerProviderId === loserProviderId && winnerDefName === loserDefName) continue;
+
+    const winnerKey = modelKey(winnerProviderId, winnerDefName);
+    const loserKey = modelKey(loserProviderId, loserDefName);
 
     if (!modelStats[winnerKey]) {
-      const winnerModel = winnerKey === modelKey(modelA?.provider_id ?? "", modelA?.model_id ?? "")
+      const winnerModel = winnerKey === modelKey(modelA?.provider_id ?? "", toDefinitionName(modelA?.provider_id ?? "", modelA?.model_id ?? ""))
         ? modelA
         : modelB;
       modelStats[winnerKey] = {
         modelId: winnerKey,
-        modelName: winnerModel?.name ?? "Unknown",
+        modelName: winnerModel?.name ?? winnerDefName,
         providerName: (winnerModel?.provider as { name?: string })?.name ?? "Unknown",
         matchesPlayed: 0,
         wins: 0,
@@ -172,12 +196,12 @@ export async function getPersonalLeaderboard(
       };
     }
     if (!modelStats[loserKey]) {
-      const loserModel = loserKey === modelKey(modelA?.provider_id ?? "", modelA?.model_id ?? "")
+      const loserModel = loserKey === modelKey(modelA?.provider_id ?? "", toDefinitionName(modelA?.provider_id ?? "", modelA?.model_id ?? ""))
         ? modelA
         : modelB;
       modelStats[loserKey] = {
         modelId: loserKey,
-        modelName: loserModel?.name ?? "Unknown",
+        modelName: loserModel?.name ?? loserDefName,
         providerName: (loserModel?.provider as { name?: string })?.name ?? "Unknown",
         matchesPlayed: 0,
         wins: 0,
@@ -209,7 +233,7 @@ export async function getPersonalLeaderboard(
     loserStats.ratings[loserKey] = result.loserNewRating;
   }
 
-  // Apply provider/model filter (modelId is now provider_id:model_id)
+  // Apply provider/model filter (modelId is provider_id:definition_name)
   let rows: PersonalLeaderboardRow[] = Object.values(modelStats).map((s) => {
     const winRate = s.matchesPlayed > 0 ? (s.wins / s.matchesPlayed) * 100 : 0;
     const userElo = s.ratings[s.modelId] ?? 1500;
@@ -234,19 +258,26 @@ export async function getPersonalLeaderboard(
     rows = rows.filter((r) => r.modelId.startsWith(`${filters.providerId}:`));
   }
   if (filters?.modelId) {
-    // modelId filter can be models.id (legacy) or provider_id:model_id
+    // modelId filter: provider_id:definition_name (composite) or models.id (legacy)
     const isComposite = filters.modelId.includes(":");
     if (isComposite) {
       rows = rows.filter((r) => r.modelId === filters.modelId);
     } else {
-      // Resolve models.id -> (provider_id, model_id) and filter
+      // Resolve models.id -> (provider_id, definition_name) and filter
       const { data: modelRow } = await admin
         .from("models")
         .select("provider_id, model_id")
         .eq("id", filters.modelId)
         .single();
       if (modelRow) {
-        const key = `${modelRow.provider_id}:${modelRow.model_id}`;
+        const { data: def } = await admin
+          .from("provider_model_definitions")
+          .select("name")
+          .eq("provider_id", modelRow.provider_id)
+          .eq("model_id", modelRow.model_id)
+          .maybeSingle();
+        const defName = def?.name ?? modelRow.model_id;
+        const key = `${modelRow.provider_id}:${defName}`;
         rows = rows.filter((r) => r.modelId === key);
       }
     }
@@ -294,7 +325,29 @@ export async function getTestHistory(
     }
   }
   if (filters?.modelId) {
-    query = query.or(`model_a_id.eq.${filters.modelId},model_b_id.eq.${filters.modelId}`);
+    const isComposite = filters.modelId.includes(":");
+    if (isComposite) {
+      const [providerId, definitionName] = filters.modelId.split(":", 2);
+      const { data: defModels } = await admin
+        .from("provider_model_definitions")
+        .select("model_id")
+        .eq("provider_id", providerId)
+        .eq("name", definitionName);
+      const modelIdsForDef = (defModels ?? []).map((d) => d.model_id);
+      if (modelIdsForDef.length > 0) {
+        const { data: modelRows } = await admin
+          .from("models")
+          .select("id")
+          .eq("provider_id", providerId)
+          .in("model_id", modelIdsForDef);
+        const ids = (modelRows ?? []).map((r) => r.id);
+        if (ids.length > 0) {
+          query = query.or(`model_a_id.in.(${ids.join(",")}),model_b_id.in.(${ids.join(",")})`);
+        }
+      }
+    } else {
+      query = query.or(`model_a_id.eq.${filters.modelId},model_b_id.eq.${filters.modelId}`);
+    }
   }
   if (filters?.fromDate) query = query.gte("voted_at", filters.fromDate);
   if (filters?.toDate) query = query.lte("voted_at", filters.toDate + "T23:59:59.999Z");
@@ -465,12 +518,35 @@ export async function getFilterOptions(
       ? admin.from("languages").select("id, name").in("id", Array.from(languageIds))
       : Promise.resolve({ data: [] }),
     modelIds.size > 0
-      ? admin.from("models").select("id, name, provider_id").in("id", Array.from(modelIds))
+      ? admin.from("models").select("id, name, provider_id, model_id").in("id", Array.from(modelIds))
       : Promise.resolve({ data: [] }),
   ]);
 
   const models = modelRes.data ?? [];
   const providerIds = new Set(models.map((m) => m.provider_id));
+
+  // Resolve (provider_id, model_id) -> definition_name for unique model options
+  const defMap = new Map<string, string>();
+  if (models.length > 0) {
+    const { data: defs } = await admin
+      .from("provider_model_definitions")
+      .select("provider_id, model_id, name")
+      .in("provider_id", Array.from(providerIds));
+    for (const d of defs ?? []) {
+      defMap.set(`${d.provider_id}:${d.model_id}`, d.name);
+    }
+  }
+
+  const seen = new Set<string>();
+  const modelOptions: { id: string; name: string; providerId: string }[] = [];
+  for (const m of models) {
+    const defName = defMap.get(`${m.provider_id}:${m.model_id}`) ?? m.name ?? m.model_id;
+    const compositeKey = `${m.provider_id}:${defName}`;
+    if (seen.has(compositeKey)) continue;
+    seen.add(compositeKey);
+    modelOptions.push({ id: compositeKey, name: defName, providerId: m.provider_id });
+  }
+
   const provRes =
     providerIds.size > 0
       ? await admin.from("providers").select("id, name").in("id", Array.from(providerIds))
@@ -479,6 +555,6 @@ export async function getFilterOptions(
   return {
     languages: (langRes.data ?? []).map((l) => ({ id: l.id, name: l.name })),
     providers: (provRes.data ?? []).map((p) => ({ id: p.id, name: p.name })),
-    models: models.map((m) => ({ id: m.id, name: m.name, providerId: m.provider_id })),
+    models: modelOptions,
   };
 }

@@ -34,6 +34,7 @@ export default async function TestApiPage({
   const [
     { count: keyCount },
     { data: models },
+    { data: modelDefs },
     { data: providerLangs },
     { data: providerVoices },
   ] = await Promise.all([
@@ -44,9 +45,12 @@ export default async function TestApiPage({
       .eq("provider_id", providerId)
       .eq("is_active", true)
       .order("name"),
+    admin.from("provider_model_definitions").select("model_id, name").eq("provider_id", providerId),
     admin.from("provider_languages").select("language_id").eq("provider_id", providerId),
     admin.from("provider_voices").select("voice_id, display_name").eq("provider_id", providerId),
   ]);
+
+  const defNameByModelId = new Map((modelDefs ?? []).map((d) => [d.model_id, d.name]));
 
   const hasKeys = (keyCount ?? 0) > 0;
   const hasModels = (models ?? []).length > 0;
@@ -83,14 +87,16 @@ export default async function TestApiPage({
   const modelsWithDisplayName = (models ?? []).map((m) => {
     const ml = m.model_languages as { languages: { code: string } | null }[] | null;
     const languageCodes = (ml ?? []).map((x) => x?.languages?.code).filter(Boolean) as string[];
+    const definitionName = defNameByModelId.get(m.model_id) ?? m.name ?? m.model_id;
     return {
       id: m.id,
       name: m.name,
       model_id: m.model_id,
+      definition_name: definitionName,
       voice_id: m.voice_id ?? null,
       display_name: m.voice_id
         ? (voiceByVoiceId.get(m.voice_id) ?? m.voice_id)
-        : m.name,
+        : definitionName,
       languageCodes,
     };
   });

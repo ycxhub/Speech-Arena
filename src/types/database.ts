@@ -233,7 +233,7 @@ export type Database = {
       elo_ratings_global_model: {
         Row: {
           provider_id: string
-          model_id: string
+          definition_name: string
           rating: number
           matches_played: number
           wins: number
@@ -242,7 +242,7 @@ export type Database = {
         }
         Insert: {
           provider_id: string
-          model_id: string
+          definition_name: string
           rating?: number
           matches_played?: number
           wins?: number
@@ -251,7 +251,7 @@ export type Database = {
         }
         Update: {
           provider_id?: string
-          model_id?: string
+          definition_name?: string
           rating?: number
           matches_played?: number
           wins?: number
@@ -271,7 +271,7 @@ export type Database = {
       elo_ratings_by_language_model: {
         Row: {
           provider_id: string
-          model_id: string
+          definition_name: string
           language_id: string
           rating: number
           matches_played: number
@@ -281,7 +281,7 @@ export type Database = {
         }
         Insert: {
           provider_id: string
-          model_id: string
+          definition_name: string
           language_id: string
           rating?: number
           matches_played?: number
@@ -291,7 +291,7 @@ export type Database = {
         }
         Update: {
           provider_id?: string
-          model_id?: string
+          definition_name?: string
           language_id?: string
           rating?: number
           matches_played?: number
@@ -376,6 +376,7 @@ export type Database = {
       models: {
         Row: {
           created_at: string
+          definition_id: string | null
           gender: string
           id: string
           is_active: boolean
@@ -388,6 +389,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          definition_id?: string | null
           gender: string
           id?: string
           is_active?: boolean
@@ -400,6 +402,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          definition_id?: string | null
           gender?: string
           id?: string
           is_active?: boolean
@@ -416,6 +419,13 @@ export type Database = {
             columns: ["provider_id"]
             isOneToOne: false
             referencedRelation: "providers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "models_definition_id_fkey"
+            columns: ["definition_id"]
+            isOneToOne: false
+            referencedRelation: "provider_model_definitions"
             referencedColumns: ["id"]
           },
         ]
@@ -821,7 +831,7 @@ export type Database = {
         }
         Returns: {
           provider_id: string
-          model_id: string
+          definition_name: string
           model_name: string | null
           provider_name: string
           provider_slug: string
@@ -840,7 +850,7 @@ export type Database = {
         }
         Returns: {
           provider_id: string
-          model_id: string
+          definition_name: string
           model_name: string | null
           provider_name: string
           provider_slug: string
@@ -865,11 +875,20 @@ export type Database = {
         Args: { p_language_id: string }
         Returns: {
           provider_id: string
-          model_id: string
+          definition_name: string
           gender: string
           rating: number
           matches_played: number
         }[]
+      }
+      pick_random_voice_for_definition: {
+        Args: {
+          p_provider_id: string
+          p_definition_name: string
+          p_language_id: string
+          p_gender?: string
+        }
+        Returns: string
       }
       get_random_sentence: {
         Args: {

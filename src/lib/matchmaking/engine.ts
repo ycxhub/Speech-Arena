@@ -31,19 +31,19 @@ export interface PrepareNextRoundResult {
 
 type CandidateModel = {
   provider_id: string;
-  model_id: string;
+  definition_name: string;
   gender: string;
   rating: number;
   matches_played: number;
 };
 
-function modelKey(p: string, m: string): string {
-  return `${p}:${m}`;
+function modelKey(p: string, d: string): string {
+  return `${p}:${d}`;
 }
 
 function pairKey(a: CandidateModel, b: CandidateModel): string {
-  const k1 = modelKey(a.provider_id, a.model_id);
-  const k2 = modelKey(b.provider_id, b.model_id);
+  const k1 = modelKey(a.provider_id, a.definition_name);
+  const k2 = modelKey(b.provider_id, b.definition_name);
   return [k1, k2].sort().join("--");
 }
 
@@ -86,6 +86,29 @@ export async function prepareNextRound(params: {
         model_a?: { provider_id: string; model_id: string };
         model_b?: { provider_id: string; model_id: string };
       }>;
+
+      // Resolve (provider_id, model_id) -> definition_name for recent events (for anti-repeat)
+      const providerIds = new Set(
+        recentEventsRaw.flatMap((e) => [
+          ...(e.model_a?.provider_id ? [e.model_a.provider_id] : []),
+          ...(e.model_b?.provider_id ? [e.model_b.provider_id] : []),
+        ])
+      );
+      const defsResult =
+        providerIds.size > 0
+          ? await supabase
+              .from("provider_model_definitions")
+              .select("provider_id, model_id, name")
+              .in("provider_id", [...providerIds])
+          : { data: [] };
+      const defsMap = new Map<string, string>();
+      for (const d of defsResult.data ?? []) {
+        defsMap.set(`${d.provider_id}:${d.model_id}`, d.name);
+      }
+      function toDefinitionKey(providerId: string, modelId: string): string {
+        return modelKey(providerId, defsMap.get(`${providerId}:${modelId}`) ?? modelId);
+      }
+
       const sentenceRows = sentenceResult.data ?? [];
 
       if (candidates.length < 2) {
@@ -129,8 +152,8 @@ export async function prepareNextRound(params: {
                       e.model_b?.model_id
                   )
                   .map((e) => {
-                    const k1 = modelKey(e.model_a!.provider_id, e.model_a!.model_id);
-                    const k2 = modelKey(e.model_b!.provider_id, e.model_b!.model_id);
+                    const k1 = toDefinitionKey(e.model_a!.provider_id, e.model_a!.model_id);
+                    const k2 = toDefinitionKey(e.model_b!.provider_id, e.model_b!.model_id);
                     return [k1, k2].sort().join("--");
                   })
               )
@@ -151,19 +174,18 @@ export async function prepareNextRound(params: {
         throw new Error("Could not select second model");
       }
 
-      // 5. Pick random voice for each model (provider_id, model_id) -> models.id
-      // Must pass p_gender so we get voices of the matched gender (same model can have male/female variants)
+      // 5. Pick random voice for each model (provider_id, definition_name) -> models.id
       const matchedGender = modelA.gender;
       const [voiceAResult, voiceBResult] = await Promise.all([
-        supabase.rpc("pick_random_voice_for_model", {
+        supabase.rpc("pick_random_voice_for_definition", {
           p_provider_id: modelA.provider_id,
-          p_model_id: modelA.model_id,
+          p_definition_name: modelA.definition_name,
           p_language_id: languageId,
           p_gender: matchedGender,
         }),
-        supabase.rpc("pick_random_voice_for_model", {
+        supabase.rpc("pick_random_voice_for_definition", {
           p_provider_id: modelB.provider_id,
-          p_model_id: modelB.model_id,
+          p_definition_name: modelB.definition_name,
           p_language_id: languageId,
           p_gender: matchedGender,
         }),
@@ -245,7 +267,7 @@ function selectModelsBalanced(
   if (!modelA) return { modelA: null, modelB: null };
 
   const sameGender = (byGender.get(modelA.gender) ?? []).filter(
-    (m) => m.provider_id !== modelA.provider_id || m.model_id !== modelA.model_id
+    (m) => m.provider_id !== modelA.provider_id || m.definition_name !== modelA.definition_name
   );
   if (sameGender.length === 0) return { modelA: null, modelB: null };
 
@@ -282,7 +304,7 @@ function selectModelsExploration(
   if (!modelA) return { modelA: null, modelB: null };
 
   const sameGender = (byGender.get(modelA.gender) ?? []).filter(
-    (m) => m.provider_id !== modelA.provider_id || m.model_id !== modelA.model_id
+    (m) => m.provider_id !== modelA.provider_id || m.definition_name !== modelA.definition_name
   );
   if (sameGender.length === 0) return { modelA: null, modelB: null };
 

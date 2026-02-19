@@ -15,6 +15,7 @@ type Model = {
   id: string;
   name: string;
   model_id: string;
+  definition_name: string;
   voice_id: string | null;
   display_name: string | null;
   languageCodes: string[];
@@ -37,37 +38,37 @@ export function TestApiPageClient({
   missingItems,
 }: TestApiPageClientProps) {
   const [text, setText] = useState(DEFAULT_TEXT);
-  const uniqueModelIds = [...new Set(models.map((m) => m.model_id))];
-  const firstModelId = uniqueModelIds[0] ?? "";
-  const [selectedModelId, setSelectedModelId] = useState(firstModelId);
-  const modelsForSelectedModel = models.filter((m) => m.model_id === selectedModelId);
-  const languageCodesForSelectedModel = [
-    ...new Set(modelsForSelectedModel.flatMap((m) => m.languageCodes)),
+  const uniqueDefinitionNames = [...new Set(models.map((m) => m.definition_name))];
+  const firstDefinitionName = uniqueDefinitionNames[0] ?? "";
+  const [selectedDefinitionName, setSelectedDefinitionName] = useState(firstDefinitionName);
+  const modelsForSelectedDefinition = models.filter((m) => m.definition_name === selectedDefinitionName);
+  const languageCodesForSelectedDefinition = [
+    ...new Set(modelsForSelectedDefinition.flatMap((m) => m.languageCodes)),
   ];
   const [languageCode, setLanguageCode] = useState(
-    languageCodesForSelectedModel[0] ?? languages[0]?.code ?? ""
+    languageCodesForSelectedDefinition[0] ?? languages[0]?.code ?? ""
   );
-  const modelsForSelectedModelAndLanguage = modelsForSelectedModel.filter((m) =>
+  const modelsForSelectedDefinitionAndLanguage = modelsForSelectedDefinition.filter((m) =>
     m.languageCodes.includes(languageCode)
   );
   const [selectedModelRowId, setSelectedModelRowId] = useState(
-    modelsForSelectedModelAndLanguage[0]?.id ?? ""
+    modelsForSelectedDefinitionAndLanguage[0]?.id ?? ""
   );
 
   useEffect(() => {
-    const codes = [...new Set(modelsForSelectedModel.flatMap((m) => m.languageCodes))];
+    const codes = [...new Set(modelsForSelectedDefinition.flatMap((m) => m.languageCodes))];
     setLanguageCode((prev) => (codes.includes(prev) ? prev : codes[0] ?? ""));
-  }, [selectedModelId, models]);
+  }, [selectedDefinitionName, models]);
 
   useEffect(() => {
-    const forModelAndLang = modelsForSelectedModel.filter((m) =>
+    const forDefAndLang = modelsForSelectedDefinition.filter((m) =>
       m.languageCodes.includes(languageCode)
     );
-    const firstId = forModelAndLang[0]?.id ?? "";
+    const firstId = forDefAndLang[0]?.id ?? "";
     setSelectedModelRowId((prev) =>
-      forModelAndLang.some((m) => m.id === prev) ? prev : firstId
+      forDefAndLang.some((m) => m.id === prev) ? prev : firstId
     );
-  }, [selectedModelId, languageCode, models]);
+  }, [selectedDefinitionName, languageCode, models]);
   const [loading, setLoading] = useState(false);
   const [audioDataUrl, setAudioDataUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -118,14 +119,14 @@ export function TestApiPageClient({
     );
   }
 
-  const modelOptions = uniqueModelIds.map((modelId) => {
-    const m = models.find((x) => x.model_id === modelId)!;
-    return { value: modelId, label: `${m.name} (${m.model_id})` };
+  const modelOptions = uniqueDefinitionNames.map((defName) => {
+    const m = models.find((x) => x.definition_name === defName)!;
+    return { value: defName, label: m.definition_name };
   });
   const languageOptions = languages
-    .filter((l) => languageCodesForSelectedModel.includes(l.code))
+    .filter((l) => languageCodesForSelectedDefinition.includes(l.code))
     .map((l) => ({ value: l.code, label: l.code }));
-  const voiceOptions = modelsForSelectedModelAndLanguage.map((m) => ({
+  const voiceOptions = modelsForSelectedDefinitionAndLanguage.map((m) => ({
     value: m.id,
     label: m.display_name ?? m.voice_id ?? m.name,
   }));
@@ -148,8 +149,8 @@ export function TestApiPageClient({
         <GlassSelect
           label="Model"
           options={modelOptions}
-          value={selectedModelId}
-          onChange={(e) => setSelectedModelId(e.target.value)}
+          value={selectedDefinitionName}
+          onChange={(e) => setSelectedDefinitionName(e.target.value)}
         />
         <GlassSelect
           label="Language"

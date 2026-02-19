@@ -32,11 +32,17 @@ export async function getModelsForLanguage(
   if (modelsError || !models) return [];
 
   const providerIds = [...new Set(models.map((m) => m.provider_id))];
-  const { data: providers } = await admin
-    .from("providers")
-    .select("id, name")
-    .eq("is_active", true)
-    .in("id", providerIds);
+  const [providersRes, defsRes] = await Promise.all([
+    admin.from("providers").select("id, name").eq("is_active", true).in("id", providerIds),
+    admin.from("provider_model_definitions").select("provider_id, model_id, name").in("provider_id", providerIds),
+  ]);
+  const { data: providers } = providersRes;
+  const { data: defs } = defsRes;
+
+  const defMap = new Map<string, string>();
+  for (const d of defs ?? []) {
+    defMap.set(`${d.provider_id}:${d.model_id}`, d.name);
+  }
 
   const { data: keys } = await admin
     .from("api_keys")
@@ -47,20 +53,21 @@ export async function getModelsForLanguage(
   const providersWithKeys = new Set((keys ?? []).map((k) => k.provider_id));
   const providerMap = new Map((providers ?? []).map((p) => [p.id, p.name]));
 
-  // Deduplicate by (provider_id, model_id) - keep first models.id per unique pair
+  // Deduplicate by (provider_id, definition_name) - keep first models.id per unique definition
   const seen = new Set<string>();
   const result: ModelOption[] = [];
 
   for (const m of models) {
     if (!providersWithKeys.has(m.provider_id)) continue;
-    const key = `${m.provider_id}:${m.model_id}`;
+    const defName = defMap.get(`${m.provider_id}:${m.model_id}`) ?? m.model_id;
+    const key = `${m.provider_id}:${defName}`;
     if (seen.has(key)) continue;
     seen.add(key);
 
     const providerName = providerMap.get(m.provider_id) ?? "Unknown";
     result.push({
       id: m.id,
-      label: `${providerName} - ${m.model_id}`,
+      label: `${providerName} - ${defName}`,
     });
   }
 

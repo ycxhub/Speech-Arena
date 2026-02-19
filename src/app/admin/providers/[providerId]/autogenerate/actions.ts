@@ -88,10 +88,10 @@ export async function runAutogenerate(
 
   const { data: modelDefs } = await admin
     .from("provider_model_definitions")
-    .select("model_id, name")
+    .select("id, model_id, name")
     .eq("provider_id", providerId);
 
-  const defByName = new Map((modelDefs ?? []).map((d) => [d.model_id, d]));
+  const defByModelId = new Map((modelDefs ?? []).map((d) => [d.model_id, d]));
   const validModelIds = new Set((modelDefs ?? []).map((d) => d.model_id));
 
   let created = 0;
@@ -100,7 +100,7 @@ export async function runAutogenerate(
     if (!voice.model_id || !validModelIds.has(voice.model_id)) continue;
     if (!voice.language_id) continue;
 
-    const def = defByName.get(voice.model_id);
+    const def = defByModelId.get(voice.model_id);
     if (!def) continue;
 
     const { data: existing } = await admin
@@ -117,6 +117,7 @@ export async function runAutogenerate(
       .from("models")
       .insert({
         provider_id: providerId,
+        definition_id: def.id,
         name: def.name,
         model_id: voice.model_id,
         voice_id: voice.voice_id,
@@ -135,26 +136,26 @@ export async function runAutogenerate(
     await admin.from("elo_ratings_global_model").upsert(
       {
         provider_id: providerId,
-        model_id: voice.model_id,
+        definition_name: def.name,
         rating: 1500,
         matches_played: 0,
         wins: 0,
         losses: 0,
       },
-      { onConflict: "provider_id,model_id", ignoreDuplicates: true }
+      { onConflict: "provider_id,definition_name", ignoreDuplicates: true }
     );
 
     await admin.from("elo_ratings_by_language_model").upsert(
       {
         provider_id: providerId,
-        model_id: voice.model_id,
+        definition_name: def.name,
         language_id: voice.language_id,
         rating: 1500,
         matches_played: 0,
         wins: 0,
         losses: 0,
       },
-      { onConflict: "provider_id,model_id,language_id", ignoreDuplicates: true }
+      { onConflict: "provider_id,definition_name,language_id", ignoreDuplicates: true }
     );
 
     created++;

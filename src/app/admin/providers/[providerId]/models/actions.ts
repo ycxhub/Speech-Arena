@@ -216,10 +216,19 @@ export async function createModel(
   const { data: existing } = await existingQuery.maybeSingle();
   if (existing) return { error: "This model and voice combination already exists for this provider" };
 
+  const { data: defRow } = await admin
+    .from("provider_model_definitions")
+    .select("id, name")
+    .eq("provider_id", providerId)
+    .eq("model_id", trimmedModelId)
+    .maybeSingle();
+  const definitionName = defRow?.name ?? trimmedName ?? trimmedModelId;
+
   const { data: inserted, error } = await admin
     .from("models")
     .insert({
       provider_id: providerId,
+      definition_id: defRow?.id ?? null,
       name: trimmedName,
       model_id: trimmedModelId,
       voice_id: voiceId?.trim() || null,
@@ -233,17 +242,16 @@ export async function createModel(
 
   const modelUuid = inserted?.id;
   if (modelUuid) {
-    // Model-level ELO: one row per (provider_id, model_id); skip if already exists (e.g. adding another voice)
     const { error: eloError } = await admin.from("elo_ratings_global_model").upsert(
       {
         provider_id: providerId,
-        model_id: trimmedModelId,
+        definition_name: definitionName,
         rating: 1500,
         matches_played: 0,
         wins: 0,
         losses: 0,
       },
-      { onConflict: "provider_id,model_id", ignoreDuplicates: true }
+      { onConflict: "provider_id,definition_name", ignoreDuplicates: true }
     );
     if (eloError) return { error: eloError.message };
   }
