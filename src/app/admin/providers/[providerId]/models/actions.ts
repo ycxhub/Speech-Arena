@@ -56,6 +56,124 @@ async function logAudit(
 
 const GENDERS = ["male", "female", "neutral"] as const;
 
+// --- Model definitions (provider_model_definitions) ---
+
+export async function createModelDefinition(
+  providerId: string,
+  name: string,
+  modelId: string,
+  endpoint?: string
+): Promise<{ error?: string }> {
+  const { error: authError, admin, userId } = await ensureAdmin();
+  if (authError || !admin) return { error: authError ?? "Not authenticated" };
+
+  const trimmedName = name?.trim();
+  const trimmedModelId = modelId?.trim();
+  const trimmedEndpoint = endpoint?.trim() || null;
+
+  if (!trimmedName) return { error: "Name is required" };
+  if (!trimmedModelId) return { error: "Model ID is required" };
+
+  const { data: existing } = await admin
+    .from("provider_model_definitions")
+    .select("id")
+    .eq("provider_id", providerId)
+    .eq("model_id", trimmedModelId)
+    .maybeSingle();
+  if (existing) return { error: "This model ID already exists for this provider" };
+
+  const { error } = await admin.from("provider_model_definitions").insert({
+    provider_id: providerId,
+    name: trimmedName,
+    model_id: trimmedModelId,
+    endpoint: trimmedEndpoint,
+  });
+
+  if (error) return { error: error.message };
+
+  await logAudit(admin, userId, "create_model_definition", "provider_model_definitions", undefined, {
+    provider_id: providerId,
+    name: trimmedName,
+    model_id: trimmedModelId,
+  });
+
+  revalidatePath(`/admin/providers/${providerId}/models`);
+  revalidatePath("/admin/providers");
+  return {};
+}
+
+export async function updateModelDefinition(
+  definitionId: string,
+  providerId: string,
+  name: string,
+  modelId: string,
+  endpoint?: string
+): Promise<{ error?: string }> {
+  const { error: authError, admin, userId } = await ensureAdmin();
+  if (authError || !admin) return { error: authError ?? "Not authenticated" };
+
+  const trimmedName = name?.trim();
+  const trimmedModelId = modelId?.trim();
+  const trimmedEndpoint = endpoint?.trim() || null;
+
+  if (!trimmedName) return { error: "Name is required" };
+  if (!trimmedModelId) return { error: "Model ID is required" };
+
+  const { data: existing } = await admin
+    .from("provider_model_definitions")
+    .select("id")
+    .eq("provider_id", providerId)
+    .eq("model_id", trimmedModelId)
+    .neq("id", definitionId)
+    .maybeSingle();
+  if (existing) return { error: "This model ID already exists for this provider" };
+
+  const { error } = await admin
+    .from("provider_model_definitions")
+    .update({
+      name: trimmedName,
+      model_id: trimmedModelId,
+      endpoint: trimmedEndpoint,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", definitionId);
+
+  if (error) return { error: error.message };
+
+  await logAudit(admin, userId, "update_model_definition", "provider_model_definitions", definitionId, {
+    name: trimmedName,
+    model_id: trimmedModelId,
+  });
+
+  revalidatePath(`/admin/providers/${providerId}/models`);
+  revalidatePath("/admin/providers");
+  return {};
+}
+
+export async function deleteModelDefinition(
+  definitionId: string,
+  providerId: string
+): Promise<{ error?: string }> {
+  const { error: authError, admin, userId } = await ensureAdmin();
+  if (authError || !admin) return { error: authError ?? "Not authenticated" };
+
+  const { error } = await admin
+    .from("provider_model_definitions")
+    .delete()
+    .eq("id", definitionId)
+    .eq("provider_id", providerId);
+
+  if (error) return { error: error.message };
+
+  await logAudit(admin, userId, "delete_model_definition", "provider_model_definitions", definitionId);
+
+  revalidatePath(`/admin/providers/${providerId}/models`);
+  revalidatePath("/admin/providers");
+  return {};
+}
+
+// --- Generated models (models table) ---
+
 export async function createModel(
   providerId: string,
   name: string,
@@ -279,6 +397,25 @@ export async function bulkUpdateModelStatus(
     model_ids: modelIds,
     is_active: active,
   });
+
+  revalidatePath(`/admin/providers/${providerId}/models`);
+  revalidatePath("/admin/providers");
+  return {};
+}
+
+export async function deleteModel(modelUuid: string, providerId: string): Promise<{ error?: string }> {
+  const { error: authError, admin, userId } = await ensureAdmin();
+  if (authError || !admin) return { error: authError ?? "Not authenticated" };
+
+  const { error } = await admin
+    .from("models")
+    .delete()
+    .eq("id", modelUuid)
+    .eq("provider_id", providerId);
+
+  if (error) return { error: error.message };
+
+  await logAudit(admin, userId, "delete_model", "models", modelUuid);
 
   revalidatePath(`/admin/providers/${providerId}/models`);
   revalidatePath("/admin/providers");

@@ -507,6 +507,44 @@ export type Database = {
           },
         ]
       }
+      provider_model_definitions: {
+        Row: {
+          id: string
+          provider_id: string
+          name: string
+          model_id: string
+          endpoint: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          provider_id: string
+          name: string
+          model_id: string
+          endpoint?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          provider_id?: string
+          name?: string
+          model_id?: string
+          endpoint?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "provider_model_definitions_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "providers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       provider_voices: {
         Row: {
           created_at: string
@@ -514,6 +552,7 @@ export type Database = {
           gender: string
           id: string
           language_id: string
+          model_id: string | null
           provider_id: string
           updated_at: string
           voice_id: string
@@ -524,6 +563,7 @@ export type Database = {
           gender: string
           id?: string
           language_id: string
+          model_id?: string | null
           provider_id: string
           updated_at?: string
           voice_id: string
@@ -534,6 +574,7 @@ export type Database = {
           gender?: string
           id?: string
           language_id?: string
+          model_id?: string | null
           provider_id?: string
           updated_at?: string
           voice_id?: string

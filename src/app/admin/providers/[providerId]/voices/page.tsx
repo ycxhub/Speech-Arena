@@ -41,7 +41,13 @@ export default async function VoicesPage({
 
   const { data: voices } = await admin
     .from("provider_voices")
-    .select("id, voice_id, gender, display_name, language_id, created_at")
+    .select("id, voice_id, gender, display_name, language_id, model_id, created_at")
+    .eq("provider_id", providerId)
+    .order("created_at", { ascending: false });
+
+  const { data: modelDefinitions } = await admin
+    .from("provider_model_definitions")
+    .select("id, name, model_id")
     .eq("provider_id", providerId)
     .order("created_at", { ascending: false });
 
@@ -60,6 +66,8 @@ export default async function VoicesPage({
     display_name: v.display_name ?? null,
     language_id: v.language_id,
     language_code: langById.get(v.language_id ?? "")?.code ?? "—",
+    model_id: v.model_id ?? null,
+    model_id_display: v.model_id ?? "—",
     created_at: formatDate(v.created_at),
   }));
 
@@ -69,6 +77,7 @@ export default async function VoicesPage({
       providerName={provider.name}
       tableData={tableData}
       languages={languages ?? []}
+      modelDefinitions={modelDefinitions ?? []}
     />
   );
 }

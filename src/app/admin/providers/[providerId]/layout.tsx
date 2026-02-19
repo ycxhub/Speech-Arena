@@ -37,32 +37,37 @@ export default async function ProviderLayout({
 
   const [
     { count: activeKeyCount },
-    { count: activeModelCount },
-    { count: voiceCount },
+    { count: modelDefCount },
     { count: langCount },
+    { count: voiceCount },
+    { count: activeModelCount },
   ] = await Promise.all([
     admin.from("api_keys").select("id", { count: "exact", head: true }).eq("provider_id", providerId).eq("status", "active"),
-    admin.from("models").select("id", { count: "exact", head: true }).eq("provider_id", providerId).eq("is_active", true),
-    admin.from("provider_voices").select("id", { count: "exact", head: true }).eq("provider_id", providerId),
+    admin.from("provider_model_definitions").select("id", { count: "exact", head: true }).eq("provider_id", providerId),
     admin.from("provider_languages").select("provider_id", { count: "exact", head: true }).eq("provider_id", providerId),
+    admin.from("provider_voices").select("id", { count: "exact", head: true }).eq("provider_id", providerId),
+    admin.from("models").select("id", { count: "exact", head: true }).eq("provider_id", providerId).eq("is_active", true),
   ]);
 
   const hasKeys = (activeKeyCount ?? 0) > 0;
-  const hasModels = (activeModelCount ?? 0) > 0;
-  const hasVoices = (voiceCount ?? 0) > 0;
+  const hasModelDefinitions = (modelDefCount ?? 0) > 0;
   const hasLanguages = (langCount ?? 0) > 0;
-  const isReady = hasKeys && hasModels && hasVoices && hasLanguages;
+  const hasVoices = (voiceCount ?? 0) > 0;
+  const hasGeneratedModels = (activeModelCount ?? 0) > 0;
+  const isReady = hasKeys && hasGeneratedModels && hasVoices && hasLanguages;
 
   const nextStep =
-    !hasKeys
-      ? { label: "Add at least one API key", href: `/admin/providers/${providerId}/keys` }
+    !hasModelDefinitions
+      ? { label: "Add model definitions", href: `/admin/providers/${providerId}/models` }
       : !hasLanguages
         ? { label: "Add languages", href: `/admin/providers/${providerId}/languages` }
         : !hasVoices
-          ? { label: "Add voices (required for models)", href: `/admin/providers/${providerId}/voices` }
-          : !hasModels
-            ? { label: "Add models", href: `/admin/providers/${providerId}/models` }
-            : null;
+          ? { label: "Add voices", href: `/admin/providers/${providerId}/voices` }
+          : !hasGeneratedModels
+            ? { label: "Run autogenerate", href: `/admin/providers/${providerId}/autogenerate` }
+            : !hasKeys
+              ? { label: "Add at least one API key", href: `/admin/providers/${providerId}/keys` }
+              : null;
 
   return (
     <div className="space-y-6">

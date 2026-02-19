@@ -43,13 +43,14 @@ export default async function Home() {
         </div>
       </div>
 
-      <div className="flex w-full items-center justify-center border-t border-white/10 py-8">
+      <div className="relative flex w-full items-center justify-center overflow-hidden border-t border-white/10 py-8 min-h-[6rem]">
         <Image
           src="/speech-arena-footer-logo.png"
           alt="speecharena.org"
-          width={200}
-          height={48}
-          className="h-10 w-auto object-contain opacity-90"
+          fill
+          className="object-contain opacity-100"
+          style={{ bottom: "-80%", position: "absolute" }}
+          sizes="100vw"
         />
       </div>
     </>
