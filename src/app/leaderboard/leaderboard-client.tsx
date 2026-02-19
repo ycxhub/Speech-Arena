@@ -86,14 +86,6 @@ export function LeaderboardClient({
     return participated.filter((p) => pmIds.has(p.modelId)).map((p) => pmMap.get(p.modelId)!);
   }, [participated, pairwiseMatrix.models]);
 
-  const hasPairwiseData = useMemo(() => {
-    for (const row of pairwiseModels) {
-      const rowData = pairwiseMatrix.matrix[row.modelId];
-      if (rowData && Object.keys(rowData).length > 0) return true;
-    }
-    return false;
-  }, [pairwiseModels, pairwiseMatrix.matrix]);
-
   return (
     <div className="space-y-8">
       <h1 className="text-page-title">Leaderboard</h1>
@@ -241,7 +233,7 @@ export function LeaderboardClient({
         </GlassCard>
       )}
 
-      {participated.length > 0 && pairwiseModels.length > 0 && hasPairwiseData && (
+      {participated.length > 0 && (
         <GlassCard>
           <h2 className="mb-2 text-lg font-medium text-white/80">
             Pairwise Win Rate Matrix
@@ -250,6 +242,12 @@ export function LeaderboardClient({
             Head-to-head win % (row model preferred over column model). n =
             number of comparisons.
           </p>
+          {pairwiseModels.length === 0 ? (
+            <p className="py-8 text-center text-white/50">
+              No pairwise data yet. Models need to have faced each other in
+              head-to-head blind tests.
+            </p>
+          ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-max border-collapse">
               <thead>
@@ -328,6 +326,7 @@ export function LeaderboardClient({
               </tbody>
             </table>
           </div>
+          )}
         </GlassCard>
       )}
     </div>

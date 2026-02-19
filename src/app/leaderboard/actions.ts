@@ -142,8 +142,8 @@ export async function getPairwiseWinRateMatrix(
     .select(
       `
       winner_id, loser_id, language_id,
-      winner:models!winner_id(definition_id, provider_id, model_id, provider:providers(name)),
-      loser:models!loser_id(definition_id, provider_id, model_id, provider:providers(name))
+      winner:models!winner_id(definition_id, provider_id, model_id, name, provider:providers(name)),
+      loser:models!loser_id(definition_id, provider_id, model_id, name, provider:providers(name))
     `
     )
     .eq("status", "completed")
@@ -196,10 +196,13 @@ export async function getPairwiseWinRateMatrix(
   function toDefinitionName(
     definitionId: string | undefined,
     providerId: string,
-    modelId: string
+    modelId: string,
+    modelName?: string
   ): string {
     if (definitionId && defByIdMap.has(definitionId)) return defByIdMap.get(definitionId)!;
     if (defByProviderModelMap.has(`${providerId}:${modelId}`)) return defByProviderModelMap.get(`${providerId}:${modelId}`)!;
+    const trimmed = modelName ? modelName.trim() : "";
+    if (trimmed) return trimmed;
     return modelId;
   }
 
@@ -211,8 +214,18 @@ export async function getPairwiseWinRateMatrix(
     const loser = e.loser as { definition_id?: string; provider_id?: string; model_id?: string; provider?: { name?: string } } | null;
     if (!winner?.provider_id || !winner?.model_id || !loser?.provider_id || !loser?.model_id) continue;
 
-    const winnerDefName = toDefinitionName(winner.definition_id, winner.provider_id, winner.model_id);
-    const loserDefName = toDefinitionName(loser.definition_id, loser.provider_id, loser.model_id);
+    const winnerDefName = toDefinitionName(
+      winner.definition_id,
+      winner.provider_id,
+      winner.model_id,
+      (winner as { name?: string }).name
+    );
+    const loserDefName = toDefinitionName(
+      loser.definition_id,
+      loser.provider_id,
+      loser.model_id,
+      (loser as { name?: string }).name
+    );
     const winnerKey = `${winner.provider_id}:${winnerDefName}`;
     const loserKey = `${loser.provider_id}:${loserDefName}`;
 
@@ -223,8 +236,7 @@ export async function getPairwiseWinRateMatrix(
       if (!winnerKey.startsWith(`${filters.providerId}:`) || !loserKey.startsWith(`${filters.providerId}:`)) continue;
     }
 
-    if (!participatedIds.has(winnerKey) || !participatedIds.has(loserKey)) continue;
-
+    // Include all events; we filter output to participated models only
     if (!matrixData.has(winnerKey)) matrixData.set(winnerKey, new Map());
     const rowMap = matrixData.get(winnerKey)!;
     const cell = rowMap.get(loserKey) ?? { rowWins: 0, total: 0 };
