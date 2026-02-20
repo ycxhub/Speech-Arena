@@ -51,7 +51,7 @@ export function AdminUserTable({ data }: { data: ProfileRow[] }) {
   const columns = [
     { key: "email" as const, header: "Email" },
     { key: "blind_count" as const, header: "No. of Blind tests" },
-    { key: "custom_count" as const, header: "Custom tests" },
+    { key: "custom_count" as const, header: "Playground" },
     {
       key: "role" as const,
       header: "Role",

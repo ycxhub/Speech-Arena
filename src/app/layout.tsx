@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { GoogleAnalytics } from "@next/third-parties/google";
 import { Toaster } from "sonner";
 import { AppShell } from "@/components/layout/app-shell";
 import "./globals.css";
@@ -42,6 +43,12 @@ export default function RootLayout({
             },
           }}
         />
+        {process.env.NODE_ENV === "production" &&
+          process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS && (
+            <GoogleAnalytics
+              gaId={process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS}
+            />
+          )}
       </body>
     </html>
   );

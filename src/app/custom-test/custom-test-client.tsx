@@ -214,7 +214,7 @@ export function CustomTestClient({ languages }: CustomTestClientProps) {
   if (mode === "setup") {
     return (
       <div className="relative mx-auto max-w-6xl space-y-6 px-4 py-6">
-        <h1 className="text-page-title">Custom Test</h1>
+        <h1 className="text-page-title">Playground</h1>
 
         <GlassCard className="max-w-xl space-y-4">
           <p className="text-white/80">
@@ -274,7 +274,7 @@ export function CustomTestClient({ languages }: CustomTestClientProps) {
 
   return (
     <div className="relative mx-auto max-w-6xl space-y-6 px-4 py-6">
-      <h1 className="text-page-title">Custom Test</h1>
+      <h1 className="text-page-title">Playground</h1>
 
       <div className="flex flex-col gap-2">
         <div className="flex flex-wrap items-center gap-4">

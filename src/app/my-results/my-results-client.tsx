@@ -196,7 +196,7 @@ export function MyResultsClient({
         <GlassTabs
           tabs={[
             { id: "blind", label: "Blind Test" },
-            { id: "custom", label: "Custom Test" },
+            { id: "custom", label: "Playground" },
           ]}
           activeTab={testType}
           onTabChange={handleTestTypeChange}
@@ -363,7 +363,7 @@ export function MyResultsClient({
       {testType === "custom" && (
         <GlassCard>
           <p className="mb-4 text-white/80">
-            Custom tests don&apos;t use ELO. View your comparison history below.
+            Playground rounds don&apos;t use ELO. View your comparison history below.
           </p>
           {customWinRateSummary && customWinRateSummary.length > 0 && (
             <div className="space-y-2">

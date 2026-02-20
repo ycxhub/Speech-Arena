@@ -700,7 +700,7 @@ export async function exportMyResultsCsv(
   const csv = [header, ...csvRows].join("\n");
   const filename =
     testType === "custom"
-      ? `my-custom-tests-${new Date().toISOString().slice(0, 10)}.csv`
+      ? `my-playground-${new Date().toISOString().slice(0, 10)}.csv`
       : `my-results-${new Date().toISOString().slice(0, 10)}.csv`;
 
   return {

@@ -7,7 +7,7 @@ import { GlassTabs } from "@/components/ui/glass-tabs";
 
 const NAV_TABS = [
   { id: "blind-test", label: "Blind Test", href: "/blind-test" },
-  { id: "custom-test", label: "Custom Test", href: "/custom-test" },
+  { id: "custom-test", label: "Playground", href: "/custom-test" },
   { id: "my-results", label: "My Results", href: "/my-results" },
   { id: "leaderboard", label: "Leaderboard", href: "/leaderboard" },
 ] as const;
