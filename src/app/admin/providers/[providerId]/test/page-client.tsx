@@ -58,7 +58,7 @@ export function TestApiPageClient({
   useEffect(() => {
     const codes = [...new Set(modelsForSelectedDefinition.flatMap((m) => m.languageCodes))];
     setLanguageCode((prev) => (codes.includes(prev) ? prev : codes[0] ?? ""));
-  }, [selectedDefinitionName, models]);
+  }, [modelsForSelectedDefinition]);
 
   useEffect(() => {
     const forDefAndLang = modelsForSelectedDefinition.filter((m) =>
@@ -68,7 +68,7 @@ export function TestApiPageClient({
     setSelectedModelRowId((prev) =>
       forDefAndLang.some((m) => m.id === prev) ? prev : firstId
     );
-  }, [selectedDefinitionName, languageCode, models]);
+  }, [modelsForSelectedDefinition, languageCode]);
   const [loading, setLoading] = useState(false);
   const [audioDataUrl, setAudioDataUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);

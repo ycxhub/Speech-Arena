@@ -1,0 +1,273 @@
+"use client";
+
+import { LnlBadge } from "@/components/lnl/ui/lnl-badge";
+import { LnlButton } from "@/components/lnl/ui/lnl-button";
+import { LnlToggle } from "@/components/lnl/ui/lnl-toggle";
+import { cn } from "@/lib/utils";
+
+interface LabelDef {
+  name: string;
+  color: string;
+  shortcut_key: string;
+  description: string;
+}
+
+interface LabelEntry {
+  start_word_index: number;
+  end_word_index: number;
+  label_name: string;
+  color: string;
+  comment: string;
+}
+
+interface Props {
+  taskLabels: LabelDef[];
+  labels: LabelEntry[];
+  booleanAnswers: Record<string, boolean>;
+  scores: Record<string, number>;
+  overallComment: string;
+  taskOptions: Record<string, unknown>;
+  onAssignLabel: (labelName: string) => void;
+  onRemoveLabel: (index: number) => void;
+  onUpdateLabelComment: (index: number, comment: string) => void;
+  onBooleanChange: (id: string, value: boolean) => void;
+  onScoreChange: (id: string, value: number) => void;
+  onOverallCommentChange: (value: string) => void;
+  hasSelection: boolean;
+  isSaving?: boolean;
+  lastSavedAt?: Date | null;
+  saveError?: string | null;
+  readOnly?: boolean;
+  onMarkComplete?: () => void;
+  showMarkComplete?: boolean;
+  status?: string;
+}
+
+export function AnnotationSidePanel({
+  taskLabels,
+  labels,
+  booleanAnswers,
+  scores,
+  overallComment,
+  taskOptions,
+  onAssignLabel,
+  onRemoveLabel,
+  onUpdateLabelComment,
+  onBooleanChange,
+  onScoreChange,
+  onOverallCommentChange,
+  hasSelection,
+  isSaving,
+  lastSavedAt,
+  saveError,
+  readOnly = false,
+  onMarkComplete,
+  showMarkComplete,
+  status = "in_progress",
+}: Props) {
+  const booleanQuestions = (taskOptions.boolean_questions ?? []) as string[];
+  const scoringFields = (taskOptions.scoring_fields ?? []) as Array<{
+    name: string;
+    min: number;
+    max: number;
+    description: string;
+  }>;
+  const showOverallComment = taskOptions.overall_comment !== false;
+  const showPerLabelComments = taskOptions.per_label_comments !== false;
+
+  return (
+    <div className="flex flex-col gap-4 p-4">
+      {/* Label palette */}
+      <div>
+        <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-neutral-500">
+          Labels
+        </h3>
+        <div className="flex flex-wrap gap-1.5">
+          {taskLabels.map((label) => (
+            <button
+              key={label.name}
+              type="button"
+              onClick={() => !readOnly && onAssignLabel(label.name)}
+              disabled={readOnly || !hasSelection}
+              className={cn(
+                "flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors",
+                hasSelection
+                  ? "border-neutral-600 text-neutral-200 hover:bg-neutral-800"
+                  : "cursor-not-allowed border-neutral-800 text-neutral-600"
+              )}
+              title={label.description}
+            >
+              <span
+                className="size-2.5 rounded-full"
+                style={{ backgroundColor: label.color }}
+              />
+              {label.name}
+              <kbd className="ml-1 rounded bg-neutral-800 px-1 text-[10px] text-neutral-500">
+                {label.shortcut_key}
+              </kbd>
+            </button>
+          ))}
+        </div>
+        {!hasSelection && taskLabels.length > 0 && (
+          <p className="mt-1.5 text-[11px] text-neutral-600">
+            Select word(s) in the transcript to assign a label
+          </p>
+        )}
+      </div>
+
+      {/* Annotations list */}
+      {labels.length > 0 && (
+        <div>
+          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-neutral-500">
+            Annotations ({labels.length})
+          </h3>
+          <div className="flex flex-col gap-1.5">
+            {labels.map((label, i) => (
+              <div
+                key={i}
+                className="rounded-md border border-neutral-800 bg-neutral-900/50 px-3 py-2"
+              >
+                <div className="flex items-center justify-between">
+                  <LnlBadge color={label.color}>{label.label_name}</LnlBadge>
+                  {!readOnly && (
+                    <button
+                      type="button"
+                      onClick={() => onRemoveLabel(i)}
+                      className="text-[11px] text-neutral-600 hover:text-red-400"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+                <p className="mt-1 text-xs text-neutral-400">
+                  Words {label.start_word_index}–{label.end_word_index}
+                </p>
+                {showPerLabelComments && (
+                  <input
+                    type="text"
+                    placeholder="Add comment..."
+                    value={label.comment}
+                    onChange={(e) => !readOnly && onUpdateLabelComment(i, e.target.value)}
+                    readOnly={readOnly}
+                    className="mt-1.5 w-full rounded border border-neutral-800 bg-neutral-900 px-2 py-1 text-xs text-neutral-300 placeholder:text-neutral-600 focus:border-blue-600 focus:outline-none"
+                    maxLength={500}
+                  />
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Boolean questions */}
+      {booleanQuestions.length > 0 && (
+        <div>
+          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-neutral-500">
+            Questions
+          </h3>
+          <div className="flex flex-col gap-2">
+            {booleanQuestions.map((q, i) => (
+              <LnlToggle
+                key={i}
+                label={q}
+                checked={booleanAnswers[String(i)] ?? false}
+                onChange={(v) => !readOnly && onBooleanChange(String(i), v)}
+                disabled={readOnly}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Scoring fields */}
+      {scoringFields.length > 0 && (
+        <div>
+          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-neutral-500">
+            Scoring
+          </h3>
+          <div className="flex flex-col gap-3">
+            {scoringFields.map((field, i) => {
+              const range = Array.from(
+                { length: field.max - field.min + 1 },
+                (_, idx) => field.min + idx
+              );
+              return (
+                <div key={i}>
+                  <p className="mb-1 text-xs text-neutral-300">{field.name}</p>
+                  <div className="flex gap-1">
+                    {range.map((val) => (
+                      <button
+                        key={val}
+                        type="button"
+                        onClick={() => !readOnly && onScoreChange(field.name, val)}
+                        disabled={readOnly}
+                        className={cn(
+                          "size-7 rounded text-xs font-medium transition-colors",
+                          scores[field.name] === val
+                            ? "bg-blue-600 text-white"
+                            : "bg-neutral-800 text-neutral-400 hover:bg-neutral-700"
+                        )}
+                      >
+                        {val}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Overall comment */}
+      {showOverallComment && (
+        <div>
+          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-neutral-500">
+            Overall Comment
+          </h3>
+          <textarea
+            value={overallComment}
+            onChange={(e) => !readOnly && onOverallCommentChange(e.target.value)}
+            readOnly={readOnly}
+            placeholder="General observations about this item..."
+            className="w-full resize-none rounded-lg border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm text-neutral-300 placeholder:text-neutral-600 focus:border-blue-600 focus:outline-none"
+            rows={3}
+            maxLength={2000}
+          />
+          <p className="mt-0.5 text-right text-[10px] text-neutral-600">
+            {overallComment.length}/2000
+          </p>
+        </div>
+      )}
+
+      {/* Mark complete */}
+      {showMarkComplete && !readOnly && (
+        <div className="border-t border-neutral-800 pt-4">
+          <LnlButton
+            variant={status === "completed" || status === "reviewed" ? "secondary" : "primary"}
+            size="sm"
+            onClick={onMarkComplete}
+            className="w-full"
+          >
+            {status === "completed" || status === "reviewed"
+              ? "✓ Completed"
+              : "Mark complete"}
+          </LnlButton>
+        </div>
+      )}
+
+      {/* Auto-save indicator */}
+      <div className="mt-auto border-t border-neutral-800 pt-4">
+        {saveError ? (
+          <p className="text-[11px] text-red-400" title={saveError}>
+            {saveError}
+          </p>
+        ) : isSaving ? (
+          <p className="text-[11px] text-neutral-500">Saving...</p>
+        ) : lastSavedAt ? (
+          <p className="text-[11px] text-green-600/80">Auto-saved ✓</p>
+        ) : null}
+      </div>
+    </div>
+  );
+}

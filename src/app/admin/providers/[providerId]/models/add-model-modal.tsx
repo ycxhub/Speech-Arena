@@ -105,7 +105,7 @@ export function AddModelModal({
         setCustomGender("neutral");
       }
     }
-  }, [open, model, languages, providerVoices]);
+  }, [open, model, languages, providerVoices, isDuplicate]);
 
   const validate = () => {
     let valid = true;

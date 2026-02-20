@@ -32,8 +32,8 @@ export async function getGlobalLeaderboard(
   if (filters?.languageId) {
     const { data, error } = await admin.rpc("get_leaderboard_by_language_model", {
       p_language_id: filters.languageId,
-      p_provider_id: filters.providerId ?? null,
-      p_min_matches: filters.minMatches ?? null,
+      p_provider_id: filters.providerId ?? undefined,
+      p_min_matches: filters.minMatches ?? undefined,
     });
 
     if (error) return [];
@@ -41,8 +41,8 @@ export async function getGlobalLeaderboard(
   }
 
   const { data, error } = await admin.rpc("get_leaderboard_global_model", {
-    p_provider_id: filters?.providerId ?? null,
-    p_min_matches: filters?.minMatches ?? null,
+    p_provider_id: filters?.providerId ?? undefined,
+    p_min_matches: filters?.minMatches ?? undefined,
   });
 
   if (error) return [];

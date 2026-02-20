@@ -192,6 +192,54 @@ export type Database = {
           },
         ]
       }
+      elo_ratings_by_language_model: {
+        Row: {
+          definition_name: string
+          language_id: string
+          last_updated: string
+          losses: number
+          matches_played: number
+          provider_id: string
+          rating: number
+          wins: number
+        }
+        Insert: {
+          definition_name: string
+          language_id: string
+          last_updated?: string
+          losses?: number
+          matches_played?: number
+          provider_id: string
+          rating?: number
+          wins?: number
+        }
+        Update: {
+          definition_name?: string
+          language_id?: string
+          last_updated?: string
+          losses?: number
+          matches_played?: number
+          provider_id?: string
+          rating?: number
+          wins?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "elo_ratings_by_language_model_v2_language_id_fkey"
+            columns: ["language_id"]
+            isOneToOne: false
+            referencedRelation: "languages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "elo_ratings_by_language_model_v2_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "providers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       elo_ratings_global: {
         Row: {
           id: string
@@ -232,86 +280,38 @@ export type Database = {
       }
       elo_ratings_global_model: {
         Row: {
-          provider_id: string
           definition_name: string
-          rating: number
-          matches_played: number
-          wins: number
-          losses: number
           last_updated: string
+          losses: number
+          matches_played: number
+          provider_id: string
+          rating: number
+          wins: number
         }
         Insert: {
-          provider_id: string
           definition_name: string
-          rating?: number
-          matches_played?: number
-          wins?: number
-          losses?: number
           last_updated?: string
+          losses?: number
+          matches_played?: number
+          provider_id: string
+          rating?: number
+          wins?: number
         }
         Update: {
-          provider_id?: string
           definition_name?: string
-          rating?: number
-          matches_played?: number
-          wins?: number
-          losses?: number
           last_updated?: string
+          losses?: number
+          matches_played?: number
+          provider_id?: string
+          rating?: number
+          wins?: number
         }
         Relationships: [
           {
-            foreignKeyName: "elo_ratings_global_model_provider_id_fkey"
+            foreignKeyName: "elo_ratings_global_model_v2_provider_id_fkey"
             columns: ["provider_id"]
             isOneToOne: false
             referencedRelation: "providers"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      elo_ratings_by_language_model: {
-        Row: {
-          provider_id: string
-          definition_name: string
-          language_id: string
-          rating: number
-          matches_played: number
-          wins: number
-          losses: number
-          last_updated: string
-        }
-        Insert: {
-          provider_id: string
-          definition_name: string
-          language_id: string
-          rating?: number
-          matches_played?: number
-          wins?: number
-          losses?: number
-          last_updated?: string
-        }
-        Update: {
-          provider_id?: string
-          definition_name?: string
-          language_id?: string
-          rating?: number
-          matches_played?: number
-          wins?: number
-          losses?: number
-          last_updated?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "elo_ratings_by_language_model_provider_id_fkey"
-            columns: ["provider_id"]
-            isOneToOne: false
-            referencedRelation: "providers"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "elo_ratings_by_language_model_language_id_fkey"
-            columns: ["language_id"]
-            isOneToOne: false
-            referencedRelation: "languages"
             referencedColumns: ["id"]
           },
         ]
@@ -340,6 +340,300 @@ export type Database = {
           is_active?: boolean
           name?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      lnl_annotation_history: {
+        Row: {
+          annotation_id: string
+          change_description: string | null
+          change_type: string
+          changed_by: string
+          created_at: string
+          id: string
+          previous_data: Json
+        }
+        Insert: {
+          annotation_id: string
+          change_description?: string | null
+          change_type: string
+          changed_by: string
+          created_at?: string
+          id?: string
+          previous_data: Json
+        }
+        Update: {
+          annotation_id?: string
+          change_description?: string | null
+          change_type?: string
+          changed_by?: string
+          created_at?: string
+          id?: string
+          previous_data?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lnl_annotation_history_annotation_id_fkey"
+            columns: ["annotation_id"]
+            isOneToOne: false
+            referencedRelation: "lnl_annotations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lnl_annotations: {
+        Row: {
+          boolean_answers: Json
+          created_at: string
+          id: string
+          is_current: boolean
+          item_id: string
+          labels: Json
+          overall_comment: string | null
+          scores: Json
+          source: string
+          status: string
+          task_id: string
+          time_spent_ms: number | null
+          updated_at: string
+          user_id: string
+          version: number
+        }
+        Insert: {
+          boolean_answers?: Json
+          created_at?: string
+          id?: string
+          is_current?: boolean
+          item_id: string
+          labels?: Json
+          overall_comment?: string | null
+          scores?: Json
+          source?: string
+          status?: string
+          task_id: string
+          time_spent_ms?: number | null
+          updated_at?: string
+          user_id: string
+          version?: number
+        }
+        Update: {
+          boolean_answers?: Json
+          created_at?: string
+          id?: string
+          is_current?: boolean
+          item_id?: string
+          labels?: Json
+          overall_comment?: string | null
+          scores?: Json
+          source?: string
+          status?: string
+          task_id?: string
+          time_spent_ms?: number | null
+          updated_at?: string
+          user_id?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lnl_annotations_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "lnl_task_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lnl_annotations_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "lnl_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lnl_invitations: {
+        Row: {
+          accepted_at: string | null
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          invited_by: string | null
+          role: string
+          status: string
+          task_ids: string[] | null
+          token: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string
+          email: string
+          expires_at: string
+          id?: string
+          invited_by?: string | null
+          role: string
+          status?: string
+          task_ids?: string[] | null
+          token: string
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          invited_by?: string | null
+          role?: string
+          status?: string
+          task_ids?: string[] | null
+          token?: string
+        }
+        Relationships: []
+      }
+      lnl_task_assignments: {
+        Row: {
+          assigned_at: string
+          assigned_by: string | null
+          id: string
+          role: string
+          task_id: string
+          user_id: string
+        }
+        Insert: {
+          assigned_at?: string
+          assigned_by?: string | null
+          id?: string
+          role: string
+          task_id: string
+          user_id: string
+        }
+        Update: {
+          assigned_at?: string
+          assigned_by?: string | null
+          id?: string
+          role?: string
+          task_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lnl_task_assignments_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "lnl_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lnl_task_items: {
+        Row: {
+          audio_url: string
+          created_at: string
+          id: string
+          ipa_text: string | null
+          item_index: number
+          metadata: Json | null
+          normalized_text: string | null
+          task_id: string
+          text: string
+          word_timestamps: Json | null
+        }
+        Insert: {
+          audio_url: string
+          created_at?: string
+          id?: string
+          ipa_text?: string | null
+          item_index: number
+          metadata?: Json | null
+          normalized_text?: string | null
+          task_id: string
+          text: string
+          word_timestamps?: Json | null
+        }
+        Update: {
+          audio_url?: string
+          created_at?: string
+          id?: string
+          ipa_text?: string | null
+          item_index?: number
+          metadata?: Json | null
+          normalized_text?: string | null
+          task_id?: string
+          text?: string
+          word_timestamps?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lnl_task_items_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "lnl_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lnl_tasks: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          label_config: Json
+          name: string
+          status: string
+          task_options: Json
+          tool_type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          label_config?: Json
+          name: string
+          status?: string
+          task_options?: Json
+          tool_type: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          label_config?: Json
+          name?: string
+          status?: string
+          task_options?: Json
+          tool_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      lnl_user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          invited_by: string | null
+          role: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          invited_by?: string | null
+          role: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          invited_by?: string | null
+          role?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -415,17 +709,17 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "models_provider_id_fkey"
-            columns: ["provider_id"]
-            isOneToOne: false
-            referencedRelation: "providers"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "models_definition_id_fkey"
             columns: ["definition_id"]
             isOneToOne: false
             referencedRelation: "provider_model_definitions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "models_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "providers"
             referencedColumns: ["id"]
           },
         ]
@@ -453,36 +747,6 @@ export type Database = {
           email?: string
           id?: string
           role?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      providers: {
-        Row: {
-          base_url: string | null
-          created_at: string
-          id: string
-          is_active: boolean
-          name: string
-          slug: string
-          updated_at: string
-        }
-        Insert: {
-          base_url?: string | null
-          created_at?: string
-          id?: string
-          is_active?: boolean
-          name: string
-          slug: string
-          updated_at?: string
-        }
-        Update: {
-          base_url?: string | null
-          created_at?: string
-          id?: string
-          is_active?: boolean
-          name?: string
-          slug?: string
           updated_at?: string
         }
         Relationships: []
@@ -519,30 +783,30 @@ export type Database = {
       }
       provider_model_definitions: {
         Row: {
-          id: string
-          provider_id: string
-          name: string
-          model_id: string
-          endpoint: string | null
           created_at: string
+          endpoint: string | null
+          id: string
+          model_id: string
+          name: string
+          provider_id: string
           updated_at: string
         }
         Insert: {
-          id?: string
-          provider_id: string
-          name: string
-          model_id: string
-          endpoint?: string | null
           created_at?: string
+          endpoint?: string | null
+          id?: string
+          model_id: string
+          name: string
+          provider_id: string
           updated_at?: string
         }
         Update: {
-          id?: string
-          provider_id?: string
-          name?: string
-          model_id?: string
-          endpoint?: string | null
           created_at?: string
+          endpoint?: string | null
+          id?: string
+          model_id?: string
+          name?: string
+          provider_id?: string
           updated_at?: string
         }
         Relationships: [
@@ -591,6 +855,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "provider_voices_language_id_fkey"
+            columns: ["language_id"]
+            isOneToOne: false
+            referencedRelation: "languages"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "provider_voices_provider_id_fkey"
             columns: ["provider_id"]
             isOneToOne: false
@@ -598,6 +869,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      providers: {
+        Row: {
+          base_url: string | null
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          base_url?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          base_url?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       sentence_versions: {
         Row: {
@@ -687,7 +988,6 @@ export type Database = {
           audio_a_id: string
           audio_b_id: string
           created_at: string
-          test_type: string
           elo_after_loser: number | null
           elo_after_winner: number | null
           elo_before_loser: number | null
@@ -703,6 +1003,7 @@ export type Database = {
           model_b_id: string
           sentence_id: string
           status: string
+          test_type: string
           user_id: string
           voted_at: string | null
           winner_id: string | null
@@ -711,7 +1012,6 @@ export type Database = {
           audio_a_id: string
           audio_b_id: string
           created_at?: string
-          test_type?: string
           elo_after_loser?: number | null
           elo_after_winner?: number | null
           elo_before_loser?: number | null
@@ -727,6 +1027,7 @@ export type Database = {
           model_b_id: string
           sentence_id: string
           status?: string
+          test_type?: string
           user_id: string
           voted_at?: string | null
           winner_id?: string | null
@@ -735,7 +1036,6 @@ export type Database = {
           audio_a_id?: string
           audio_b_id?: string
           created_at?: string
-          test_type?: string
           elo_after_loser?: number | null
           elo_after_winner?: number | null
           elo_before_loser?: number | null
@@ -751,6 +1051,7 @@ export type Database = {
           model_b_id?: string
           sentence_id?: string
           status?: string
+          test_type?: string
           user_id?: string
           voted_at?: string | null
           winner_id?: string | null
@@ -826,102 +1127,120 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_active_languages_with_min_model_voices: {
+        Args: { p_min_count?: number }
+        Returns: {
+          code: string
+          id: string
+          name: string
+        }[]
+      }
       get_leaderboard_by_language_model: {
         Args: {
           p_language_id: string
-          p_provider_id?: string | null
-          p_min_matches?: number | null
+          p_min_matches?: number
+          p_provider_id?: string
         }
         Returns: {
-          provider_id: string
           definition_name: string
-          model_name: string | null
+          last_updated: string
+          losses: number
+          matches_played: number
+          model_name: string
+          provider_id: string
           provider_name: string
           provider_slug: string
           rating: number
-          matches_played: number
+          tags: string[]
           wins: number
-          losses: number
-          last_updated: string
-          tags: string[] | null
         }[]
       }
       get_leaderboard_global_model: {
-        Args: {
-          p_provider_id?: string | null
-          p_min_matches?: number | null
-        }
+        Args: { p_min_matches?: number; p_provider_id?: string }
         Returns: {
-          provider_id: string
           definition_name: string
-          model_name: string | null
+          last_updated: string
+          losses: number
+          matches_played: number
+          model_name: string
+          provider_id: string
           provider_name: string
           provider_slug: string
           rating: number
-          matches_played: number
+          tags: string[]
           wins: number
-          losses: number
-          last_updated: string
-          tags: string[] | null
         }[]
       }
       get_matchmaking_candidates: {
         Args: { p_language_id: string }
         Returns: {
-          model_id: string
           gender: string
-          rating: number
           matches_played: number
+          model_id: string
+          rating: number
         }[]
-      }
-      get_active_languages_with_min_model_voices: {
-        Args: { p_min_count?: number }
-        Returns: { id: string; name: string; code: string }[]
       }
       get_matchmaking_candidates_by_model: {
         Args: { p_language_id: string }
         Returns: {
-          provider_id: string
           definition_name: string
           gender: string
-          rating: number
           matches_played: number
+          provider_id: string
+          rating: number
         }[]
-      }
-      pick_random_voice_for_definition: {
-        Args: {
-          p_provider_id: string
-          p_definition_name: string
-          p_language_id: string
-          p_gender?: string
-        }
-        Returns: string
       }
       get_random_sentence: {
         Args: {
+          p_exclude_window?: number
           p_language_id: string
           p_user_id: string
-          p_exclude_window?: number
         }
-        Returns: { id: string; text: string }[]
+        Returns: {
+          id: string
+          text: string
+        }[]
       }
-      pick_random_voice_for_model: {
+      is_assigned_to_task: {
+        Args: { task_uuid: string; user_uuid: string }
+        Returns: boolean
+      }
+      is_lnl_admin: { Args: { user_uuid: string }; Returns: boolean }
+      pick_random_voice_for_definition: {
         Args: {
-          p_provider_id: string
-          p_model_id: string
-          p_language_id: string
+          p_definition_name: string
           p_gender?: string
+          p_language_id: string
+          p_provider_id: string
         }
         Returns: string
       }
+      pick_random_voice_for_model:
+        | {
+            Args: {
+              p_language_id: string
+              p_model_id: string
+              p_provider_id: string
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              p_gender?: string
+              p_language_id: string
+              p_model_id: string
+              p_provider_id: string
+            }
+            Returns: string
+          }
       process_vote: {
         Args: {
-          p_test_event_id: string
-          p_winner_id: string
-          p_loser_id: string
           p_language_id: string
           p_listen_time_a_ms: number
           p_listen_time_b_ms: number
+          p_loser_id: string
+          p_test_event_id: string
+          p_winner_id: string
         }
         Returns: undefined
       }

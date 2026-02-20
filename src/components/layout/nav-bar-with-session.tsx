@@ -10,10 +10,9 @@ export async function NavBarWithSession() {
   } = await supabase.auth.getUser();
 
   let isAdmin = false;
+  let hasLnlAccess = false;
 
   if (user) {
-    // Use admin client to bypass RLS – the user's identity is already
-    // verified via getUser() above, so this is safe.
     const adminClient = getAdminClient();
     const { data: profile } = await adminClient
       .from("profiles")
@@ -22,11 +21,23 @@ export async function NavBarWithSession() {
       .single();
 
     isAdmin = profile?.role === "admin";
+    hasLnlAccess = isAdmin;
+
+    if (!hasLnlAccess) {
+      const { data: lnlRole } = await adminClient
+        .from("lnl_user_roles")
+        .select("role")
+        .eq("user_id", user.id)
+        .single();
+
+      hasLnlAccess = !!lnlRole;
+    }
   }
 
   return (
     <NavBar
       isAdmin={isAdmin}
+      hasLnlAccess={hasLnlAccess}
       user={user?.email ? { email: user.email } : null}
     />
   );

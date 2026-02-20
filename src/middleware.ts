@@ -45,17 +45,15 @@ export async function middleware(request: NextRequest) {
   const isAuthenticated = !!user;
 
   const pathname = request.nextUrl.pathname;
-  // Leaderboard is public; admin, blind-test, my-results require auth
   const isProtectedRoute =
     pathname.startsWith("/admin") ||
     pathname.startsWith("/blind-test") ||
-    pathname.startsWith("/my-results");
+    pathname.startsWith("/my-results") ||
+    pathname.startsWith("/listen-and-log");
 
   if (isProtectedRoute && !isAuthenticated) {
     const redirectUrl = new URL("/auth/sign-in", request.url);
     const redirectResponse = NextResponse.redirect(redirectUrl);
-    // FIX: Copy cookies WITH their options (path, httpOnly, secure, sameSite, maxAge)
-    // so refreshed session cookies are properly set on the redirect response.
     supabaseResponse.cookies.getAll().forEach((cookie) => {
       redirectResponse.cookies.set(cookie);
     });

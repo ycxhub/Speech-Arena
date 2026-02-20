@@ -14,6 +14,7 @@ const NAV_TABS = [
 
 export interface NavBarProps {
   isAdmin?: boolean;
+  hasLnlAccess?: boolean;
   user?: { email: string } | null;
 }
 
@@ -22,16 +23,18 @@ function getActiveTab(pathname: string): string {
   if (pathname.startsWith("/custom-test")) return "custom-test";
   if (pathname.startsWith("/my-results")) return "my-results";
   if (pathname.startsWith("/leaderboard")) return "leaderboard";
+  if (pathname.startsWith("/listen-and-log")) return "listen-and-log";
   if (pathname.startsWith("/admin")) return "admin";
   return "blind-test";
 }
 
-export function NavBar({ isAdmin = false, user = null }: NavBarProps) {
+export function NavBar({ isAdmin = false, hasLnlAccess = false, user = null }: NavBarProps) {
   const pathname = usePathname();
   const activeTab = getActiveTab(pathname);
 
   const tabs = [
     ...NAV_TABS,
+    ...(hasLnlAccess ? [{ id: "listen-and-log" as const, label: "Listen & Log", href: "/listen-and-log" }] : []),
     ...(isAdmin ? [{ id: "admin" as const, label: "Admin", href: "/admin" }] : []),
   ];
 
