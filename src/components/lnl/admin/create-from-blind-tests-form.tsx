@@ -79,8 +79,8 @@ export function CreateFromBlindTestsForm() {
           <p className="text-sm text-neutral-500">Loading Murf Falcon models…</p>
         ) : models.length === 0 ? (
           <p className="text-sm text-amber-500">
-            No Murf Falcon models found. Add Murf Falcon models in Admin →
-            Providers first.
+            No Murf AI FALCON models found. Add a provider named &quot;Murf AI&quot;
+            with FALCON model(s) in Admin → Providers first.
           </p>
         ) : (
           <>
