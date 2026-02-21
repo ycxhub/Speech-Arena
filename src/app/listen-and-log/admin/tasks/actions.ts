@@ -411,15 +411,16 @@ export async function getMurfFalconModels() {
 
   const adminClient = getAdminClient();
 
-  // Murf AI provider may have slug "murf-ai" (from name "Murf AI") or "murf"
+  // Murf AI provider: match by name containing "murf" (covers "Murf AI", "Murf", etc.)
   const { data: murfProviders, error: provErr } = await adminClient
     .from("providers")
     .select("id")
-    .in("slug", ["murf-ai", "murf"])
+    .ilike("name", "%murf%")
+    .eq("is_active", true)
     .limit(1);
 
   if (provErr || !murfProviders?.length) {
-    return { error: "Murf AI provider not found. Add a provider with name 'Murf AI' in Admin → Providers.", data: [] };
+    return { error: "Murf AI provider not found. Add a provider named 'Murf AI' with FALCON model(s) in Admin → Providers.", data: [] };
   }
 
   const murfProvider = murfProviders[0];
