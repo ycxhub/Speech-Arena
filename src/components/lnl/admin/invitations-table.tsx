@@ -5,6 +5,7 @@ import { LnlBadge } from "@/components/lnl/ui/lnl-badge";
 import { LnlButton } from "@/components/lnl/ui/lnl-button";
 import { revokeInvitation, resendInvitation } from "@/app/listen-and-log/admin/users/actions";
 import { useState } from "react";
+import { toast } from "sonner";
 
 interface Invitation {
   id: string;
@@ -41,8 +42,17 @@ export function InvitationsTable({ invitations }: { invitations: Invitation[] })
 
   async function handleResend(id: string) {
     setLoading(id);
-    await resendInvitation(id);
+    const result = await resendInvitation(id);
     setLoading(null);
+    if (result.error) {
+      toast.error(result.error);
+    } else if (result.emailSent === false) {
+      toast.warning(
+        "Invitation updated. Email could not be sent — use Copy link to share manually."
+      );
+    } else {
+      toast.success("Invitation resent");
+    }
   }
 
   const columns: LnlTableColumn<Invitation>[] = [

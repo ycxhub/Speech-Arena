@@ -13,7 +13,7 @@ export default async function Home() {
   return (
     <>
       {/* 1st Fold */}
-      <div className="flex min-h-[calc(100vh-12rem)] flex-col items-center justify-center px-4 py-12">
+      <div className="flex min-h-[calc(100vh-12rem)] flex-col items-center justify-center px-4 py-12 text-[#00578a]">
         <div className="flex max-w-2xl flex-col items-center gap-8 text-center">
           <Image
             src="/speech-arena-logo.png"
@@ -35,17 +35,17 @@ export default async function Home() {
             </p>
           </div>
 
-          <div className="flex flex-col items-center gap-4 sm:flex-row sm:gap-6">
+          <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start sm:gap-6">
             <Link
               href={blindTestHref}
-              className="inline-flex items-center justify-center gap-2 rounded-xl border border-transparent bg-accent-blue px-6 py-3 text-lg font-medium text-white transition-colors hover:bg-accent-blue/90 focus:outline-none focus:ring-2 focus:ring-accent-blue/50 focus:ring-offset-2 focus:ring-offset-[#0a0a0a]"
+              className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-transparent bg-accent-blue px-6 py-3 text-lg font-medium text-accent-blue-cta-text transition-colors hover:bg-accent-blue/90 focus:outline-none focus:ring-2 focus:ring-accent-blue/50 focus:ring-offset-2 focus:ring-offset-[#0a0a0a]"
             >
               Start Blind Test
             </Link>
-            <div className="flex flex-col items-center gap-1">
+            <div className="flex flex-col items-center gap-1 sm:items-start">
               <Link
                 href="/leaderboard"
-                className="inline-flex items-center justify-center gap-2 rounded-xl border border-accent-blue px-6 py-3 text-lg font-medium text-accent-blue transition-colors hover:bg-accent-blue/10 focus:outline-none focus:ring-2 focus:ring-accent-blue/50 focus:ring-offset-2 focus:ring-offset-[#0a0a0a]"
+                className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-accent-blue px-6 py-3 text-lg font-medium text-accent-blue transition-colors hover:bg-accent-blue/10 focus:outline-none focus:ring-2 focus:ring-accent-blue/50 focus:ring-offset-2 focus:ring-offset-[#0a0a0a]"
               >
                 View leaderboard
               </Link>
@@ -92,17 +92,6 @@ export default async function Home() {
           See methodology
         </Link>
       </section>
-
-      {/* Footer */}
-      <div className="flex w-full items-center justify-center border-t border-white/10 py-8">
-        <Image
-          src="/speech-arena-footer-logo.png"
-          alt="speecharena.org"
-          width={200}
-          height={48}
-          className="h-10 w-auto object-contain opacity-100"
-        />
-      </div>
     </>
   );
 }

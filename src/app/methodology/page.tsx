@@ -80,7 +80,7 @@ export default function MethodologyPage() {
       <div className="pt-8">
         <Link
           href="/"
-          className="inline-flex items-center justify-center gap-2 rounded-xl border border-transparent bg-accent-blue px-6 py-3 text-base font-medium text-white transition-colors hover:bg-accent-blue/90"
+          className="inline-flex items-center justify-center gap-2 rounded-xl border border-transparent bg-accent-blue px-6 py-3 text-base font-medium text-accent-blue-cta-text transition-colors hover:bg-accent-blue/90"
         >
           Start Blind Test
         </Link>

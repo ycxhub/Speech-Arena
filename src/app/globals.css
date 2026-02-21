@@ -29,6 +29,8 @@
   --color-glass-bg: rgba(255, 255, 255, 0.1);
   /* Pastel accents (PRD 02) — use /10 for badge backgrounds (e.g. bg-accent-blue/10) */
   --color-accent-blue: #7dd3fc;
+  /* Primary CTA text on accent-blue — rgba(12, 74, 110) */
+  --color-accent-blue-cta-text: #0c4a6e;
   --color-accent-green: #86efac;
   --color-accent-yellow: #fde68a;
   --color-accent-orange: #fdba74;

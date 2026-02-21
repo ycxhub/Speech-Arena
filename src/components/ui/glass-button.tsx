@@ -27,7 +27,7 @@ const accentMap: Record<
   { primary: string; secondary: string; ghost: string }
 > = {
   blue: {
-    primary: "border border-transparent bg-accent-blue text-white",
+    primary: "border border-transparent bg-accent-blue text-accent-blue-cta-text",
     secondary:
       "border border-accent-blue text-accent-blue bg-white/5 backdrop-blur-xl hover:bg-accent-blue/10",
     ghost: "border-transparent text-accent-blue hover:bg-accent-blue/10",

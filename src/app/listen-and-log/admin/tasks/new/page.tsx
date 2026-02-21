@@ -29,7 +29,7 @@ export default async function NewTaskPage() {
       />
       <div className="p-6">
         <TaskCreationWizard
-          availableUsers={users.map((u) => ({
+          availableUsers={(users ?? []).map((u) => ({
             user_id: u.user_id,
             email: u.email,
             role: u.role,

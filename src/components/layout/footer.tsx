@@ -2,14 +2,13 @@ import Image from "next/image";
 
 export function Footer() {
   return (
-    <footer className="relative flex w-full items-center justify-center overflow-hidden border-t border-white/10 py-8 min-h-[6rem]">
+    <footer className="flex w-full items-center justify-center border-t border-white/10 py-8">
       <Image
-        src="/speecharenaorg.png"
+        src="/speech-arena-footer-logo.png"
         alt="speecharena.org"
-        width={180}
+        width={200}
         height={48}
-        className="object-contain opacity-90"
-        sizes="(max-width: 768px) 120px, 180px"
+        className="h-10 w-auto object-contain opacity-100"
       />
     </footer>
   );

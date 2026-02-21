@@ -11,7 +11,7 @@ export function AppShell({ children }: AppShellProps) {
     <div className="flex min-h-screen flex-col">
       <NavBarWithSession />
       <EmailVerificationBanner />
-      <main className="flex-1 px-6 py-8">
+      <main className="flex-1 px-6 py-8 text-black">
         <div className="mx-auto max-w-6xl">{children}</div>
       </main>
       <Footer />

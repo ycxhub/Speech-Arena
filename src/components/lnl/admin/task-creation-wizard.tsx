@@ -22,7 +22,6 @@ import { createTask, assignUsersToTask } from "@/app/listen-and-log/admin/tasks/
 
 const STEPS = [
   "Basics",
-  "Dataset",
   "Labels",
   "Options",
   "Assign Users",
@@ -51,14 +50,12 @@ export function TaskCreationWizard({ availableUsers }: Props) {
       case 0:
         return name.trim().length > 0;
       case 1:
-        return true; // dataset upload is done after task creation
-      case 2:
         return labels.length > 0 && labels.every((l) => l.name.trim().length > 0);
+      case 2:
+        return true;
       case 3:
         return true;
       case 4:
-        return true;
-      case 5:
         return true;
       default:
         return false;
@@ -144,29 +141,13 @@ export function TaskCreationWizard({ availableUsers }: Props) {
         {step === 1 && (
           <div className="flex flex-col gap-4">
             <h2 className="text-base font-semibold text-neutral-100">
-              Dataset Upload
-            </h2>
-            <div className="rounded-lg border border-dashed border-neutral-700 p-8 text-center">
-              <p className="text-sm text-neutral-400">
-                Dataset upload is available after task creation.
-              </p>
-              <p className="mt-1 text-xs text-neutral-500">
-                Create the task first, then upload CSV + audio files from the task management page.
-              </p>
-            </div>
-          </div>
-        )}
-
-        {step === 2 && (
-          <div className="flex flex-col gap-4">
-            <h2 className="text-base font-semibold text-neutral-100">
               Label Configuration
             </h2>
             <LabelConfigEditor value={labels} onChange={setLabels} />
           </div>
         )}
 
-        {step === 3 && (
+        {step === 2 && (
           <div className="flex flex-col gap-4">
             <h2 className="text-base font-semibold text-neutral-100">
               Task Options
@@ -175,7 +156,7 @@ export function TaskCreationWizard({ availableUsers }: Props) {
           </div>
         )}
 
-        {step === 4 && (
+        {step === 3 && (
           <div className="flex flex-col gap-4">
             <h2 className="text-base font-semibold text-neutral-100">
               Assign Users
@@ -188,7 +169,7 @@ export function TaskCreationWizard({ availableUsers }: Props) {
           </div>
         )}
 
-        {step === 5 && (
+        {step === 4 && (
           <div className="flex flex-col gap-4">
             <h2 className="text-base font-semibold text-neutral-100">
               Review & Publish
@@ -230,6 +211,9 @@ export function TaskCreationWizard({ availableUsers }: Props) {
                   {assignments.length}
                 </span>
               </div>
+              <p className="mt-3 text-xs text-neutral-500">
+                After publishing, upload CSV + audio files from the task management page.
+              </p>
             </div>
           </div>
         )}

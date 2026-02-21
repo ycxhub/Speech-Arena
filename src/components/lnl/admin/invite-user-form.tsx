@@ -32,7 +32,14 @@ export function InviteUserForm() {
     } else {
       const link = `${window.location.origin}/listen-and-log/invite?token=${result.token}`;
       setInviteLink(link);
-      setMessage({ type: "success", text: `Invitation created for ${formData.get("email")}` });
+      const emailNote =
+        result.emailSent === false
+          ? " Email could not be sent — share the link below manually."
+          : "";
+      setMessage({
+        type: "success",
+        text: `Invitation created for ${formData.get("email")}.${emailNote}`,
+      });
       (e.target as HTMLFormElement).reset();
     }
     setLoading(false);

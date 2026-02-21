@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { isLnlAdmin } from "@/lib/lnl/roles";
 import { revalidatePath } from "next/cache";
+import { sendInviteEmail } from "@/lib/lnl/send-invite-email";
 
 export async function inviteUser(formData: FormData) {
   const supabase = await createClient();
@@ -38,8 +39,18 @@ export async function inviteUser(formData: FormData) {
 
   if (error) return { error: error.message };
 
+  const { sent, error: emailError } = await sendInviteEmail(email, role, token);
+  if (!sent && emailError) {
+    console.warn("[L&L] Invite email failed:", emailError);
+  }
+
   revalidatePath("/listen-and-log/admin/users");
-  return { success: true, token };
+  return {
+    success: true,
+    token,
+    emailSent: sent,
+    emailError: !sent ? emailError : undefined,
+  };
 }
 
 export async function revokeInvitation(invitationId: string) {
@@ -74,10 +85,18 @@ export async function resendInvitation(invitationId: string) {
   const authorized = await isLnlAdmin(user.id);
   if (!authorized) return { error: "Not authorized" };
 
+  const adminClient = getAdminClient();
+  const { data: invitation } = await adminClient
+    .from("lnl_invitations")
+    .select("email, role")
+    .eq("id", invitationId)
+    .single();
+
+  if (!invitation) return { error: "Invitation not found" };
+
   const newToken = crypto.randomUUID();
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
-  const adminClient = getAdminClient();
   const { error } = await adminClient
     .from("lnl_invitations")
     .update({ token: newToken, expires_at: expiresAt, status: "pending" })
@@ -85,8 +104,22 @@ export async function resendInvitation(invitationId: string) {
 
   if (error) return { error: error.message };
 
+  const { sent, error: emailError } = await sendInviteEmail(
+    invitation.email,
+    invitation.role,
+    newToken
+  );
+  if (!sent && emailError) {
+    console.warn("[L&L] Resend invite email failed:", emailError);
+  }
+
   revalidatePath("/listen-and-log/admin/users");
-  return { success: true, token: newToken };
+  return {
+    success: true,
+    token: newToken,
+    emailSent: sent,
+    emailError: !sent ? emailError : undefined,
+  };
 }
 
 export async function updateUserRole(userId: string, newRole: string) {
@@ -137,6 +170,38 @@ export async function removeUser(userId: string) {
   return { success: true };
 }
 
+/**
+ * Syncs invitation status: if a user has lnl_user_roles and their email matches
+ * a pending invitation, mark that invitation as accepted.
+ */
+async function syncInvitationStatuses(adminClient: ReturnType<typeof getAdminClient>) {
+  const { data: lnlUsers } = await adminClient
+    .from("lnl_user_roles")
+    .select("user_id");
+  if (!lnlUsers?.length) return;
+
+  const emailsWithAccess = new Set<string>();
+  for (const { user_id } of lnlUsers) {
+    const { data } = await adminClient.auth.admin.getUserById(user_id);
+    const email = data?.user?.email?.toLowerCase();
+    if (email) emailsWithAccess.add(email);
+  }
+  if (emailsWithAccess.size === 0) return;
+
+  const { data: pending } = await adminClient
+    .from("lnl_invitations")
+    .select("id, email")
+    .eq("status", "pending");
+  for (const inv of pending ?? []) {
+    if (inv.email && emailsWithAccess.has(inv.email.toLowerCase())) {
+      await adminClient
+        .from("lnl_invitations")
+        .update({ status: "accepted", accepted_at: new Date().toISOString() })
+        .eq("id", inv.id);
+    }
+  }
+}
+
 export async function getInvitations() {
   const supabase = await createClient();
   const {
@@ -145,6 +210,8 @@ export async function getInvitations() {
   if (!user) return { error: "Not authenticated", data: [] };
 
   const adminClient = getAdminClient();
+  await syncInvitationStatuses(adminClient);
+
   const { data, error } = await adminClient
     .from("lnl_invitations")
     .select("*")
@@ -170,24 +237,30 @@ export async function getLnlUsers() {
   if (error) return { error: error.message, data: [] };
 
   const userIds = (roles ?? []).map((r) => r.user_id);
-  if (userIds.length === 0) {
-    return { data: [] };
+  const existingUserIds = new Set(userIds);
+
+  const profileMap = new Map<
+    string,
+    { email: string | null; display_name: string | null }
+  >();
+  if (userIds.length > 0) {
+    const { data: profiles } = await adminClient
+      .from("profiles")
+      .select("id, email, display_name")
+      .in("id", userIds);
+    for (const p of profiles ?? []) {
+      profileMap.set(p.id, {
+        email: p.email ?? null,
+        display_name: p.display_name ?? null,
+      });
+    }
   }
-
-  const { data: profiles } = await adminClient
-    .from("profiles")
-    .select("id, email, display_name")
-    .in("id", userIds);
-
-  const profileMap = new Map(
-    (profiles ?? []).map((p) => [p.id, { email: p.email, display_name: p.display_name }])
-  );
 
   const users = [];
   for (const r of roles ?? []) {
-    let email = profileMap.get(r.user_id)?.email;
+    let email = profileMap.get(r.user_id)?.email ?? null;
     const display_name = profileMap.get(r.user_id)?.display_name ?? null;
-    if (!email || email === "Unknown") {
+    if (!email) {
       const { data } = await adminClient.auth.admin.getUserById(r.user_id);
       email = data?.user?.email ?? "Unknown";
     }
@@ -200,6 +273,7 @@ export async function getLnlUsers() {
     });
   }
 
+  // Also include users with pending invitations who have auth accounts
   const pendingEmails = new Set(
     (
       await adminClient
@@ -208,7 +282,6 @@ export async function getLnlUsers() {
         .eq("status", "pending")
     ).data?.map((i) => i.email.toLowerCase()) ?? []
   );
-  const existingUserIds = new Set(userIds);
   const { data: authUsers } = await adminClient.auth.admin.listUsers({ perPage: 1000 });
   for (const u of authUsers?.users ?? []) {
     const email = u.email?.toLowerCase();
