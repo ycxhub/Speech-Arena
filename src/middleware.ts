@@ -2,12 +2,79 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
+// Salespeak LLM Analytics - Organization ID (replace with your actual ID from Salespeak dashboard)
+const SALESPEAK_ORGANIZATION_ID = "XXX96776-2ccf-4198-bd8a-3aa7c5a6986c";
+
+// UA regexes for AI visitor detection
+const CHATGPT_UA_RE = /ChatGPT-User\/1\.0/i;
+const GPTBOT_UA_RE = /GPTBot\/1\.0/i;
+const GOOGLE_EXTENDED_RE = /Google-Extended/i;
+const BING_PREVIEW_RE = /bingpreview/i;
+const PERPLEXITY_UA_RE = /PerplexityBot/i;
+const CLAUDE_USER_RE = /Claude-User/i;
+const CLAUDE_WEB_RE = /Claude-Web/i;
+const CLAUDE_BOT_RE = /ClaudeBot/i;
+
+function isAIVisitor(ua: string, qsAgent?: string | null) {
+  const isChatGPT = CHATGPT_UA_RE.test(ua) || qsAgent === "chatgpt";
+  return (
+    isChatGPT ||
+    GPTBOT_UA_RE.test(ua) ||
+    GOOGLE_EXTENDED_RE.test(ua) ||
+    BING_PREVIEW_RE.test(ua) ||
+    PERPLEXITY_UA_RE.test(ua) ||
+    CLAUDE_USER_RE.test(ua) ||
+    CLAUDE_WEB_RE.test(ua) ||
+    CLAUDE_BOT_RE.test(ua)
+  );
+}
+
 /**
- * Middleware: refreshes auth session and protects routes.
- * Uses getUser() which contacts the Supabase Auth server to validate the session
- * and triggers token refresh when needed (via setAll cookie callback).
+ * Middleware: Salespeak LLM Analytics + Supabase auth.
+ * 1. AI visitors (ChatGPT, Claude, etc.) → rewrite to ai-proxy for analytics + optimized content
+ * 2. Normal users → Supabase auth session refresh and route protection
  */
 export async function middleware(request: NextRequest) {
+  const ua = request.headers.get("user-agent") || "";
+  const qsAgent = request.nextUrl.searchParams.get("user-agent")?.toLowerCase() ?? null;
+
+  // Bypass Salespeak if requested (prevents loops from ai-proxy)
+  if (
+    request.headers.get("x-bypass-middleware") === "true" ||
+    request.nextUrl.searchParams.get("_sp_bypass") === "1"
+  ) {
+    if (request.nextUrl.searchParams.has("_sp_bypass")) {
+      const clean = request.nextUrl.clone();
+      clean.searchParams.delete("_sp_bypass");
+      return NextResponse.rewrite(clean);
+    }
+    // Fall through to auth
+  } else if (
+    !request.nextUrl.pathname.startsWith("/api/ai-proxy") &&
+    !request.nextUrl.pathname.startsWith("/_next/") &&
+    !request.nextUrl.pathname.startsWith("/favicon.ico") &&
+    !request.nextUrl.pathname.startsWith("/robots.txt") &&
+    !request.nextUrl.pathname.startsWith("/sitemap.xml") &&
+    !request.nextUrl.pathname.match(/\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot)$/)
+  ) {
+    if (isAIVisitor(ua, qsAgent)) {
+      const url = request.nextUrl.clone();
+      const target = new URL(`/api/ai-proxy`, request.url);
+      target.searchParams.set("path", url.pathname + url.search);
+      target.searchParams.set("org", SALESPEAK_ORGANIZATION_ID);
+      target.searchParams.set("ua", ua);
+      if (qsAgent) {
+        target.searchParams.set("user-agent", qsAgent);
+      }
+      return NextResponse.rewrite(target, {
+        headers: {
+          Vary: "User-Agent",
+        },
+      });
+    }
+  }
+
+  // --- Supabase auth (existing logic) ---
   let supabaseResponse = NextResponse.next({
     request,
   });
@@ -95,11 +162,11 @@ export const config = {
   matcher: [
     /*
      * Match all request paths except:
-     * - _next/static (static files)
-     * - _next/image (image optimization)
-     * - favicon.ico
-     * - public assets (e.g. images)
+     * - _next/ (static files, image optimization)
+     * - favicon.ico, robots.txt, sitemap.xml
+     * - api/ai-proxy (Salespeak proxy - prevent loops)
+     * - static assets (js, css, images, fonts)
      */
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/|favicon.ico|robots.txt|sitemap.xml|api/ai-proxy|.*\\.(?:js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot)$).*)",
   ],
 };

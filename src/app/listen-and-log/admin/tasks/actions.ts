@@ -243,6 +243,202 @@ export async function removeUserFromTask(taskId: string, userId: string) {
   return { success: true };
 }
 
+export interface CreateTaskFromBlindTestsParams {
+  modelIds: string[];
+  outcome: "lost" | "won";
+  taskName: string;
+  taskDescription?: string;
+}
+
+export async function createTaskFromBlindTests(params: CreateTaskFromBlindTestsParams) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  const authorized = await isLnlAdmin(user.id);
+  if (!authorized) return { error: "Not authorized" };
+
+  const { modelIds, outcome, taskName, taskDescription } = params;
+  if (modelIds.length === 0) {
+    return { error: "At least one model must be selected" };
+  }
+
+  const adminClient = getAdminClient();
+
+  // Query test_events where Falcon lost or won, with audio and sentence data
+  const outcomeColumn = outcome === "lost" ? "loser_id" : "winner_id";
+  const { data: events, error: eventsErr } = await adminClient
+    .from("test_events")
+    .select(
+      `
+      id,
+      sentence_id,
+      model_a_id,
+      model_b_id,
+      audio_a_id,
+      audio_b_id,
+      winner_id,
+      loser_id,
+      voted_at
+    `
+    )
+    .eq("status", "completed")
+    .in(outcomeColumn, modelIds)
+    .not("voted_at", "is", null)
+    .order("voted_at", { ascending: true });
+
+  if (eventsErr) return { error: eventsErr.message };
+  if (!events || events.length === 0) {
+    return { error: "No blind tests found for this model/outcome." };
+  }
+
+  // Build map: sentence_id -> { r2_key, text } (deduplicate by sentence_id, keep first by voted_at)
+  const seenSentenceIds = new Set<string>();
+  const itemsToInsert: Array<{ sentence_id: string; audio_file_id: string }> = [];
+
+  for (const ev of events) {
+    if (!ev.sentence_id || seenSentenceIds.has(ev.sentence_id)) continue;
+    seenSentenceIds.add(ev.sentence_id);
+
+    const falconModelId = outcome === "lost" ? ev.loser_id : ev.winner_id;
+    if (!falconModelId || !modelIds.includes(falconModelId)) continue;
+
+    const isFalconA = ev.model_a_id === falconModelId;
+    const audioFileId = isFalconA ? ev.audio_a_id : ev.audio_b_id;
+    if (!audioFileId) continue;
+
+    itemsToInsert.push({ sentence_id: ev.sentence_id, audio_file_id: audioFileId });
+  }
+
+  if (itemsToInsert.length === 0) {
+    return { error: "No unique items to import after deduplication." };
+  }
+
+  // Fetch audio_files r2_key and sentences text
+  const audioIds = [...new Set(itemsToInsert.map((i) => i.audio_file_id))];
+  const sentenceIds = [...new Set(itemsToInsert.map((i) => i.sentence_id))];
+
+  const { data: audioFiles, error: afErr } = await adminClient
+    .from("audio_files")
+    .select("id, r2_key")
+    .in("id", audioIds);
+
+  if (afErr) return { error: afErr.message };
+  const audioMap = new Map((audioFiles ?? []).map((a) => [a.id, a.r2_key]));
+
+  const { data: sentences, error: sErr } = await adminClient
+    .from("sentences")
+    .select("id, text")
+    .in("id", sentenceIds);
+
+  if (sErr) return { error: sErr.message };
+  const sentenceMap = new Map((sentences ?? []).map((s) => [s.id, s.text]));
+
+  // Create task with default label config (text_annotation requires at least one label)
+  const defaultLabelConfig = {
+    labels: [
+      { name: "Good", color: "#22c55e", description: "Acceptable quality", shortcut_key: "1" },
+      { name: "Issue", color: "#ef4444", description: "Needs review", shortcut_key: "2" },
+    ],
+  };
+
+  const defaultTaskOptions = {
+    randomized_order: false,
+    transcript_visibility: "shown",
+    show_ipa: false,
+    show_normalized_text: false,
+    per_label_comments: true,
+    overall_comment: true,
+    boolean_questions: [] as string[],
+    scoring_fields: [] as Array<{ name: string; min: number; max: number; description: string }>,
+  };
+
+  const insertRow: Database["public"]["Tables"]["lnl_tasks"]["Insert"] = {
+    name: taskName,
+    description: taskDescription ?? "",
+    tool_type: "text_annotation",
+    label_config: defaultLabelConfig as Database["public"]["Tables"]["lnl_tasks"]["Row"]["label_config"],
+    task_options: defaultTaskOptions as Database["public"]["Tables"]["lnl_tasks"]["Row"]["task_options"],
+    status: "draft",
+    created_by: user.id,
+  };
+
+  const { data: task, error: taskErr } = await adminClient
+    .from("lnl_tasks")
+    .insert(insertRow)
+    .select("id")
+    .single();
+
+  if (taskErr) return { error: taskErr.message };
+  if (!task) return { error: "Failed to create task" };
+
+  // Bulk insert lnl_task_items
+  const itemRows = itemsToInsert.map((item, idx) => {
+    const r2Key = audioMap.get(item.audio_file_id);
+    const text = sentenceMap.get(item.sentence_id);
+    if (!r2Key || !text) return null;
+    return {
+      task_id: task.id,
+      item_index: idx + 1,
+      audio_url: r2Key,
+      text,
+      metadata: {},
+    };
+  }).filter((r): r is NonNullable<typeof r> => r !== null);
+
+  const { error: insertErr } = await adminClient
+    .from("lnl_task_items")
+    .insert(itemRows);
+
+  if (insertErr) return { error: insertErr.message };
+
+  revalidatePath("/listen-and-log/admin/tasks");
+  revalidatePath(`/listen-and-log/admin/tasks/${task.id}`);
+  return { success: true, taskId: task.id, itemsCreated: itemRows.length };
+}
+
+export async function getMurfFalconModels() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated", data: [] };
+
+  const authorized = await isLnlAdmin(user.id);
+  if (!authorized) return { error: "Not authorized", data: [] };
+
+  const adminClient = getAdminClient();
+
+  const { data: murfProvider, error: provErr } = await adminClient
+    .from("providers")
+    .select("id")
+    .eq("slug", "murf")
+    .single();
+
+  if (provErr || !murfProvider) {
+    return { error: "Murf provider not found", data: [] };
+  }
+
+  const { data: models, error } = await adminClient
+    .from("models")
+    .select("id, name, model_id")
+    .eq("provider_id", murfProvider.id)
+    .eq("is_active", true)
+    .ilike("model_id", "%FALCON%");
+
+  if (error) return { error: error.message, data: [] };
+
+  return {
+    data: (models ?? []).map((m) => ({
+      id: m.id,
+      name: m.name,
+      model_id: m.model_id,
+    })),
+  };
+}
+
 export async function getTasks() {
   const supabase = await createClient();
   const {
