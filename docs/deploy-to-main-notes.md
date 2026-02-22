@@ -872,3 +872,19 @@ Deployment history for the main branch, ordered from oldest to newest. Each push
 2. `.cursor/commands/deploy.md`
 
 ---
+
+## 65. Annotation item loading skeleton; L&L UX improvements [Medium]
+
+**Date & Time (IST):** 22 Feb 2026, 9:31 PM
+
+**Deployment notes:**
+- New features: Annotation item loading skeleton
+- Feature enhancements: L&L sidebar icon (headphones+waveform); item nav prefetch; auto-save flushNow
+- Bug fix: Flush auto-save before Mark Complete; parallel history+insert in saveAnnotation
+
+**3 files with largest changes:**
+1. `src/app/listen-and-log/tasks/[taskId]/actions.ts`
+2. `src/app/listen-and-log/tasks/[taskId]/items/[itemIndex]/loading.tsx`
+3. `src/components/lnl/layout/lnl-sidebar.tsx`
+
+---
