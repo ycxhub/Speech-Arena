@@ -6,6 +6,7 @@ import { LnlHeader } from "@/components/lnl/layout/lnl-header";
 import { LnlCard } from "@/components/lnl/ui/lnl-card";
 import { LnlBadge } from "@/components/lnl/ui/lnl-badge";
 import { TaskStatusControls } from "@/components/lnl/admin/task-status-controls";
+import { TaskNameEditable } from "@/components/lnl/admin/task-name-editable";
 import { getLnlUsers } from "../../users/actions";
 import { TaskDetailClient } from "./task-detail-client";
 
@@ -110,9 +111,11 @@ export default async function TaskDetailPage({
         <div className="flex items-start justify-between">
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-xl font-semibold text-neutral-100">
-                {task.name}
-              </h1>
+              <TaskNameEditable
+                taskId={taskId}
+                name={task.name}
+                isDraft={task.status === "draft"}
+              />
               <LnlBadge variant={statusVariant[task.status] ?? "default"}>
                 {task.status}
               </LnlBadge>
@@ -210,6 +213,7 @@ export default async function TaskDetailPage({
 
         <TaskDetailClient
           taskId={taskId}
+          status={task.status}
           availableUsers={availableUsers}
           initialAssignments={initialAssignments}
         />

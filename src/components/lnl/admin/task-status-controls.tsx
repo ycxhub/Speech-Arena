@@ -72,14 +72,12 @@ export function TaskStatusControls({
     setLoading(null);
   }
 
-  const statusButtons = showDelete
-    ? actions
-    : actions.filter((a) => a.status !== "__delete__");
+  const statusButtons = actions.filter((a) => a.status !== "__delete__");
 
   return (
     <div className="flex flex-wrap items-center gap-2">
       {hasItems && (
-        <Link href={`/listen-and-log/tasks/${taskId}/items/1`}>
+        <Link href={`/listen-and-log/admin/tasks/${taskId}`}>
           <LnlButton variant="secondary" size="sm">
             View
           </LnlButton>

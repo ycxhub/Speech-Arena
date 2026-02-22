@@ -13,15 +13,18 @@ import { assignUsersToTask } from "../actions";
 
 interface Props {
   taskId: string;
+  status: string;
   availableUsers: Array<{ user_id: string; email: string; role: string }>;
   initialAssignments: TaskAssignment[];
 }
 
 export function TaskDetailClient({
   taskId,
+  status,
   availableUsers,
   initialAssignments,
 }: Props) {
+  const isDraft = status === "draft";
   const router = useRouter();
   const [assignments, setAssignments] = useState<TaskAssignment[]>(
     initialAssignments
@@ -51,13 +54,15 @@ export function TaskDetailClient({
           Dataset Upload
         </h2>
         <p className="mt-1 text-xs text-neutral-500">
-          Upload a CSV with item_id, text, audio_filename columns, plus audio
-          files. Drag & drop or select files, then validate and upload.
+          {isDraft
+            ? "Upload a CSV with item_id, text, audio_filename columns, plus audio files. Drag & drop or select files, then validate and upload."
+            : "Task configuration is locked after publishing."}
         </p>
         <div className="mt-4">
           <CsvUploadForm
             taskId={taskId}
             onUploadComplete={() => router.refresh()}
+            disabled={!isDraft}
           />
         </div>
       </LnlCard>
@@ -67,26 +72,31 @@ export function TaskDetailClient({
           Assign Users
         </h2>
         <p className="mt-1 text-xs text-neutral-500">
-          Search by email to add annotators or auditors. Save to apply changes.
+          {isDraft
+            ? "Search by email to add annotators or auditors. Save to apply changes."
+            : "Task configuration is locked after publishing."}
         </p>
         <div className="mt-4">
           <TaskUserAssignment
             availableUsers={availableUsers}
             value={assignments}
             onChange={setAssignments}
+            disabled={!isDraft}
           />
-          <div className="mt-4 flex items-center gap-3">
-            <LnlButton
-              size="sm"
-              onClick={handleSaveAssignments}
-              loading={saving}
-            >
-              Save Assignments
-            </LnlButton>
-            {assignError && (
-              <p className="text-sm text-red-400">{assignError}</p>
-            )}
-          </div>
+          {isDraft && (
+            <div className="mt-4 flex items-center gap-3">
+              <LnlButton
+                size="sm"
+                onClick={handleSaveAssignments}
+                loading={saving}
+              >
+                Save Assignments
+              </LnlButton>
+              {assignError && (
+                <p className="text-sm text-red-400">{assignError}</p>
+              )}
+            </div>
+          )}
         </div>
       </LnlCard>
     </>

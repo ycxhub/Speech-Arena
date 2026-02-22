@@ -126,7 +126,7 @@ function TaskRowActions({
   return (
     <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
       {itemCount > 0 && (
-        <Link href={`/listen-and-log/tasks/${taskId}/items/1`}>
+        <Link href={`/listen-and-log/admin/tasks/${taskId}`}>
           <LnlButton variant="ghost" size="sm">
             View
           </LnlButton>

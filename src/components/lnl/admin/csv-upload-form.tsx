@@ -9,9 +9,10 @@ import { CsvPreviewTable } from "./csv-preview-table";
 interface Props {
   taskId: string;
   onUploadComplete: () => void;
+  disabled?: boolean;
 }
 
-export function CsvUploadForm({ taskId, onUploadComplete }: Props) {
+export function CsvUploadForm({ taskId, onUploadComplete, disabled = false }: Props) {
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [audioFiles, setAudioFiles] = useState<File[]>([]);
   const [parseResult, setParseResult] = useState<ParseResult | null>(null);
@@ -71,6 +72,16 @@ export function CsvUploadForm({ taskId, onUploadComplete }: Props) {
       (f) => !f.name.endsWith(".csv") && !f.name.endsWith(".zip")
     );
     if (audio.length > 0) setAudioFiles((prev) => [...prev, ...audio]);
+  }
+
+  if (disabled) {
+    return (
+      <div className="rounded-lg border border-neutral-800 bg-neutral-900/50 p-6 text-center">
+        <p className="text-sm text-neutral-500">
+          Dataset upload is only available for draft tasks.
+        </p>
+      </div>
+    );
   }
 
   return (

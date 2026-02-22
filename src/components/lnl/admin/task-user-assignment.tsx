@@ -15,9 +15,10 @@ interface Props {
   availableUsers: Array<{ user_id: string; email: string; role: string }>;
   value: TaskAssignment[];
   onChange: (assignments: TaskAssignment[]) => void;
+  disabled?: boolean;
 }
 
-export function TaskUserAssignment({ availableUsers, value, onChange }: Props) {
+export function TaskUserAssignment({ availableUsers, value, onChange, disabled = false }: Props) {
   const [searchEmail, setSearchEmail] = useState("");
   const [selectedRole, setSelectedRole] = useState("annotator");
 
@@ -40,6 +41,16 @@ export function TaskUserAssignment({ availableUsers, value, onChange }: Props) {
   function updateRole(userId: string, role: string) {
     onChange(
       value.map((a) => (a.userId === userId ? { ...a, role } : a))
+    );
+  }
+
+  if (disabled) {
+    return (
+      <div className="rounded-lg border border-neutral-800 bg-neutral-900/50 p-4 text-center">
+        <p className="text-sm text-neutral-500">
+          User assignments are only editable for draft tasks.
+        </p>
+      </div>
     );
   }
 
