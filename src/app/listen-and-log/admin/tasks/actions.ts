@@ -248,6 +248,8 @@ export interface CreateTaskFromBlindTestsParams {
   outcome: "lost" | "won";
   taskName: string;
   taskDescription?: string;
+  labelConfig?: { labels: Array<{ name: string; color: string; description: string; shortcut_key: string }> };
+  taskOptions?: Record<string, unknown>;
 }
 
 export async function createTaskFromBlindTests(params: CreateTaskFromBlindTestsParams) {
@@ -260,7 +262,7 @@ export async function createTaskFromBlindTests(params: CreateTaskFromBlindTestsP
   const authorized = await isLnlAdmin(user.id);
   if (!authorized) return { error: "Not authorized" };
 
-  const { modelIds, outcome, taskName, taskDescription } = params;
+  const { modelIds, outcome, taskName, taskDescription, labelConfig, taskOptions: userTaskOptions } = params;
   if (modelIds.length === 0) {
     return { error: "At least one model must be selected" };
   }
@@ -336,13 +338,17 @@ export async function createTaskFromBlindTests(params: CreateTaskFromBlindTestsP
   if (sErr) return { error: sErr.message };
   const sentenceMap = new Map((sentences ?? []).map((s) => [s.id, s.text]));
 
-  // Create task with default label config (text_annotation requires at least one label)
+  // Use provided label config or default (text_annotation requires at least one label)
   const defaultLabelConfig = {
     labels: [
       { name: "Good", color: "#22c55e", description: "Acceptable quality", shortcut_key: "1" },
       { name: "Issue", color: "#ef4444", description: "Needs review", shortcut_key: "2" },
     ],
   };
+  const labelConfigToUse =
+    labelConfig?.labels?.length && labelConfig.labels.every((l) => l.name?.trim())
+      ? labelConfig
+      : defaultLabelConfig;
 
   const defaultTaskOptions = {
     randomized_order: false,
@@ -354,13 +360,16 @@ export async function createTaskFromBlindTests(params: CreateTaskFromBlindTestsP
     boolean_questions: [] as string[],
     scoring_fields: [] as Array<{ name: string; min: number; max: number; description: string }>,
   };
+  const taskOptionsToUse = userTaskOptions
+    ? { ...defaultTaskOptions, ...userTaskOptions }
+    : defaultTaskOptions;
 
   const insertRow: Database["public"]["Tables"]["lnl_tasks"]["Insert"] = {
     name: taskName,
     description: taskDescription ?? "",
     tool_type: "text_annotation",
-    label_config: defaultLabelConfig as Database["public"]["Tables"]["lnl_tasks"]["Row"]["label_config"],
-    task_options: defaultTaskOptions as Database["public"]["Tables"]["lnl_tasks"]["Row"]["task_options"],
+    label_config: labelConfigToUse as Database["public"]["Tables"]["lnl_tasks"]["Row"]["label_config"],
+    task_options: taskOptionsToUse as Database["public"]["Tables"]["lnl_tasks"]["Row"]["task_options"],
     status: "draft",
     created_by: user.id,
   };

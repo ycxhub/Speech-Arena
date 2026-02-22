@@ -58,7 +58,8 @@ export async function getTaskItem(
   if (!item) return null;
 
   let audioUrl = item.audio_url;
-  if (audioUrl.startsWith("lnl/")) {
+  // R2 keys (lnl/..., murf-ai/..., etc.) need signed URLs; only skip for full http(s) URLs
+  if (!audioUrl.startsWith("http://") && !audioUrl.startsWith("https://")) {
     audioUrl = await getSignedUrl(audioUrl, 3600);
   }
 

@@ -10,6 +10,17 @@ import {
   createTaskFromBlindTests,
   getMurfFalconModels,
 } from "@/app/listen-and-log/admin/tasks/actions";
+import { LabelConfigEditor, type LabelConfig } from "./label-config-editor";
+import {
+  TaskOptionsForm,
+  type TaskOptions,
+  DEFAULT_TASK_OPTIONS,
+} from "./task-options-form";
+
+const DEFAULT_LABELS: LabelConfig[] = [
+  { name: "Good", color: "#22c55e", description: "Acceptable quality", shortcut_key: "1" },
+  { name: "Issue", color: "#ef4444", description: "Needs review", shortcut_key: "2" },
+];
 
 export function CreateFromBlindTestsForm() {
   const router = useRouter();
@@ -20,6 +31,8 @@ export function CreateFromBlindTestsForm() {
   const [outcome, setOutcome] = useState<"lost" | "won">("lost");
   const [taskName, setTaskName] = useState("Falcon's Lost Blind Tests");
   const [taskDescription, setTaskDescription] = useState("");
+  const [labels, setLabels] = useState<LabelConfig[]>(DEFAULT_LABELS);
+  const [taskOptions, setTaskOptions] = useState<TaskOptions>(DEFAULT_TASK_OPTIONS);
 
   useEffect(() => {
     getMurfFalconModels().then((res) => {
@@ -49,6 +62,8 @@ export function CreateFromBlindTestsForm() {
       outcome,
       taskName: taskName.trim() || (outcome === "lost" ? "Falcon's Lost Blind Tests" : "Falcon's Won Blind Tests"),
       taskDescription: taskDescription.trim() || undefined,
+      labelConfig: labels.length > 0 && labels.every((l) => l.name.trim()) ? { labels } : undefined,
+      taskOptions: taskOptions as unknown as Record<string, unknown>,
     });
 
     setLoading(false);
@@ -114,10 +129,20 @@ export function CreateFromBlindTestsForm() {
               placeholder="Describe the purpose of this task"
             />
 
+            <div className="flex flex-col gap-4 rounded-lg border border-neutral-800 p-4">
+              <h3 className="text-sm font-medium text-neutral-200">Labels</h3>
+              <LabelConfigEditor value={labels} onChange={setLabels} />
+            </div>
+
+            <div className="flex flex-col gap-4 rounded-lg border border-neutral-800 p-4">
+              <h3 className="text-sm font-medium text-neutral-200">Task Options</h3>
+              <TaskOptionsForm value={taskOptions} onChange={setTaskOptions} />
+            </div>
+
             <LnlButton
               onClick={handleCreate}
               loading={loading}
-              disabled={models.length === 0}
+              disabled={models.length === 0 || labels.length === 0 || !labels.every((l) => l.name.trim())}
             >
               Create Task from Blind Tests
             </LnlButton>
