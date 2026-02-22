@@ -903,3 +903,15 @@ Deployment history for the main branch, ordered from oldest to newest. Each push
 3. `src/components/lnl/layout/lnl-header.tsx`
 
 ---
+
+## 67. Revert L&L sidebar to inline SVG icon [Low]
+
+**Date & Time (IST):** 22 Feb 2026, 10:19 PM
+
+**Deployment notes:**
+- Bug fix: Revert L&L sidebar to inline SVG icon (remove Image dependency)
+
+**3 files with largest changes:**
+1. `src/components/lnl/layout/lnl-sidebar.tsx`
+
+---
