@@ -67,6 +67,14 @@ export function useAutoSave<T>(
     return { error: lastErr };
   }, [opts.maxRetries]);
 
+  const flushNow = useCallback(() => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+    if (opts.enabled) performSave();
+  }, [opts.enabled, performSave]);
+
   useEffect(() => {
     if (!opts.enabled) return;
 
@@ -80,5 +88,5 @@ export function useAutoSave<T>(
     };
   }, [data, opts.enabled, opts.delayMs, performSave]);
 
-  return { isSaving, lastSavedAt, error };
+  return { isSaving, lastSavedAt, error, flushNow };
 }

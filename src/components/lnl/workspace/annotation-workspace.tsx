@@ -195,7 +195,7 @@ function AnnotationWorkspaceInner(props: Props) {
 
   const savePayload = store.getSavePayload();
 
-  const { isSaving, lastSavedAt, error } = useAutoSave(handleSave, savePayload, {
+  const { isSaving, lastSavedAt, error, flushNow } = useAutoSave(handleSave, savePayload, {
     enabled: canEdit && store.isDirty,
     delayMs: 1000,
   });
@@ -361,7 +361,10 @@ function AnnotationWorkspaceInner(props: Props) {
               lastSavedAt={lastSavedAt}
               saveError={error}
               readOnly={!canEdit}
-              onMarkComplete={() => store.setStatus("completed")}
+              onMarkComplete={() => {
+                store.setStatus("completed");
+                flushNow();
+              }}
               showMarkComplete={canEdit && !isViewingAsAuditor}
               status={store.status}
             />

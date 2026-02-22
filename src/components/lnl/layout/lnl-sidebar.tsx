@@ -73,8 +73,20 @@ export function LnlSidebar({ isAdmin, className }: LnlSidebarProps) {
       )}
     >
       <div className="flex items-center gap-2 px-4 py-5">
-        <svg className="size-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75z" />
+        <svg
+          className="size-5 text-blue-500"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={1.5}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden
+        >
+          {/* Headphones: headband + earcups */}
+          <path d="M4.5 6.375a4.5 4.5 0 119 0v2.25m-9 0a4.5 4.5 0 109 0v2.25m-9 0h9a2.25 2.25 0 012.25 2.25v7.5a2.25 2.25 0 01-2.25 2.25h-9a2.25 2.25 0 01-2.25-2.25v-7.5a2.25 2.25 0 012.25-2.25m9 0h-9" />
+          {/* Log: waveform bars in center */}
+          <path d="M9.5 13v3M10.5 12v5M11.5 11v7M12.5 12v5M13.5 13v3" />
         </svg>
         <span className="text-sm font-semibold text-neutral-100">
           Listen & Log

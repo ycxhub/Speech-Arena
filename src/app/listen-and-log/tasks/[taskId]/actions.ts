@@ -176,20 +176,6 @@ export async function saveAnnotation(data: {
       .update({ is_current: false })
       .eq("id", existing.id);
 
-    await adminClient.from("lnl_annotation_history").insert({
-      annotation_id: existing.id,
-      changed_by: user.id,
-      previous_data: {
-        id: existing.id,
-        labels: existing.labels,
-        boolean_answers: existing.boolean_answers,
-        scores: existing.scores,
-        overall_comment: existing.overall_comment,
-        status: existing.status,
-      },
-      change_type: "updated",
-    });
-
     type LnlAnnotationInsert = Database["public"]["Tables"]["lnl_annotations"]["Insert"];
     const insertRow: LnlAnnotationInsert = {
       task_id: data.taskId,
@@ -205,9 +191,26 @@ export async function saveAnnotation(data: {
       time_spent_ms: data.timeSpentMs,
       source: "manual",
     };
-    const { error } = await adminClient.from("lnl_annotations").insert(insertRow);
 
-    if (error) return { error: error.message };
+    const [historyResult, insertResult] = await Promise.all([
+      adminClient.from("lnl_annotation_history").insert({
+        annotation_id: existing.id,
+        changed_by: user.id,
+        previous_data: {
+          id: existing.id,
+          labels: existing.labels,
+          boolean_answers: existing.boolean_answers,
+          scores: existing.scores,
+          overall_comment: existing.overall_comment,
+          status: existing.status,
+        },
+        change_type: "updated",
+      }),
+      adminClient.from("lnl_annotations").insert(insertRow),
+    ]);
+
+    if (historyResult.error) return { error: historyResult.error.message };
+    if (insertResult.error) return { error: insertResult.error.message };
   } else {
     type LnlAnnotationInsert = Database["public"]["Tables"]["lnl_annotations"]["Insert"];
     const insertRow: LnlAnnotationInsert = {
@@ -397,21 +400,6 @@ export async function saveAnnotationAsReviewer(data: {
     .update({ is_current: false })
     .eq("id", existing.id);
 
-  await adminClient.from("lnl_annotation_history").insert({
-    annotation_id: existing.id,
-    changed_by: user.id,
-    previous_data: {
-      id: existing.id,
-      labels: existing.labels,
-      boolean_answers: existing.boolean_answers,
-      scores: existing.scores,
-      overall_comment: existing.overall_comment,
-      status: existing.status,
-    },
-    change_type: "reviewed",
-    change_description: "Auditor review edit",
-  });
-
   type LnlAnnotationInsert = Database["public"]["Tables"]["lnl_annotations"]["Insert"];
   const insertRow: LnlAnnotationInsert = {
     task_id: data.taskId,
@@ -427,8 +415,26 @@ export async function saveAnnotationAsReviewer(data: {
     time_spent_ms: data.timeSpentMs,
     source: "auto_reviewed",
   };
-  const { error } = await adminClient.from("lnl_annotations").insert(insertRow);
 
-  if (error) return { error: error.message };
+  const [historyResult, insertResult] = await Promise.all([
+    adminClient.from("lnl_annotation_history").insert({
+      annotation_id: existing.id,
+      changed_by: user.id,
+      previous_data: {
+        id: existing.id,
+        labels: existing.labels,
+        boolean_answers: existing.boolean_answers,
+        scores: existing.scores,
+        overall_comment: existing.overall_comment,
+        status: existing.status,
+      },
+      change_type: "reviewed",
+      change_description: "Auditor review edit",
+    }),
+    adminClient.from("lnl_annotations").insert(insertRow),
+  ]);
+
+  if (historyResult.error) return { error: historyResult.error.message };
+  if (insertResult.error) return { error: insertResult.error.message };
   return { success: true };
 }

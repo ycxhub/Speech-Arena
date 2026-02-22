@@ -1,5 +1,9 @@
 # Listen & Log — Architecture & User Journey
 
+**Listen & Log** is an invite-only annotation platform for computational linguists and speech ML researchers. It cuts data preparation time by ~80% compared to manual spreadsheet workflows by combining three purpose-built tools: **word-level text annotation** (G2P errors, TN issues, pronunciation quality), **holistic audio evaluation** (including blind A/B testing), and **IPA validation** with on-the-fly TTS re-rendering. Auto-save, versioned audit trails, and configurable export keep teams productive at scale.
+
+---
+
 ## 1. System Architecture Overview
 
 ```

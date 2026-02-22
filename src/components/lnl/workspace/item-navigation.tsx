@@ -73,6 +73,12 @@ export function ItemNavigation({
         size="sm"
         disabled={itemIndex <= 1}
         onClick={() => goTo(itemIndex - 1)}
+        onMouseEnter={() => {
+          if (itemIndex > 1) router.prefetch(`${basePath}/items/${itemIndex - 1}`);
+        }}
+        onFocus={() => {
+          if (itemIndex > 1) router.prefetch(`${basePath}/items/${itemIndex - 1}`);
+        }}
       >
         ← Prev
       </LnlButton>
@@ -81,6 +87,12 @@ export function ItemNavigation({
         size="sm"
         disabled={itemIndex >= totalItems}
         onClick={() => goTo(itemIndex + 1)}
+        onMouseEnter={() => {
+          if (itemIndex < totalItems) router.prefetch(`${basePath}/items/${itemIndex + 1}`);
+        }}
+        onFocus={() => {
+          if (itemIndex < totalItems) router.prefetch(`${basePath}/items/${itemIndex + 1}`);
+        }}
       >
         Next →
       </LnlButton>
