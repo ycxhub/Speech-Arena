@@ -178,7 +178,7 @@ export function AnnotationSidePanel({
                       onClick={() => !readOnly && onBooleanChange(String(i), true)}
                       disabled={readOnly}
                       className={cn(
-                        "min-h-[44px] min-w-[72px] rounded-lg border px-4 py-2 text-sm font-medium transition-colors",
+                        "min-h-[27px] min-w-[44px] rounded border px-2.5 py-1 text-xs font-medium transition-colors",
                         isYes
                           ? "border-blue-600 bg-blue-600 text-white"
                           : "border-neutral-700 bg-neutral-800 text-neutral-400 hover:bg-neutral-700"
@@ -191,7 +191,7 @@ export function AnnotationSidePanel({
                       onClick={() => !readOnly && onBooleanChange(String(i), false)}
                       disabled={readOnly}
                       className={cn(
-                        "min-h-[44px] min-w-[72px] rounded-lg border px-4 py-2 text-sm font-medium transition-colors",
+                        "min-h-[27px] min-w-[44px] rounded border px-2.5 py-1 text-xs font-medium transition-colors",
                         isNo
                           ? "border-blue-600 bg-blue-600 text-white"
                           : "border-neutral-700 bg-neutral-800 text-neutral-400 hover:bg-neutral-700"

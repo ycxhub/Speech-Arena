@@ -9,17 +9,23 @@ export interface LnlHeaderProps {
   breadcrumbs?: LnlBreadcrumb[];
   actions?: React.ReactNode;
   className?: string;
+  /** When true, stack breadcrumbs and actions vertically, centered */
+  stacked?: boolean;
 }
 
 export function LnlHeader({
   breadcrumbs,
   actions,
   className,
+  stacked = false,
 }: LnlHeaderProps) {
   return (
     <header
       className={cn(
-        "flex min-h-14 items-center justify-between gap-6 border-b border-neutral-800 bg-neutral-950 px-6 py-4",
+        "flex min-h-14 border-b border-neutral-800 bg-neutral-950 px-6 py-4",
+        stacked
+          ? "flex-col items-center justify-center gap-4"
+          : "items-center justify-between gap-6",
         className
       )}
     >
@@ -48,10 +54,17 @@ export function LnlHeader({
           ))}
         </nav>
       ) : (
-        <div />
+        stacked ? null : <div />
       )}
 
-      {actions && <div className="flex flex-wrap items-center gap-4">{actions}</div>}
+      {actions && (
+        <div className={cn(
+          "flex flex-wrap items-center gap-4",
+          stacked && "flex-col"
+        )}>
+          {actions}
+        </div>
+      )}
     </header>
   );
 }

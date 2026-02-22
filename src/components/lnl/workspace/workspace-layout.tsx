@@ -93,8 +93,9 @@ export function WorkspaceLayout({
           { label: taskConfig.name, href: `/listen-and-log/tasks/${taskConfig.id}` },
           { label: `Item ${itemIndex}` },
         ]}
+        stacked
         actions={
-          <div className="flex flex-wrap items-center gap-6">
+          <>
             <ProgressIndicator
               completed={completedItems}
               total={totalItems}
@@ -107,7 +108,7 @@ export function WorkspaceLayout({
               onFlag={onFlag}
               onSkip={onSkip}
             />
-          </div>
+          </>
         }
       />
 

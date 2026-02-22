@@ -9,6 +9,7 @@ import { TaskStatusControls } from "@/components/lnl/admin/task-status-controls"
 import { TaskNameEditable } from "@/components/lnl/admin/task-name-editable";
 import { getLnlUsers } from "../../users/actions";
 import { TaskDetailClient } from "./task-detail-client";
+import { DraftTaskSettingsEditor } from "./draft-task-settings-editor";
 
 const statusVariant: Record<string, "default" | "success" | "warning" | "info"> = {
   draft: "default",
@@ -159,56 +160,68 @@ export default async function TaskDetailPage({
               {assignments?.length ?? 0}
             </p>
           </LnlCard>
-          <LnlCard>
-            <p className="text-xs font-medium uppercase tracking-wider text-neutral-500">
-              Labels
-            </p>
-            <div className="mt-1 flex flex-wrap gap-1">
-              {labels.length > 0 ? (
-                labels.map((l, i) => (
-                  <LnlBadge key={i} color={l.color}>
-                    {l.name}
-                  </LnlBadge>
-                ))
-              ) : (
-                <span className="text-sm text-neutral-500">None</span>
-              )}
-            </div>
-          </LnlCard>
+          {task.status !== "draft" && (
+            <LnlCard>
+              <p className="text-xs font-medium uppercase tracking-wider text-neutral-500">
+                Labels
+              </p>
+              <div className="mt-1 flex flex-wrap gap-1">
+                {labels.length > 0 ? (
+                  labels.map((l, i) => (
+                    <LnlBadge key={i} color={l.color}>
+                      {l.name}
+                    </LnlBadge>
+                  ))
+                ) : (
+                  <span className="text-sm text-neutral-500">None</span>
+                )}
+              </div>
+            </LnlCard>
+          )}
         </div>
 
-        {(booleanQuestions.length > 0 || scoringFields.length > 0) && (
-          <div className="grid grid-cols-2 gap-4">
-            {booleanQuestions.length > 0 && (
-              <LnlCard>
-                <p className="text-xs font-medium uppercase tracking-wider text-neutral-500">
-                  Boolean Questions
-                </p>
-                <ul className="mt-2 list-inside list-disc space-y-1 text-sm text-neutral-300">
-                  {booleanQuestions.map((q, i) => (
-                    <li key={i}>{q || "(empty)"}</li>
-                  ))}
-                </ul>
-              </LnlCard>
-            )}
-            {scoringFields.length > 0 && (
-              <LnlCard>
-                <p className="text-xs font-medium uppercase tracking-wider text-neutral-500">
-                  Scoring Fields
-                </p>
-                <ul className="mt-2 space-y-2 text-sm text-neutral-300">
-                  {scoringFields.map((f, i) => (
-                    <li key={i}>
-                      {f.name} ({f.min}–{f.max})
-                      {f.description && (
-                        <span className="ml-1 text-neutral-500">— {f.description}</span>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              </LnlCard>
-            )}
-          </div>
+        {task.status === "draft" ? (
+          <DraftTaskSettingsEditor
+            taskId={taskId}
+            initialLabels={labels}
+            initialBooleanQuestions={booleanQuestions}
+            initialScoringFields={scoringFields}
+            initialTaskOptions={(task.task_options as Record<string, unknown>) ?? {}}
+          />
+        ) : (
+          (booleanQuestions.length > 0 || scoringFields.length > 0) && (
+            <div className="grid grid-cols-2 gap-4">
+              {booleanQuestions.length > 0 && (
+                <LnlCard>
+                  <p className="text-xs font-medium uppercase tracking-wider text-neutral-500">
+                    Boolean Questions
+                  </p>
+                  <ul className="mt-2 list-inside list-disc space-y-1 text-sm text-neutral-300">
+                    {booleanQuestions.map((q, i) => (
+                      <li key={i}>{q || "(empty)"}</li>
+                    ))}
+                  </ul>
+                </LnlCard>
+              )}
+              {scoringFields.length > 0 && (
+                <LnlCard>
+                  <p className="text-xs font-medium uppercase tracking-wider text-neutral-500">
+                    Scoring Fields
+                  </p>
+                  <ul className="mt-2 space-y-2 text-sm text-neutral-300">
+                    {scoringFields.map((f, i) => (
+                      <li key={i}>
+                        {f.name} ({f.min}–{f.max})
+                        {f.description && (
+                          <span className="ml-1 text-neutral-500">— {f.description}</span>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </LnlCard>
+              )}
+            </div>
+          )
         )}
 
         <TaskDetailClient

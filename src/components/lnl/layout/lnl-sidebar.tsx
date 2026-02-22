@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -73,21 +74,14 @@ export function LnlSidebar({ isAdmin, className }: LnlSidebarProps) {
       )}
     >
       <div className="flex items-center gap-2 px-4 py-5">
-        <svg
-          className="size-5 text-blue-500"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={1.5}
-          strokeLinecap="round"
-          strokeLinejoin="round"
+        <Image
+          src="/listen-and-log-icon.png"
+          alt=""
+          width={20}
+          height={20}
+          className="size-5 object-contain brightness-0 invert opacity-90"
           aria-hidden
-        >
-          {/* Headphones: headband + earcups */}
-          <path d="M4.5 6.375a4.5 4.5 0 119 0v2.25m-9 0a4.5 4.5 0 109 0v2.25m-9 0h9a2.25 2.25 0 012.25 2.25v7.5a2.25 2.25 0 01-2.25 2.25h-9a2.25 2.25 0 01-2.25-2.25v-7.5a2.25 2.25 0 012.25-2.25m9 0h-9" />
-          {/* Log: waveform bars in center */}
-          <path d="M9.5 13v3M10.5 12v5M11.5 11v7M12.5 12v5M13.5 13v3" />
-        </svg>
+        />
         <span className="text-sm font-semibold text-neutral-100">
           Listen & Log
         </span>
