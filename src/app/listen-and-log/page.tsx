@@ -18,7 +18,7 @@ export default async function ListenAndLogDashboard() {
       <LnlHeader
         breadcrumbs={[
           { label: "Listen & Log", href: "/listen-and-log" },
-          { label: "Dashboard" },
+          { label: "My Tasks" },
         ]}
       />
       <div className="flex flex-col gap-6 p-6">

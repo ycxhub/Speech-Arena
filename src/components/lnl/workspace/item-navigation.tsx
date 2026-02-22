@@ -67,7 +67,7 @@ export function ItemNavigation({
   }, [itemIndex, totalItems, goTo, onFlag]);
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex flex-wrap items-center gap-3">
       <LnlButton
         variant="ghost"
         size="sm"

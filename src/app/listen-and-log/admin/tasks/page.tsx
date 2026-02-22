@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { isLnlAdmin } from "@/lib/lnl/roles";
+import { isLnlAdmin, isSuperAdmin } from "@/lib/lnl/roles";
 import { redirect } from "next/navigation";
 import { getTasks } from "./actions";
 import { LnlHeader } from "@/components/lnl/layout/lnl-header";
@@ -18,6 +18,7 @@ export default async function TasksPage() {
   const authorized = await isLnlAdmin(user.id);
   if (!authorized) redirect("/listen-and-log");
 
+  const superAdmin = await isSuperAdmin(user.id);
   const { data: tasks } = await getTasks();
 
   return (
@@ -36,7 +37,7 @@ export default async function TasksPage() {
       />
       <div className="p-6">
         <LnlCard padding="none">
-          <TasksTable tasks={tasks} />
+          <TasksTable tasks={tasks} isSuperAdmin={superAdmin} />
         </LnlCard>
       </div>
     </>

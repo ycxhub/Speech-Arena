@@ -102,7 +102,7 @@ export function CreateFromBlindTestsForm() {
             <p className="text-sm text-neutral-400">
               Using {models.length} Murf Falcon model
               {models.length > 1 ? "s" : ""}:{" "}
-              {models.map((m) => m.name).join(", ")}
+              {[...new Set(models.map((m) => m.name))].join(", ")}
             </p>
 
             <LnlSelect

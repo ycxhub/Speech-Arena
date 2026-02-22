@@ -14,11 +14,61 @@ function extractAudioFilename(audioUrl: string): string {
   return audioUrl;
 }
 
+interface LabelEntry {
+  start_word_index: number;
+  end_word_index: number;
+  label_name: string;
+  [key: string]: unknown;
+}
+
+function formatLabelsForExport(
+  labels: LabelEntry[] | null,
+  itemText: string
+): string {
+  if (!labels?.length) return "";
+  const words = itemText.trim().split(/\s+/);
+  return labels
+    .map((l) => {
+      const start = Math.max(0, l.start_word_index);
+      const end = Math.min(words.length - 1, l.end_word_index);
+      const selectedWords =
+        start <= end ? words.slice(start, end + 1).join(" ") : "";
+      return `${l.label_name}: ${selectedWords}`;
+    })
+    .join("; ");
+}
+
+function formatBooleanAnswersForExport(
+  booleanAnswers: Record<string, boolean> | null,
+  booleanQuestions: string[]
+): string {
+  if (!booleanAnswers || Object.keys(booleanAnswers).length === 0) return "";
+  return Object.entries(booleanAnswers)
+    .map(([key, val]) => {
+      const q = booleanQuestions[parseInt(key, 10)];
+      const question = q ?? `Q${key}`;
+      const answer = val ? "Yes" : "No";
+      return `${question}: ${answer}`;
+    })
+    .join("; ");
+}
+
 export async function generateCsvExport(
   taskId: string,
   filters?: ExportFilters
 ): Promise<string> {
   const adminClient = getAdminClient();
+
+  const { data: task } = await adminClient
+    .from("lnl_tasks")
+    .select("task_options")
+    .eq("id", taskId)
+    .single();
+
+  const taskOptions = (task?.task_options ?? {}) as {
+    boolean_questions?: string[];
+  };
+  const booleanQuestions = taskOptions.boolean_questions ?? [];
 
   let query = adminClient
     .from("lnl_annotations")
@@ -95,6 +145,15 @@ export async function generateCsvExport(
       | null;
     const email = emailMap.get(row.user_id) ?? "Unknown";
 
+    const labelsFormatted = formatLabelsForExport(
+      row.labels as LabelEntry[] | null,
+      item?.text ?? ""
+    );
+    const booleanFormatted = formatBooleanAnswersForExport(
+      row.boolean_answers as Record<string, boolean> | null,
+      booleanQuestions
+    );
+
     lines.push(
       [
         row.item_id,
@@ -103,8 +162,8 @@ export async function generateCsvExport(
         escapeCsv(item?.text ?? ""),
         escapeCsv(email),
         row.updated_at ?? row.created_at ?? "",
-        escapeCsv(JSON.stringify(row.labels ?? [])),
-        escapeCsv(JSON.stringify(row.boolean_answers ?? {})),
+        escapeCsv(labelsFormatted),
+        escapeCsv(booleanFormatted),
         escapeCsv(JSON.stringify(row.scores ?? {})),
         escapeCsv(row.overall_comment ?? ""),
         row.status ?? "",

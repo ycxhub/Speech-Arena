@@ -94,7 +94,7 @@ export function WorkspaceLayout({
           { label: `Item ${itemIndex}` },
         ]}
         actions={
-          <div className="flex flex-wrap items-center gap-4">
+          <div className="flex flex-wrap items-center gap-6">
             <ProgressIndicator
               completed={completedItems}
               total={totalItems}
@@ -112,7 +112,7 @@ export function WorkspaceLayout({
       />
 
       <div className="flex flex-1 overflow-hidden">
-        <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-6">
+        <div className="flex flex-1 flex-col gap-6 overflow-y-auto p-6">
           <AudioPlayer
             audioUrl={item.audio_url}
             onSkipItem={onSkip}
@@ -140,7 +140,7 @@ export function WorkspaceLayout({
           />
         </div>
 
-        <aside className="w-80 shrink-0 overflow-y-auto border-l border-neutral-800 bg-neutral-950">
+        <aside className="w-80 shrink-0 overflow-y-auto border-l border-neutral-800 bg-neutral-950 p-6">
           {annotationPanel}
         </aside>
       </div>

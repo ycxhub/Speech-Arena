@@ -7,7 +7,7 @@ export interface LnlSelectOption {
 
 export interface LnlSelectProps
   extends Omit<React.SelectHTMLAttributes<HTMLSelectElement>, "children"> {
-  label?: string;
+  label?: React.ReactNode;
   error?: string;
   options: LnlSelectOption[];
   placeholder?: string;
@@ -25,7 +25,10 @@ export function LnlSelect({
   ...props
 }: LnlSelectProps) {
   const selectId =
-    id ?? (label ? `lnl-select-${label.replace(/\s/g, "-").toLowerCase()}` : undefined);
+    id ??
+    (typeof label === "string"
+      ? `lnl-select-${label.replace(/\s/g, "-").toLowerCase()}`
+      : undefined);
 
   return (
     <div className="w-full">

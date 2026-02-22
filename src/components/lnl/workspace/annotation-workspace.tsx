@@ -127,6 +127,11 @@ function AnnotationWorkspaceInner(props: Props) {
 
   const [showCelebration, setShowCelebration] = useState(false);
   const hasShownCelebration = useRef(false);
+  const startTimeRef = useRef(Date.now());
+
+  useEffect(() => {
+    startTimeRef.current = Date.now();
+  }, [item.id]);
 
   const handleSave = useCallback(
     async (payload: {
@@ -137,6 +142,7 @@ function AnnotationWorkspaceInner(props: Props) {
       status: string;
     }) => {
       if (isViewingAsAuditor && viewAnnotatorId) {
+        const timeSpentMs = Math.round(Date.now() - startTimeRef.current);
         const result = await saveAnnotationAsReviewer({
           taskId: taskConfig.id,
           itemId: item.id,
@@ -146,11 +152,12 @@ function AnnotationWorkspaceInner(props: Props) {
           scores: payload.scores,
           overallComment: payload.overallComment,
           status: payload.status,
-          timeSpentMs: 0,
+          timeSpentMs,
         });
         if (!result.error) store.markSaved();
         return result;
       }
+      const timeSpentMs = Math.round(Date.now() - startTimeRef.current);
       const result = await saveAnnotation({
         taskId: taskConfig.id,
         itemId: item.id,
@@ -159,7 +166,7 @@ function AnnotationWorkspaceInner(props: Props) {
         scores: payload.scores,
         overallComment: payload.overallComment,
         status: payload.status,
-        timeSpentMs: 0,
+        timeSpentMs,
       });
       if (!result.error) {
         store.markSaved();

@@ -126,11 +126,8 @@ export function AudioPlayer({
     return (
       <div className="flex flex-col gap-3 rounded-lg border border-red-900/50 bg-neutral-900 p-4">
         <p className="text-sm text-red-400">
-          Audio failed to load: {loadError.message}
-        </p>
-        <p className="text-xs text-neutral-500">
-          The file may be missing, corrupted, or inaccessible. You can skip this
-          item and continue.
+          This audio file could not be loaded. It may be missing from storage, or
+          the file may have been removed. You can skip this item and continue.
         </p>
         {onSkipItem && (
           <LnlButton variant="secondary" size="sm" onClick={onSkipItem}>

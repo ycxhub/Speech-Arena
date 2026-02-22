@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 export interface LnlToggleProps {
   checked: boolean;
   onChange: (checked: boolean) => void;
-  label?: string;
+  label?: React.ReactNode;
   disabled?: boolean;
   className?: string;
 }

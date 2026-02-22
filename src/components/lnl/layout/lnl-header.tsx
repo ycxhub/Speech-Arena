@@ -19,7 +19,7 @@ export function LnlHeader({
   return (
     <header
       className={cn(
-        "flex h-14 items-center justify-between border-b border-neutral-800 bg-neutral-950 px-6",
+        "flex min-h-14 items-center justify-between gap-6 border-b border-neutral-800 bg-neutral-950 px-6 py-4",
         className
       )}
     >
@@ -51,7 +51,7 @@ export function LnlHeader({
         <div />
       )}
 
-      {actions && <div className="flex items-center gap-3">{actions}</div>}
+      {actions && <div className="flex flex-wrap items-center gap-4">{actions}</div>}
     </header>
   );
 }

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { LnlButton } from "@/components/lnl/ui/lnl-button";
+import { LnlModal } from "@/components/lnl/ui/lnl-modal";
 import { LnlCard } from "@/components/lnl/ui/lnl-card";
 import { LnlInput } from "@/components/lnl/ui/lnl-input";
 import { LnlSelect } from "@/components/lnl/ui/lnl-select";
@@ -37,6 +38,7 @@ export function TaskCreationWizard({ availableUsers }: Props) {
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showPublishConfirm, setShowPublishConfirm] = useState(false);
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -242,7 +244,7 @@ export function TaskCreationWizard({ availableUsers }: Props) {
                   Save as Draft
                 </LnlButton>
                 <LnlButton
-                  onClick={() => handlePublish(false)}
+                  onClick={() => setShowPublishConfirm(true)}
                   loading={loading}
                 >
                   Publish Task
@@ -259,6 +261,33 @@ export function TaskCreationWizard({ availableUsers }: Props) {
           </div>
         </div>
       </LnlCard>
+
+      <LnlModal
+        isOpen={showPublishConfirm}
+        onClose={() => setShowPublishConfirm(false)}
+        title="Confirm publish"
+        footer={
+          <>
+            <LnlButton variant="secondary" onClick={() => setShowPublishConfirm(false)}>
+              Cancel
+            </LnlButton>
+            <LnlButton
+              onClick={async () => {
+                setShowPublishConfirm(false);
+                await handlePublish(false);
+              }}
+              loading={loading}
+            >
+              Publish
+            </LnlButton>
+          </>
+        }
+      >
+        <p className="text-sm text-neutral-300">
+          Task settings (labels, questions, scoring) cannot be edited after
+          publishing. Double-check before proceeding.
+        </p>
+      </LnlModal>
     </div>
   );
 }

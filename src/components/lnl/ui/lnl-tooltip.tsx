@@ -8,6 +8,8 @@ export interface LnlTooltipProps {
   children: React.ReactNode;
   position?: "top" | "bottom" | "left" | "right";
   className?: string;
+  /** Use for multi-line content (e.g. max-w-xs whitespace-normal) */
+  contentClassName?: string;
 }
 
 const positionStyles: Record<string, string> = {
@@ -22,6 +24,7 @@ export function LnlTooltip({
   children,
   position = "top",
   className,
+  contentClassName,
 }: LnlTooltipProps) {
   const [visible, setVisible] = useState(false);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -47,7 +50,8 @@ export function LnlTooltip({
       {visible && (
         <div
           className={cn(
-            "pointer-events-none absolute z-50 whitespace-nowrap rounded-md border border-neutral-700 bg-neutral-800 px-2.5 py-1.5 text-xs text-neutral-200 shadow-lg",
+            "pointer-events-none absolute z-50 rounded-md border border-neutral-700 bg-neutral-800 px-2.5 py-1.5 text-xs text-neutral-200 shadow-lg",
+            contentClassName ?? "whitespace-nowrap",
             positionStyles[position]
           )}
           role="tooltip"

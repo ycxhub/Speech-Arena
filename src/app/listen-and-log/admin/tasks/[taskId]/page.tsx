@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { getAdminClient } from "@/lib/supabase/admin";
-import { isLnlAdmin } from "@/lib/lnl/roles";
+import { isLnlAdmin, isSuperAdmin } from "@/lib/lnl/roles";
 import { redirect, notFound } from "next/navigation";
 import { LnlHeader } from "@/components/lnl/layout/lnl-header";
 import { LnlCard } from "@/components/lnl/ui/lnl-card";
@@ -39,6 +39,7 @@ export default async function TaskDetailPage({
   const authorized = await isLnlAdmin(user.id);
   if (!authorized) redirect("/listen-and-log");
 
+  const superAdmin = await isSuperAdmin(user.id);
   const adminClient = getAdminClient();
   const { data: task } = await adminClient
     .from("lnl_tasks")
@@ -60,6 +61,12 @@ export default async function TaskDetailPage({
 
   const labelConfig = task.label_config as { labels?: Array<{ name: string; color: string }> };
   const labels = labelConfig?.labels ?? [];
+  const taskOptions = task.task_options as {
+    boolean_questions?: string[];
+    scoring_fields?: Array<{ name: string; min: number; max: number; description: string }>;
+  } | null;
+  const booleanQuestions = taskOptions?.boolean_questions ?? [];
+  const scoringFields = taskOptions?.scoring_fields ?? [];
 
   const { data: users } = await getLnlUsers();
   const availableUsers = users ?? [];
@@ -116,7 +123,12 @@ export default async function TaskDetailPage({
               </p>
             )}
           </div>
-          <TaskStatusControls taskId={taskId} currentStatus={task.status} />
+          <TaskStatusControls
+            taskId={taskId}
+            currentStatus={task.status}
+            isSuperAdmin={superAdmin}
+            hasItems={(itemCount ?? 0) > 0}
+          />
         </div>
 
         <div className="grid grid-cols-4 gap-4">
@@ -161,6 +173,40 @@ export default async function TaskDetailPage({
             </div>
           </LnlCard>
         </div>
+
+        {(booleanQuestions.length > 0 || scoringFields.length > 0) && (
+          <div className="grid grid-cols-2 gap-4">
+            {booleanQuestions.length > 0 && (
+              <LnlCard>
+                <p className="text-xs font-medium uppercase tracking-wider text-neutral-500">
+                  Boolean Questions
+                </p>
+                <ul className="mt-2 list-inside list-disc space-y-1 text-sm text-neutral-300">
+                  {booleanQuestions.map((q, i) => (
+                    <li key={i}>{q || "(empty)"}</li>
+                  ))}
+                </ul>
+              </LnlCard>
+            )}
+            {scoringFields.length > 0 && (
+              <LnlCard>
+                <p className="text-xs font-medium uppercase tracking-wider text-neutral-500">
+                  Scoring Fields
+                </p>
+                <ul className="mt-2 space-y-2 text-sm text-neutral-300">
+                  {scoringFields.map((f, i) => (
+                    <li key={i}>
+                      {f.name} ({f.min}–{f.max})
+                      {f.description && (
+                        <span className="ml-1 text-neutral-500">— {f.description}</span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </LnlCard>
+            )}
+          </div>
+        )}
 
         <TaskDetailClient
           taskId={taskId}

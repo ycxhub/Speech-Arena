@@ -2,7 +2,8 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { getAdminClient } from "@/lib/supabase/admin";
-import { isLnlAdmin } from "@/lib/lnl/roles";
+import { isLnlAdmin, isSuperAdmin } from "@/lib/lnl/roles";
+import { objectExists } from "@/lib/r2/storage";
 import { revalidatePath } from "next/cache";
 import type { Database } from "@/types/database";
 
@@ -118,6 +119,20 @@ export async function deleteTask(taskId: string) {
   if (!authorized) return { error: "Not authorized" };
 
   const adminClient = getAdminClient();
+
+  const { data: task } = await adminClient
+    .from("lnl_tasks")
+    .select("status")
+    .eq("id", taskId)
+    .single();
+
+  if (!task) return { error: "Task not found" };
+
+  const superAdmin = await isSuperAdmin(user.id);
+  if (task.status !== "draft" && !superAdmin) {
+    return { error: "Only draft tasks can be deleted. Super admins can delete any task." };
+  }
+
   const { error } = await adminClient
     .from("lnl_tasks")
     .delete()
@@ -127,6 +142,69 @@ export async function deleteTask(taskId: string) {
 
   revalidatePath("/listen-and-log/admin/tasks");
   return { success: true };
+}
+
+export async function duplicateTask(taskId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  const superAdmin = await isSuperAdmin(user.id);
+  if (!superAdmin) return { error: "Only super admins can duplicate tasks" };
+
+  const adminClient = getAdminClient();
+
+  const { data: sourceTask, error: taskErr } = await adminClient
+    .from("lnl_tasks")
+    .select("*")
+    .eq("id", taskId)
+    .single();
+
+  if (taskErr || !sourceTask) return { error: taskErr?.message ?? "Task not found" };
+
+  const { data: items } = await adminClient
+    .from("lnl_task_items")
+    .select("*")
+    .eq("task_id", taskId)
+    .order("item_index", { ascending: true });
+
+  const { data: newTask, error: insertErr } = await adminClient
+    .from("lnl_tasks")
+    .insert({
+      name: `${sourceTask.name} (copy)`,
+      description: sourceTask.description ?? "",
+      tool_type: sourceTask.tool_type,
+      label_config: sourceTask.label_config,
+      task_options: sourceTask.task_options,
+      status: "draft",
+      created_by: user.id,
+    })
+    .select("id")
+    .single();
+
+  if (insertErr || !newTask) return { error: insertErr?.message ?? "Failed to create task" };
+
+  if ((items ?? []).length > 0) {
+    const itemRows = items!.map((item) => ({
+      task_id: newTask.id,
+      item_index: item.item_index,
+      audio_url: item.audio_url,
+      text: item.text,
+      ipa_text: item.ipa_text,
+      normalized_text: item.normalized_text,
+      metadata: item.metadata ?? {},
+      word_timestamps: item.word_timestamps,
+    }));
+    const { error: itemsErr } = await adminClient
+      .from("lnl_task_items")
+      .insert(itemRows);
+    if (itemsErr) return { error: itemsErr.message };
+  }
+
+  revalidatePath("/listen-and-log/admin/tasks");
+  return { success: true, taskId: newTask.id };
 }
 
 async function ensureUserHasLnlRole(
@@ -383,19 +461,31 @@ export async function createTaskFromBlindTests(params: CreateTaskFromBlindTestsP
   if (taskErr) return { error: taskErr.message };
   if (!task) return { error: "Failed to create task" };
 
-  // Bulk insert lnl_task_items
-  const itemRows = itemsToInsert.map((item, idx) => {
-    const r2Key = audioMap.get(item.audio_file_id);
-    const text = sentenceMap.get(item.sentence_id);
-    if (!r2Key || !text) return null;
-    return {
-      task_id: task.id,
-      item_index: idx + 1,
-      audio_url: r2Key,
-      text,
-      metadata: {},
-    };
-  }).filter((r): r is NonNullable<typeof r> => r !== null);
+  // Validate R2 keys exist before inserting; skip items with missing audio
+  const candidates = itemsToInsert
+    .map((item) => {
+      const r2Key = audioMap.get(item.audio_file_id);
+      const text = sentenceMap.get(item.sentence_id);
+      if (!r2Key || !text) return null;
+      return { r2Key, text };
+    })
+    .filter((r): r is NonNullable<typeof r> => r !== null);
+
+  const validCandidates: typeof candidates = [];
+  for (const c of candidates) {
+    const exists = await objectExists(c.r2Key);
+    if (exists) validCandidates.push(c);
+  }
+
+  const itemRows = validCandidates.map((c, idx) => ({
+    task_id: task.id,
+    item_index: idx + 1,
+    audio_url: c.r2Key,
+    text: c.text,
+    metadata: {},
+  }));
+
+  const skippedCount = candidates.length - validCandidates.length;
 
   const { error: insertErr } = await adminClient
     .from("lnl_task_items")
@@ -405,7 +495,12 @@ export async function createTaskFromBlindTests(params: CreateTaskFromBlindTestsP
 
   revalidatePath("/listen-and-log/admin/tasks");
   revalidatePath(`/listen-and-log/admin/tasks/${task.id}`);
-  return { success: true, taskId: task.id, itemsCreated: itemRows.length };
+  return {
+    success: true,
+    taskId: task.id,
+    itemsCreated: itemRows.length,
+    itemsSkipped: skippedCount,
+  };
 }
 
 export async function getMurfFalconModels() {

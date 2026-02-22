@@ -33,6 +33,16 @@ export async function hasLnlAccess(userId: string): Promise<boolean> {
   return !!lnlRole;
 }
 
+export async function isSuperAdmin(userId: string): Promise<boolean> {
+  const adminClient = getAdminClient();
+  const { data: profile } = await adminClient
+    .from("profiles")
+    .select("role")
+    .eq("id", userId)
+    .single();
+  return profile?.role === "admin";
+}
+
 export async function isLnlAdmin(userId: string): Promise<boolean> {
   const adminClient = getAdminClient();
 

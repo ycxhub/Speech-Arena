@@ -2,6 +2,7 @@ import {
   PutObjectCommand,
   GetObjectCommand,
   DeleteObjectCommand,
+  HeadObjectCommand,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl as createPresignedUrl } from "@aws-sdk/s3-request-presigner";
 import { getR2Client } from "./client";
@@ -58,6 +59,24 @@ export async function getSignedUrl(
     Key: key,
   });
   return createPresignedUrl(client, command, { expiresIn });
+}
+
+/**
+ * Returns true if the object exists in R2, false otherwise.
+ */
+export async function objectExists(key: string): Promise<boolean> {
+  const client = getR2Client();
+  try {
+    await client.send(
+      new HeadObjectCommand({
+        Bucket: getBucket(),
+        Key: key,
+      })
+    );
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 /**

@@ -2,7 +2,6 @@
 
 import { LnlBadge } from "@/components/lnl/ui/lnl-badge";
 import { LnlButton } from "@/components/lnl/ui/lnl-button";
-import { LnlToggle } from "@/components/lnl/ui/lnl-toggle";
 import { cn } from "@/lib/utils";
 
 interface LabelDef {
@@ -76,7 +75,7 @@ export function AnnotationSidePanel({
   const showPerLabelComments = taskOptions.per_label_comments !== false;
 
   return (
-    <div className="flex flex-col gap-4 p-4">
+    <div className="flex flex-col gap-6 p-4">
       {/* Label palette */}
       <div>
         <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-neutral-500">
@@ -165,16 +164,45 @@ export function AnnotationSidePanel({
           <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-neutral-500">
             Questions
           </h3>
-          <div className="flex flex-col gap-2">
-            {booleanQuestions.map((q, i) => (
-              <LnlToggle
-                key={i}
-                label={q}
-                checked={booleanAnswers[String(i)] ?? false}
-                onChange={(v) => !readOnly && onBooleanChange(String(i), v)}
-                disabled={readOnly}
-              />
-            ))}
+          <div className="flex flex-col gap-3">
+            {booleanQuestions.map((q, i) => {
+              const value = booleanAnswers[String(i)];
+              const isYes = value === true;
+              const isNo = value === false;
+              return (
+                <div key={i}>
+                  <p className="mb-1.5 text-sm text-neutral-300">{q}</p>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => !readOnly && onBooleanChange(String(i), true)}
+                      disabled={readOnly}
+                      className={cn(
+                        "min-h-[44px] min-w-[72px] rounded-lg border px-4 py-2 text-sm font-medium transition-colors",
+                        isYes
+                          ? "border-blue-600 bg-blue-600 text-white"
+                          : "border-neutral-700 bg-neutral-800 text-neutral-400 hover:bg-neutral-700"
+                      )}
+                    >
+                      Yes
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => !readOnly && onBooleanChange(String(i), false)}
+                      disabled={readOnly}
+                      className={cn(
+                        "min-h-[44px] min-w-[72px] rounded-lg border px-4 py-2 text-sm font-medium transition-colors",
+                        isNo
+                          ? "border-blue-600 bg-blue-600 text-white"
+                          : "border-neutral-700 bg-neutral-800 text-neutral-400 hover:bg-neutral-700"
+                      )}
+                    >
+                      No
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
