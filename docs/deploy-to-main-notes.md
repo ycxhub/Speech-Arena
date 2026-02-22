@@ -888,3 +888,18 @@ Deployment history for the main branch, ordered from oldest to newest. Each push
 3. `src/components/lnl/layout/lnl-sidebar.tsx`
 
 ---
+
+## 66. Draft task settings editor; L&L UI polish [High]
+
+**Date & Time (IST):** 22 Feb 2026, 10:13 PM
+
+**Deployment notes:**
+- New features: Draft task settings editor (labels, boolean questions, scoring)
+- Feature enhancements: L&L sidebar image icon; stacked header layout; compact Yes/No buttons
+
+**3 files with largest changes:**
+1. `src/app/listen-and-log/admin/tasks/[taskId]/draft-task-settings-editor.tsx`
+2. `src/app/listen-and-log/admin/tasks/[taskId]/page.tsx`
+3. `src/components/lnl/layout/lnl-header.tsx`
+
+---
