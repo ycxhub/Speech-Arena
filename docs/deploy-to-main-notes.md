@@ -6,7 +6,20 @@ Deployment history for the main branch, ordered from latest to oldest. Each push
 
 ---
 
-## 1. Inline editable task name & L&L admin enhancements [Medium]
+## 1. Deploy command & deploy-to-main-notes doc [High]
+
+**Date & Time (IST):** 22 Feb 2026, 7:58 PM
+
+**Deployment notes:**
+- Feature enhancements: Deploy command with post-deploy notes; deploy-to-main-notes doc
+
+**3 files with largest changes:**
+1. `docs/deploy-to-main-notes.md`
+2. `.cursor/commands/deploy.md`
+
+---
+
+## 2. Inline editable task name & L&L admin enhancements [Medium]
 
 **Date & Time (IST):** 22 Feb 2026, 7:39 PM
 
@@ -21,7 +34,7 @@ Deployment history for the main branch, ordered from latest to oldest. Each push
 
 ---
 
-## 2. Super admin role, duplicate task, R2 object check [High]
+## 3. Super admin role, duplicate task, R2 object check [High]
 
 **Date & Time (IST):** 22 Feb 2026, 7:11 PM
 
@@ -37,7 +50,7 @@ Deployment history for the main branch, ordered from latest to oldest. Each push
 
 ---
 
-## 3. Create from Blind Tests — custom labels & signed URLs fix [Medium]
+## 4. Create from Blind Tests — custom labels & signed URLs fix [Medium]
 
 **Date & Time (IST):** 22 Feb 2026, 2:21 PM
 
@@ -52,7 +65,7 @@ Deployment history for the main branch, ordered from latest to oldest. Each push
 
 ---
 
-## 4. Fix: Match Murf AI provider by name for Create from Blind Tests [Low]
+## 5. Fix: Match Murf AI provider by name for Create from Blind Tests [Low]
 
 **Date & Time (IST):** 21 Feb 2026, 6:36 PM
 
@@ -64,7 +77,7 @@ Deployment history for the main branch, ordered from latest to oldest. Each push
 
 ---
 
-## 5. Fix: Support Murf AI provider for Create from Blind Tests [Low]
+## 6. Fix: Support Murf AI provider for Create from Blind Tests [Low]
 
 **Date & Time (IST):** 21 Feb 2026, 6:34 PM
 
@@ -77,7 +90,7 @@ Deployment history for the main branch, ordered from latest to oldest. Each push
 
 ---
 
-## 6. Add pull-from-main command and cursor settings [Medium]
+## 7. Add pull-from-main command and cursor settings [Medium]
 
 **Date & Time (IST):** 21 Feb 2026, 5:51 PM
 
@@ -90,7 +103,7 @@ Deployment history for the main branch, ordered from latest to oldest. Each push
 
 ---
 
-## 7. Create L&L tasks from blind tests; AI visitor proxy (Salespeak) [High]
+## 8. Create L&L tasks from blind tests; AI visitor proxy (Salespeak) [High]
 
 **Date & Time (IST):** 21 Feb 2026, 5:46 PM
 
@@ -105,7 +118,7 @@ Deployment history for the main branch, ordered from latest to oldest. Each push
 
 ---
 
-## 8. L&L invitation emails via Resend [High]
+## 9. L&L invitation emails via Resend [High]
 
 **Date & Time (IST):** 21 Feb 2026, 3:38 PM
 
@@ -119,7 +132,7 @@ Deployment history for the main branch, ordered from latest to oldest. Each push
 
 ---
 
-## 9. Listen & Log text annotation platform [High]
+## 10. Listen & Log text annotation platform [High]
 
 **Date & Time (IST):** 21 Feb 2026, 2:19 AM
 
@@ -133,7 +146,7 @@ Deployment history for the main branch, ordered from latest to oldest. Each push
 
 ---
 
-## 10. Bug fix: Update speech-arena-logo and favicon assets [Low]
+## 11. Bug fix: Update speech-arena-logo and favicon assets [Low]
 
 **Date & Time (IST):** 20 Feb 2026, 1:04 PM
 
@@ -146,7 +159,7 @@ Deployment history for the main branch, ordered from latest to oldest. Each push
 
 ---
 
-## 11. Google Analytics, Methodology page; Home page refresh [High]
+## 12. Google Analytics, Methodology page; Home page refresh [High]
 
 **Date & Time (IST):** 20 Feb 2026, 12:18 PM
 
@@ -160,7 +173,7 @@ Deployment history for the main branch, ordered from latest to oldest. Each push
 
 ---
 
-## 12. Global footer, Admin user management improvements [Medium]
+## 13. Global footer, Admin user management improvements [Medium]
 
 **Date & Time (IST):** 20 Feb 2026, 3:45 AM
 
@@ -174,7 +187,7 @@ Deployment history for the main branch, ordered from latest to oldest. Each push
 
 ---
 
-## 13. Leaderboard pairwise matrix fallbacks and empty state [Low]
+## 14. Leaderboard pairwise matrix fallbacks and empty state [Low]
 
 **Date & Time (IST):** 20 Feb 2026, 3:32 AM
 
@@ -187,7 +200,7 @@ Deployment history for the main branch, ordered from latest to oldest. Each push
 
 ---
 
-## 14. Sentence labels, Leaderboard pairwise win rate matrix [High]
+## 15. Sentence labels, Leaderboard pairwise win rate matrix [High]
 
 **Date & Time (IST):** 20 Feb 2026, 3:28 AM
 
@@ -201,7 +214,7 @@ Deployment history for the main branch, ordered from latest to oldest. Each push
 
 ---
 
-## 15. My-results definition display name; Leaderboard rank simplification [Medium]
+## 16. My-results definition display name; Leaderboard rank simplification [Medium]
 
 **Date & Time (IST):** 20 Feb 2026, 2:41 AM
 
@@ -214,7 +227,7 @@ Deployment history for the main branch, ordered from latest to oldest. Each push
 
 ---
 
-## 16. Bug fix: Merge duplicate ELO entries from case-sensitive definition_name [Medium]
+## 17. Bug fix: Merge duplicate ELO entries from case-sensitive definition_name [Medium]
 
 **Date & Time (IST):** 20 Feb 2026, 1:45 AM
 
@@ -227,7 +240,7 @@ Deployment history for the main branch, ordered from latest to oldest. Each push
 
 ---
 
-## 17. Admin analytics client, audit-log filters, leaderboard split, UX polish [High]
+## 18. Admin analytics client, audit-log filters, leaderboard split, UX polish [High]
 
 **Date & Time (IST):** 20 Feb 2026, 1:17 AM
 
@@ -241,7 +254,7 @@ Deployment history for the main branch, ordered from latest to oldest. Each push
 
 ---
 
-## 18. Hume AI and Sarvam TTS providers; en sentence mapping [High]
+## 19. Hume AI and Sarvam TTS providers; en sentence mapping [High]
 
 **Date & Time (IST):** 20 Feb 2026, 12:26 AM
 
@@ -255,7 +268,7 @@ Deployment history for the main branch, ordered from latest to oldest. Each push
 
 ---
 
-## 19. Autogenerate per (model, voice, language); canonical model_id [Medium]
+## 20. Autogenerate per (model, voice, language); canonical model_id [Medium]
 
 **Date & Time (IST):** 19 Feb 2026, 10:41 PM
 
@@ -269,7 +282,7 @@ Deployment history for the main branch, ordered from latest to oldest. Each push
 
 ---
 
-## 20. ELO/matchmaking/leaderboard by definition_name; Admin UI refresh [High]
+## 21. ELO/matchmaking/leaderboard by definition_name; Admin UI refresh [High]
 
 **Date & Time (IST):** 19 Feb 2026, 9:55 PM
 
@@ -283,7 +296,7 @@ Deployment history for the main branch, ordered from latest to oldest. Each push
 
 ---
 
-## 21. Bug fix: Cartesia TTS language code handling [Low]
+## 22. Bug fix: Cartesia TTS language code handling [Low]
 
 **Date & Time (IST):** 19 Feb 2026, 8:08 PM
 
@@ -295,7 +308,7 @@ Deployment history for the main branch, ordered from latest to oldest. Each push
 
 ---
 
-## 22. Test API page filters voices by model language support [Medium]
+## 23. Test API page filters voices by model language support [Medium]
 
 **Date & Time (IST):** 19 Feb 2026, 7:46 PM
 
@@ -308,7 +321,7 @@ Deployment history for the main branch, ordered from latest to oldest. Each push
 
 ---
 
-## 23. Model+voice selection on Test API page; cascade deletes for model removal [Medium]
+## 24. Model+voice selection on Test API page; cascade deletes for model removal [Medium]
 
 **Date & Time (IST):** 19 Feb 2026, 7:32 PM
 
@@ -322,7 +335,7 @@ Deployment history for the main branch, ordered from latest to oldest. Each push
 
 ---
 
-## 24. Voices actions and import-csv-modal updates, remove debug.log [Medium]
+## 25. Voices actions and import-csv-modal updates, remove debug.log [Medium]
 
 **Date & Time (IST):** 19 Feb 2026, 7:10 PM
 
@@ -336,7 +349,7 @@ Deployment history for the main branch, ordered from latest to oldest. Each push
 
 ---
 
-## 25. Merge feature/custom-tests: provider model definitions, autogenerate, voices import [High]
+## 26. Merge feature/custom-tests: provider model definitions, autogenerate, voices import [High]
 
 **Date & Time (IST):** 19 Feb 2026, 6:53 PM
 
@@ -350,7 +363,7 @@ Deployment history for the main branch, ordered from latest to oldest. Each push
 
 ---
 
-## 26. Provider model definitions, autogenerate, voices import, footer logo, assets [High]
+## 27. Provider model definitions, autogenerate, voices import, footer logo, assets [High]
 
 **Date & Time (IST):** 19 Feb 2026, 6:53 PM
 
@@ -364,7 +377,7 @@ Deployment history for the main branch, ordered from latest to oldest. Each push
 
 ---
 
-## 27. Merge pull request #1: feature/custom-tests [High]
+## 28. Merge pull request #1: feature/custom-tests [High]
 
 **Date & Time (IST):** 18 Feb 2026, 4:02 PM
 
@@ -378,7 +391,7 @@ Deployment history for the main branch, ordered from latest to oldest. Each push
 
 ---
 
-## 28. Enhance custom test management with new fields and navigation updates [High]
+## 29. Enhance custom test management with new fields and navigation updates [High]
 
 **Date & Time (IST):** 18 Feb 2026, 4:00 PM
 
@@ -392,7 +405,7 @@ Deployment history for the main branch, ordered from latest to oldest. Each push
 
 ---
 
-## 29. Add language_id and test_type fields to Database type [High]
+## 30. Add language_id and test_type fields to Database type [High]
 
 **Date & Time (IST):** 18 Feb 2026, 4:00 PM
 
@@ -406,7 +419,7 @@ Deployment history for the main branch, ordered from latest to oldest. Each push
 
 ---
 
-## 30. Add support for custom tests in navigation and results handling [High]
+## 31. Add support for custom tests in navigation and results handling [High]
 
 **Date & Time (IST):** 18 Feb 2026, 4:00 PM
 
@@ -420,7 +433,7 @@ Deployment history for the main branch, ordered from latest to oldest. Each push
 
 ---
 
-## 31. Murf, Deepgram, Cartesia, Inworld, Minimax TTS providers; model-level ELO, leaderboard, matchmaking; api-playground [High]
+## 32. Murf, Deepgram, Cartesia, Inworld, Minimax TTS providers; model-level ELO, leaderboard, matchmaking; api-playground [High]
 
 **Date & Time (IST):** 17 Feb 2026, 10:56 PM
 
@@ -434,7 +447,7 @@ Deployment history for the main branch, ordered from latest to oldest. Each push
 
 ---
 
-## 32. Admin provider voices, languages, test tabs, user-management, admin layout and sidebar [High]
+## 33. Admin provider voices, languages, test tabs, user-management, admin layout and sidebar [High]
 
 **Date & Time (IST):** 16 Feb 2026, 11:50 AM
 
@@ -448,7 +461,7 @@ Deployment history for the main branch, ordered from latest to oldest. Each push
 
 ---
 
-## 33. Use admin client for all admin Add/Update operations [High]
+## 34. Use admin client for all admin Add/Update operations [High]
 
 **Date & Time (IST):** 14 Feb 2026, 9:38 PM
 
@@ -462,7 +475,7 @@ Deployment history for the main branch, ordered from latest to oldest. Each push
 
 ---
 
-## 34. Use admin client for sentences page data fetch [Low]
+## 35. Use admin client for sentences page data fetch [Low]
 
 **Date & Time (IST):** 14 Feb 2026, 9:32 PM
 
@@ -474,7 +487,7 @@ Deployment history for the main branch, ordered from latest to oldest. Each push
 
 ---
 
-## 35. Use admin client for languages and providers page data fetch [Low]
+## 36. Use admin client for languages and providers page data fetch [Low]
 
 **Date & Time (IST):** 14 Feb 2026, 9:27 PM
 
@@ -487,7 +500,7 @@ Deployment history for the main branch, ordered from latest to oldest. Each push
 
 ---
 
-## 36. Use admin client for all DB ops in languages and providers actions [Medium]
+## 37. Use admin client for all DB ops in languages and providers actions [Medium]
 
 **Date & Time (IST):** 14 Feb 2026, 9:21 PM
 
@@ -500,7 +513,7 @@ Deployment history for the main branch, ordered from latest to oldest. Each push
 
 ---
 
-## 37. Move role column render to client component (RSC serialization) [Medium]
+## 38. Move role column render to client component (RSC serialization) [Medium]
 
 **Date & Time (IST):** 14 Feb 2026, 8:52 PM
 
@@ -514,7 +527,7 @@ Deployment history for the main branch, ordered from latest to oldest. Each push
 
 ---
 
-## 38. Remove fs import and add step tracker for admin page errors [Medium]
+## 39. Remove fs import and add step tracker for admin page errors [Medium]
 
 **Date & Time (IST):** 14 Feb 2026, 8:40 PM
 
@@ -526,7 +539,7 @@ Deployment history for the main branch, ordered from latest to oldest. Each push
 
 ---
 
-## 39. Add try-catch and error boundary to admin page for error visibility [Medium]
+## 40. Add try-catch and error boundary to admin page for error visibility [Medium]
 
 **Date & Time (IST):** 14 Feb 2026, 8:35 PM
 
@@ -539,7 +552,7 @@ Deployment history for the main branch, ordered from latest to oldest. Each push
 
 ---
 
-## 40. Remove duplicate admin variable declaration in audit-log page [Low]
+## 41. Remove duplicate admin variable declaration in audit-log page [Low]
 
 **Date & Time (IST):** 14 Feb 2026, 8:21 PM
 
@@ -551,7 +564,7 @@ Deployment history for the main branch, ordered from latest to oldest. Each push
 
 ---
 
-## 41. Use service-role client for all admin profiles queries [Medium]
+## 42. Use service-role client for all admin profiles queries [Medium]
 
 **Date & Time (IST):** 14 Feb 2026, 8:12 PM
 
@@ -565,7 +578,7 @@ Deployment history for the main branch, ordered from latest to oldest. Each push
 
 ---
 
-## 42. Add URL-visible diagnostics for admin redirect [Low]
+## 43. Add URL-visible diagnostics for admin redirect [Low]
 
 **Date & Time (IST):** 14 Feb 2026, 7:58 PM
 
@@ -578,7 +591,7 @@ Deployment history for the main branch, ordered from latest to oldest. Each push
 
 ---
 
-## 43. Replace require() with dynamic import in tests for ESLint [Low]
+## 44. Replace require() with dynamic import in tests for ESLint [Low]
 
 **Date & Time (IST):** 14 Feb 2026, 7:24 PM
 
@@ -591,7 +604,7 @@ Deployment history for the main branch, ordered from latest to oldest. Each push
 
 ---
 
-## 44. Add sign-out route, auth-source-contracts, middleware tests [High]
+## 45. Add sign-out route, auth-source-contracts, middleware tests [High]
 
 **Date & Time (IST):** 14 Feb 2026, 7:24 PM
 
@@ -605,7 +618,7 @@ Deployment history for the main branch, ordered from latest to oldest. Each push
 
 ---
 
-## 45. Resolve auth session persistence and admin access issues [Medium]
+## 46. Resolve auth session persistence and admin access issues [Medium]
 
 **Date & Time (IST):** 14 Feb 2026, 7:12 PM
 
@@ -619,7 +632,7 @@ Deployment history for the main branch, ordered from latest to oldest. Each push
 
 ---
 
-## 46. Update UI components for better user experience and performance [Medium]
+## 47. Update UI components for better user experience and performance [Medium]
 
 **Date & Time (IST):** 13 Feb 2026, 6:13 PM
 
@@ -633,7 +646,7 @@ Deployment history for the main branch, ordered from latest to oldest. Each push
 
 ---
 
-## 47. New changes [Low]
+## 48. New changes [Low]
 
 **Date & Time (IST):** 13 Feb 2026, 5:39 PM
 
@@ -646,7 +659,7 @@ Deployment history for the main branch, ordered from latest to oldest. Each push
 
 ---
 
-## 48. Auth page updates, layout, nav-bar, middleware, seed admin user migration [Medium]
+## 49. Auth page updates, layout, nav-bar, middleware, seed admin user migration [Medium]
 
 **Date & Time (IST):** 13 Feb 2026, 4:38 PM
 
@@ -660,7 +673,7 @@ Deployment history for the main branch, ordered from latest to oldest. Each push
 
 ---
 
-## 49. My-results, leaderboard, admin analytics/audit-log/logs, abuse-check cron, logger [High]
+## 50. My-results, leaderboard, admin analytics/audit-log/logs, abuse-check cron, logger [High]
 
 **Date & Time (IST):** 13 Feb 2026, 4:01 PM
 
@@ -674,7 +687,7 @@ Deployment history for the main branch, ordered from latest to oldest. Each push
 
 ---
 
-## 50. Add process_vote to database types [Low]
+## 51. Add process_vote to database types [Low]
 
 **Date & Time (IST):** 13 Feb 2026, 3:27 PM
 
@@ -686,7 +699,7 @@ Deployment history for the main branch, ordered from latest to oldest. Each push
 
 ---
 
-## 51. ELO rating system, calculator with tests, process_vote RPC, elo-verify cron, icon [High]
+## 52. ELO rating system, calculator with tests, process_vote RPC, elo-verify cron, icon [High]
 
 **Date & Time (IST):** 13 Feb 2026, 3:26 PM
 
@@ -700,7 +713,7 @@ Deployment history for the main branch, ordered from latest to oldest. Each push
 
 ---
 
-## 52. Blind test UI, matchmaking engine RPC functions, audio card component [High]
+## 53. Blind test UI, matchmaking engine RPC functions, audio card component [High]
 
 **Date & Time (IST):** 13 Feb 2026, 2:42 PM
 
@@ -714,7 +727,7 @@ Deployment history for the main branch, ordered from latest to oldest. Each push
 
 ---
 
-## 53. Audio generation pipeline, admin providers/models/keys, languages, sentences, TTS registry, cron pre-generate [High]
+## 54. Audio generation pipeline, admin providers/models/keys, languages, sentences, TTS registry, cron pre-generate [High]
 
 **Date & Time (IST):** 13 Feb 2026, 1:52 PM
 
@@ -728,7 +741,7 @@ Deployment history for the main branch, ordered from latest to oldest. Each push
 
 ---
 
-## 54. Auth RBAC — sign-in, sign-up, callback, forgot/reset password, admin user role [High]
+## 55. Auth RBAC — sign-in, sign-up, callback, forgot/reset password, admin user role [High]
 
 **Date & Time (IST):** 12 Feb 2026, 9:17 PM
 
@@ -742,7 +755,7 @@ Deployment history for the main branch, ordered from latest to oldest. Each push
 
 ---
 
-## 55. Database schema, Supabase migrations, ESLint FlatCompat fix [High]
+## 56. Database schema, Supabase migrations, ESLint FlatCompat fix [High]
 
 **Date & Time (IST):** 12 Feb 2026, 6:12 PM
 
@@ -756,7 +769,7 @@ Deployment history for the main branch, ordered from latest to oldest. Each push
 
 ---
 
-## 56. Update glass UI components for improved accessibility and responsiveness [Low]
+## 57. Update glass UI components for improved accessibility and responsiveness [Low]
 
 **Date & Time (IST):** 12 Feb 2026, 5:16 PM
 
@@ -768,7 +781,7 @@ Deployment history for the main branch, ordered from latest to oldest. Each push
 
 ---
 
-## 57. Design system with glass UI components, app shell, nav bar [High]
+## 58. Design system with glass UI components, app shell, nav bar [High]
 
 **Date & Time (IST):** 12 Feb 2026, 5:11 PM
 
@@ -782,7 +795,7 @@ Deployment history for the main branch, ordered from latest to oldest. Each push
 
 ---
 
-## 58. Point R2_PUBLIC_URL to cdn.speecharena.org and add getPublicUrl helper [Low]
+## 59. Point R2_PUBLIC_URL to cdn.speecharena.org and add getPublicUrl helper [Low]
 
 **Date & Time (IST):** 12 Feb 2026, 4:41 PM
 
@@ -795,7 +808,7 @@ Deployment history for the main branch, ordered from latest to oldest. Each push
 
 ---
 
-## 59. Mark all project foundation tasks complete [Low]
+## 60. Mark all project foundation tasks complete [Low]
 
 **Date & Time (IST):** 12 Feb 2026, 2:30 PM
 
@@ -807,7 +820,7 @@ Deployment history for the main branch, ordered from latest to oldest. Each push
 
 ---
 
-## 60. Add /api/health route for Supabase + R2 connectivity check [Medium]
+## 61. Add /api/health route for Supabase + R2 connectivity check [Medium]
 
 **Date & Time (IST):** 12 Feb 2026, 2:22 PM
 
@@ -819,7 +832,7 @@ Deployment history for the main branch, ordered from latest to oldest. Each push
 
 ---
 
-## 61. Migrate to Supabase publishable/secret key naming [High]
+## 62. Migrate to Supabase publishable/secret key naming [High]
 
 **Date & Time (IST):** 12 Feb 2026, 2:19 PM
 
@@ -833,7 +846,7 @@ Deployment history for the main branch, ordered from latest to oldest. Each push
 
 ---
 
-## 62. Project foundation and tech stack setup (PRD 01) [High]
+## 63. Project foundation and tech stack setup (PRD 01) [High]
 
 **Date & Time (IST):** 12 Feb 2026, 1:22 PM
 
