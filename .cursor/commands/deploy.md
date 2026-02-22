@@ -10,7 +10,7 @@ Do not commit .env.local to git.
 
 Add the new deployment to [docs/deploy-to-main-notes.md](docs/deploy-to-main-notes.md):
 
-1. **Insert a new entry at the top** (after the intro, before deployment #1), renumbering existing entries.
+1. **Append a new entry at the end** with the next sequential number (e.g. if the last is #63, add #64). Do not renumber existing entries.
 2. **Structure for each deployment:**
    - **Title** with complexity in brackets: `[Low]` (< 50 lines), `[Medium]` (50–200 lines & < 10 files), `[High]` (> 200 lines, or 50–200 lines & ≥ 10 files)
    - **Date & Time (IST)**
