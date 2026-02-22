@@ -83,7 +83,8 @@ export function LnlSidebar({ isAdmin, className }: LnlSidebarProps) {
           strokeLinejoin="round"
           aria-hidden
         >
-          <path d="M4.5 6.375a4.5 4.5 0 119 0v2.25m-9 0a4.5 4.5 0 109 0v2.25m-9 0h9a2.25 2.25 0 012.25 2.25v7.5a2.25 2.25 0 01-2.25 2.25h-9a2.25 2.25 0 01-2.25-2.25v-7.5a2.25 2.25 0 012.25-2.25m9 0h-9" />
+          <path d="M3 18v-6a9 9 0 0 1 18 0v6" />
+          <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z" />
         </svg>
         <span className="text-sm font-semibold text-neutral-100">
           Listen & Log

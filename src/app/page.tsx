@@ -26,12 +26,13 @@ export default async function Home() {
 
           <div className="space-y-4">
             <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
-              Best text-to-speech models, ranked by blind listening tests.
+              Best text to speech models, 
+              ranked by crowd-sourced blind listening tests.
             </h1>
             <p className="text-lg text-white/70 sm:text-xl">
-              Ranked through crowd-sourced blind tests. Listen to two samples,
-              pick the better voice, and help build a public leaderboard you can
-              trust. Explore the leaderboard, or run your own comparisons.
+              Listen to two samples, pick the better voice, 
+              and help build a public leaderboard you can trust. 
+              Explore the leaderboard, or run your own comparisons.
             </p>
           </div>
 
@@ -42,7 +43,7 @@ export default async function Home() {
             >
               Start Blind Test
             </Link>
-            <div className="flex flex-col items-center gap-1 sm:items-start">
+            <div className="flex flex-col items-center gap-1">
               <Link
                 href="/leaderboard"
                 className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-accent-blue px-6 py-3 text-lg font-medium text-accent-blue transition-colors hover:bg-accent-blue/10 focus:outline-none focus:ring-2 focus:ring-accent-blue/50 focus:ring-offset-2 focus:ring-offset-[#0a0a0a]"

@@ -77,12 +77,18 @@ export default function MethodologyPage() {
         </section>
       </div>
 
-      <div className="pt-8">
+      <div className="flex flex-col items-center gap-4 pt-8 sm:flex-row sm:gap-6">
         <Link
-          href="/"
+          href="/blind-test"
           className="inline-flex items-center justify-center gap-2 rounded-xl border border-transparent bg-accent-blue px-6 py-3 text-base font-medium text-accent-blue-cta-text transition-colors hover:bg-accent-blue/90"
         >
           Start Blind Test
+        </Link>
+        <Link
+          href="/leaderboard"
+          className="inline-flex items-center justify-center gap-2 rounded-xl border border-accent-blue px-6 py-3 text-base font-medium text-accent-blue transition-colors hover:bg-accent-blue/10"
+        >
+          View Leaderboard
         </Link>
       </div>
     </div>
