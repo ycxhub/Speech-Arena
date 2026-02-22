@@ -859,3 +859,16 @@ Deployment history for the main branch, ordered from oldest to newest. Each push
 2. `.cursor/commands/deploy.md`
 
 ---
+
+## 64. Deploy command — append at end; deploy-to-main-notes — order oldest to newest [High]
+
+**Date & Time (IST):** 22 Feb 2026, 8:06 PM
+
+**Deployment notes:**
+- Feature enhancements: Deploy command — append deployment at end; deploy-to-main-notes — order oldest to newest
+
+**3 files with largest changes:**
+1. `docs/deploy-to-main-notes.md`
+2. `.cursor/commands/deploy.md`
+
+---
