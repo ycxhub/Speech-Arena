@@ -915,3 +915,17 @@ Deployment history for the main branch, ordered from oldest to newest. Each push
 1. `src/components/lnl/layout/lnl-sidebar.tsx`
 
 ---
+
+## 68. Home & Methodology copy and CTAs; L&L sidebar icon [Low]
+
+**Date & Time (IST):** 22 Feb 2026, 10:41 PM
+
+**Deployment notes:**
+- Feature enhancements: Home & Methodology copy and CTAs; L&L sidebar headphones icon
+
+**3 files with largest changes:**
+1. `src/app/page.tsx`
+2. `src/app/methodology/page.tsx`
+3. `src/components/lnl/layout/lnl-sidebar.tsx`
+
+---
