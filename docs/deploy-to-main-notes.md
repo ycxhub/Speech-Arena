@@ -929,3 +929,18 @@ Deployment history for the main branch, ordered from oldest to newest. Each push
 3. `src/components/lnl/layout/lnl-sidebar.tsx`
 
 ---
+
+## 69. L&L on-the-fly TTS generation; create tasks from text; admin usage [High]
+
+**Date & Time (IST):** 24 Feb 2026, 5:34 PM
+
+**Deployment notes:**
+- New features: L&L on-the-fly TTS generation; create tasks from text; admin usage page; @murf.ai redirect to L&L
+- Feature enhancements: L&L sidebar; admin task list; TTS generation progress; transcript panel
+
+**3 files with largest changes:**
+1. `src/components/lnl/admin/create-on-the-fly-wizard.tsx`
+2. `src/components/lnl/layout/lnl-sidebar.tsx`
+3. `src/lib/lnl/tts-generate.ts`
+
+---
