@@ -8,6 +8,7 @@ import {
   getTaskAssignmentRole,
   getAnnotatorsForTask,
   getAnnotationHistory,
+  generateAndGetAudioUrl,
 } from "../../actions";
 import { AnnotationWorkspace } from "@/components/lnl/workspace/annotation-workspace";
 
@@ -41,6 +42,32 @@ export default async function AnnotationItemPage({
   if (!task) redirect("/listen-and-log");
   if (!item) notFound();
 
+  let audioUrl = item.audio_url;
+  let generationError: string | null = null;
+  if (!audioUrl) {
+    const genResult = await generateAndGetAudioUrl(taskId, item.id, user.id);
+    if (genResult.error || !genResult.signedUrl) {
+      generationError = genResult.error ?? "Failed to generate audio";
+    } else {
+      audioUrl = genResult.signedUrl;
+    }
+  }
+
+  if (generationError || !audioUrl) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-4 p-12">
+        <p className="text-lg font-medium text-neutral-100">Audio generation failed</p>
+        <p className="text-sm text-neutral-400">{generationError}</p>
+        <a
+          href={`/listen-and-log/tasks/${taskId}/items/${itemIndex}`}
+          className="rounded-md bg-neutral-700 px-4 py-2 text-sm font-medium text-neutral-100 hover:bg-neutral-600"
+        >
+          Retry
+        </a>
+      </div>
+    );
+  }
+
   const isAuditor = assignmentRole === "auditor";
   const effectiveViewAnnotatorId =
     isAuditor && viewAnnotatorId
@@ -66,7 +93,7 @@ export default async function AnnotationItemPage({
       item={{
         id: item.id,
         item_index: item.item_index,
-        audio_url: item.audio_url,
+        audio_url: audioUrl as string,
         text: item.text,
         ipa_text: item.ipa_text,
         normalized_text: item.normalized_text,

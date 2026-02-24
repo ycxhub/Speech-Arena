@@ -24,8 +24,7 @@ export async function GET(request: NextRequest) {
   }
 
   if (code) {
-    const redirectUrl = new URL(next, request.url);
-    const response = NextResponse.redirect(redirectUrl);
+    const response = NextResponse.redirect(new URL(next, request.url));
 
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -44,9 +43,19 @@ export async function GET(request: NextRequest) {
       }
     );
 
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {
+      // Redirect @murf.ai users to Listen & Log when using default destination
+      if (
+        next === "/blind-test" &&
+        data.session?.user?.email?.toLowerCase().endsWith("@murf.ai")
+      ) {
+        response.headers.set(
+          "Location",
+          new URL("/listen-and-log", request.url).toString()
+        );
+      }
       return response;
     }
   }

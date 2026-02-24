@@ -48,6 +48,131 @@ export async function createTask(data: TaskFormData) {
   return { success: true, taskId: task.id };
 }
 
+export interface CreateTaskItemsFromPlainTextParams {
+  taskId: string;
+  items: Array<{ text: string; item_index: number }>;
+}
+
+export async function createTaskItemsFromPlainText(
+  params: CreateTaskItemsFromPlainTextParams
+) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  const authorized = await isLnlAdmin(user.id);
+  if (!authorized) return { error: "Not authorized" };
+
+  const { taskId, items } = params;
+  if (items.length === 0) return { error: "No items to insert" };
+
+  const adminClient = getAdminClient();
+  const itemRows = items.map((item) => ({
+    task_id: taskId,
+    item_index: item.item_index,
+    audio_url: null as string | null,
+    text: item.text,
+    ipa_text: null as string | null,
+    normalized_text: null as string | null,
+    metadata: {} as Record<string, unknown>,
+  }));
+
+  const { error } = await adminClient
+    .from("lnl_task_items")
+    .insert(itemRows as Database["public"]["Tables"]["lnl_task_items"]["Insert"][]);
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/listen-and-log/admin/tasks");
+  revalidatePath(`/listen-and-log/admin/tasks/${taskId}`);
+  return { success: true, itemsCreated: items.length };
+}
+
+export interface ModelOption {
+  id: string;
+  label: string;
+}
+
+export async function getModelsForLanguageForLnL(
+  languageId: string
+): Promise<{ data?: ModelOption[]; error?: string }> {
+  const adminClient = getAdminClient();
+
+  const { data: modelLanguages } = await adminClient
+    .from("model_languages")
+    .select("model_id")
+    .eq("language_id", languageId);
+
+  const modelIds = (modelLanguages ?? []).map((r) => r.model_id);
+  if (modelIds.length === 0) return { data: [] };
+
+  const { data: models, error: modelsError } = await adminClient
+    .from("models")
+    .select("id, provider_id, model_id")
+    .in("id", modelIds)
+    .eq("is_active", true);
+
+  if (modelsError || !models) return { error: modelsError?.message ?? "Failed to load models" };
+
+  const providerIds = [...new Set(models.map((m) => m.provider_id))];
+  const { data: providers } = await adminClient
+    .from("providers")
+    .select("id, name")
+    .eq("is_active", true)
+    .in("id", providerIds);
+
+  const { data: keys } = await adminClient
+    .from("api_keys")
+    .select("provider_id")
+    .eq("status", "active")
+    .in("provider_id", providerIds);
+
+  const providersWithKeys = new Set((keys ?? []).map((k) => k.provider_id));
+  const providerMap = new Map((providers ?? []).map((p) => [p.id, p.name]));
+
+  const result: ModelOption[] = [];
+  for (const m of models) {
+    if (!providersWithKeys.has(m.provider_id)) continue;
+    const providerName = providerMap.get(m.provider_id) ?? "Unknown";
+    result.push({
+      id: m.id,
+      label: `${providerName} - ${m.model_id}`,
+    });
+  }
+
+  result.sort((a, b) => a.label.localeCompare(b.label));
+  return { data: result };
+}
+
+export interface LanguageOption {
+  id: string;
+  code: string;
+  name?: string;
+}
+
+export async function getLanguagesForLnL(): Promise<{
+  data?: LanguageOption[];
+  error?: string;
+}> {
+  const adminClient = getAdminClient();
+  const { data, error } = await adminClient
+    .from("languages")
+    .select("id, code, name")
+    .eq("is_active", true)
+    .order("code", { ascending: true });
+
+  if (error) return { error: error.message };
+  return {
+    data: (data ?? []).map((l) => ({
+      id: l.id,
+      code: l.code,
+      name: l.name ?? undefined,
+    })),
+  };
+}
+
 export async function updateTask(taskId: string, data: Partial<TaskFormData>) {
   const supabase = await createClient();
   const {

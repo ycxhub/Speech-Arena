@@ -27,19 +27,38 @@ export default async function ListenAndLogLayout({
     .single();
 
   const isSiteAdmin = profile?.role === "admin";
+  const isMurfEmail =
+    user.email?.toLowerCase().endsWith("@murf.ai") ?? false;
 
   // Check if user has an L&L role (or is a site admin who gets full access)
   let lnlRole: string | null = null;
   let hasAccess = isSiteAdmin;
   if (!isSiteAdmin) {
-    const { data: lnlUserRole } = await adminClient
-      .from("lnl_user_roles")
-      .select("role")
-      .eq("user_id", user.id)
-      .single();
+    if (isMurfEmail) {
+      // Auto-provision @murf.ai users as lnl_admin (idempotent upsert)
+      const { data: existing } = await adminClient
+        .from("lnl_user_roles")
+        .select("id")
+        .eq("user_id", user.id)
+        .single();
+      if (!existing) {
+        await adminClient.from("lnl_user_roles").insert({
+          user_id: user.id,
+          role: "lnl_admin",
+        });
+      }
+      hasAccess = true;
+      lnlRole = "lnl_admin";
+    } else {
+      const { data: lnlUserRole } = await adminClient
+        .from("lnl_user_roles")
+        .select("role")
+        .eq("user_id", user.id)
+        .single();
 
-    hasAccess = !!lnlUserRole;
-    lnlRole = lnlUserRole?.role ?? null;
+      hasAccess = !!lnlUserRole;
+      lnlRole = lnlUserRole?.role ?? null;
+    }
   }
 
   if (!hasAccess) {

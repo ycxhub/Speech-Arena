@@ -526,7 +526,7 @@ export type Database = {
       }
       lnl_task_items: {
         Row: {
-          audio_url: string
+          audio_url: string | null
           created_at: string
           id: string
           ipa_text: string | null
@@ -538,7 +538,7 @@ export type Database = {
           word_timestamps: Json | null
         }
         Insert: {
-          audio_url: string
+          audio_url?: string | null
           created_at?: string
           id?: string
           ipa_text?: string | null
@@ -550,7 +550,7 @@ export type Database = {
           word_timestamps?: Json | null
         }
         Update: {
-          audio_url?: string
+          audio_url?: string | null
           created_at?: string
           id?: string
           ipa_text?: string | null
@@ -567,6 +567,68 @@ export type Database = {
             columns: ["task_id"]
             isOneToOne: false
             referencedRelation: "lnl_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lnl_tts_generations: {
+        Row: {
+          id: string
+          task_id: string
+          item_id: string
+          model_id: string
+          provider_id: string
+          characters_generated: number
+          estimated_cost_usd: number | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          task_id: string
+          item_id: string
+          model_id: string
+          provider_id: string
+          characters_generated?: number
+          estimated_cost_usd?: number | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          task_id?: string
+          item_id?: string
+          model_id?: string
+          provider_id?: string
+          characters_generated?: number
+          estimated_cost_usd?: number | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lnl_tts_generations_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "lnl_tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lnl_tts_generations_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "lnl_task_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lnl_tts_generations_model_id_fkey"
+            columns: ["model_id"]
+            isOneToOne: false
+            referencedRelation: "models"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lnl_tts_generations_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "providers"
             referencedColumns: ["id"]
           },
         ]

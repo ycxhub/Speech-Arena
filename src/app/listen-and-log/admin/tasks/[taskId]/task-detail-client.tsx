@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { LnlCard } from "@/components/lnl/ui/lnl-card";
 import { CsvUploadForm } from "@/components/lnl/admin/csv-upload-form";
+import { TtsGenerationProgress } from "@/components/lnl/admin/tts-generation-progress";
 import {
   TaskUserAssignment,
   type TaskAssignment,
@@ -16,6 +17,9 @@ interface Props {
   status: string;
   availableUsers: Array<{ user_id: string; email: string; role: string }>;
   initialAssignments: TaskAssignment[];
+  isTtsTask?: boolean;
+  pendingAudioCount?: number;
+  totalItems?: number;
 }
 
 export function TaskDetailClient({
@@ -23,6 +27,9 @@ export function TaskDetailClient({
   status,
   availableUsers,
   initialAssignments,
+  isTtsTask = false,
+  pendingAudioCount = 0,
+  totalItems = 0,
 }: Props) {
   const isDraft = status === "draft";
   const router = useRouter();
@@ -49,23 +56,40 @@ export function TaskDetailClient({
 
   return (
     <>
-      <LnlCard>
-        <h2 className="text-sm font-semibold text-neutral-100">
-          Dataset Upload
-        </h2>
-        <p className="mt-1 text-xs text-neutral-500">
-          {isDraft
-            ? "Upload a CSV with item_id, text, audio_filename columns, plus audio files. Drag & drop or select files, then validate and upload."
-            : "Task configuration is locked after publishing."}
-        </p>
-        <div className="mt-4">
-          <CsvUploadForm
+      {isTtsTask ? (
+        pendingAudioCount > 0 ? (
+          <TtsGenerationProgress
             taskId={taskId}
-            onUploadComplete={() => router.refresh()}
-            disabled={!isDraft}
+            totalItems={totalItems}
+            initialPending={pendingAudioCount}
           />
-        </div>
-      </LnlCard>
+        ) : (
+          <LnlCard>
+            <h2 className="text-sm font-semibold text-neutral-100">Audio Generation</h2>
+            <p className="mt-1 text-xs text-neutral-500">
+              All {totalItems} audio files have been generated. Annotators can start working.
+            </p>
+          </LnlCard>
+        )
+      ) : (
+        <LnlCard>
+          <h2 className="text-sm font-semibold text-neutral-100">
+            Dataset Upload
+          </h2>
+          <p className="mt-1 text-xs text-neutral-500">
+            {isDraft
+              ? "Prepare a CSV with item_id, text, audio_filename columns, plus matching audio files (MP3, WAV). Drag & drop or select files, then validate and upload."
+              : "Task configuration is locked after publishing."}
+          </p>
+          <div className="mt-4">
+            <CsvUploadForm
+              taskId={taskId}
+              onUploadComplete={() => router.refresh()}
+              disabled={!isDraft}
+            />
+          </div>
+        </LnlCard>
+      )}
 
       <LnlCard>
         <h2 className="text-sm font-semibold text-neutral-100">

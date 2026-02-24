@@ -12,7 +12,7 @@ interface Props {
   index: number;
   isSelected: boolean;
   labels: LabelInfo[];
-  onClick: (index: number) => void;
+  onClick: (index: number, event?: React.MouseEvent) => void;
   onMouseDown: (index: number) => void;
   onMouseEnter: (index: number) => void;
   onContextMenu: (e: React.MouseEvent, index: number) => void;
@@ -38,7 +38,7 @@ export function WordToken({
             ? "text-neutral-100"
             : "text-neutral-300 hover:bg-neutral-800"
       )}
-      onClick={() => onClick(index)}
+      onClick={(e) => onClick(index, e)}
       onMouseDown={(e) => {
         if (e.button === 0) onMouseDown(index);
       }}

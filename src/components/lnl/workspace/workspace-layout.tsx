@@ -126,6 +126,16 @@ export function WorkspaceLayout({
             onWordClick={onWordClick ?? (() => {})}
             onWordRangeSelect={onWordRangeSelect ?? (() => {})}
             onWordContextMenu={onWordContextMenu ?? (() => {})}
+            onSelectEntireSentence={
+              onWordRangeSelect
+                ? () => {
+                    const words = item.text.split(/\s+/).filter(Boolean);
+                    if (words.length > 0) {
+                      onWordRangeSelect(0, words.length - 1);
+                    }
+                  }
+                : undefined
+            }
             isVisible={transcriptVisible}
             labelColors={labelColors}
           />

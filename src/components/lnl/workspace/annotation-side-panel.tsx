@@ -22,6 +22,8 @@ interface LabelEntry {
 interface Props {
   taskLabels: LabelDef[];
   labels: LabelEntry[];
+  /** Item transcript text - used to show exact words for each annotation */
+  itemText?: string;
   booleanAnswers: Record<string, boolean>;
   scores: Record<string, number>;
   overallComment: string;
@@ -42,9 +44,23 @@ interface Props {
   status?: string;
 }
 
+function getLabelDisplayText(
+  label: LabelEntry,
+  itemText?: string
+): string {
+  if (!itemText) return `Words ${label.start_word_index}–${label.end_word_index}`;
+  const words = itemText.split(/\s+/).filter(Boolean);
+  if (words.length === 0) return `Words ${label.start_word_index}–${label.end_word_index}`;
+  const start = Math.max(0, label.start_word_index);
+  const end = Math.min(words.length - 1, label.end_word_index);
+  if (start === 0 && end === words.length - 1) return "Entire Sentence";
+  return words.slice(start, end + 1).join(" ");
+}
+
 export function AnnotationSidePanel({
   taskLabels,
   labels,
+  itemText,
   booleanAnswers,
   scores,
   overallComment,
@@ -139,7 +155,7 @@ export function AnnotationSidePanel({
                   )}
                 </div>
                 <p className="mt-1 text-xs text-neutral-400">
-                  Words {label.start_word_index}–{label.end_word_index}
+                  {getLabelDisplayText(label, itemText)}
                 </p>
                 {showPerLabelComments && (
                   <input

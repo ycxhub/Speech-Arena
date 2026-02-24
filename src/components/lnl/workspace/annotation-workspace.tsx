@@ -346,6 +346,7 @@ function AnnotationWorkspaceInner(props: Props) {
             <AnnotationSidePanel
               taskLabels={taskLabels}
               labels={store.labels}
+              itemText={item.text}
               booleanAnswers={store.booleanAnswers}
               scores={store.scores}
               overallComment={store.overallComment}

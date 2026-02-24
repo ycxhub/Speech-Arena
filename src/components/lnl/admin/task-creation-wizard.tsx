@@ -214,7 +214,8 @@ export function TaskCreationWizard({ availableUsers }: Props) {
                 </span>
               </div>
               <p className="mt-3 text-xs text-neutral-500">
-                After publishing, upload CSV + audio files from the task management page.
+                After publishing, upload CSV (item_id, text, audio_filename) and matching audio files
+                from the task management page.
               </p>
             </div>
           </div>

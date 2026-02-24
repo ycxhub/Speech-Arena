@@ -56,6 +56,19 @@ export default async function TaskDetailPage({
     .select("*", { count: "exact", head: true })
     .eq("task_id", taskId);
 
+  const { count: pendingAudioCount } = await adminClient
+    .from("lnl_task_items")
+    .select("*", { count: "exact", head: true })
+    .eq("task_id", taskId)
+    .is("audio_url", null);
+
+  const taskOptionsFull = task.task_options as {
+    tts_generation?: { model_id: string; language_id: string };
+    boolean_questions?: string[];
+    scoring_fields?: Array<{ name: string; min: number; max: number; description: string }>;
+  } | null;
+  const isTtsTask = !!(taskOptionsFull?.tts_generation?.model_id && taskOptionsFull?.tts_generation?.language_id);
+
   const { data: assignments } = await adminClient
     .from("lnl_task_assignments")
     .select("user_id, role")
@@ -63,12 +76,8 @@ export default async function TaskDetailPage({
 
   const labelConfig = task.label_config as { labels?: Array<{ name: string; color: string }> };
   const labels = labelConfig?.labels ?? [];
-  const taskOptions = task.task_options as {
-    boolean_questions?: string[];
-    scoring_fields?: Array<{ name: string; min: number; max: number; description: string }>;
-  } | null;
-  const booleanQuestions = taskOptions?.boolean_questions ?? [];
-  const scoringFields = taskOptions?.scoring_fields ?? [];
+  const booleanQuestions = taskOptionsFull?.boolean_questions ?? [];
+  const scoringFields = taskOptionsFull?.scoring_fields ?? [];
 
   const { data: users } = await getLnlUsers();
   const availableUsers = users ?? [];
@@ -229,6 +238,9 @@ export default async function TaskDetailPage({
           status={task.status}
           availableUsers={availableUsers}
           initialAssignments={initialAssignments}
+          isTtsTask={isTtsTask}
+          pendingAudioCount={pendingAudioCount ?? 0}
+          totalItems={itemCount ?? 0}
         />
       </div>
     </>

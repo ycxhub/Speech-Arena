@@ -57,11 +57,29 @@ export async function generateAndStoreAudio(
     throw new Error(`Sentence not found: ${sentenceId}. ${sentenceErr?.message ?? ""}`);
   }
 
-  // 3. Look up language code
+  // 3. Look up language code for TTS — use voice's language when available
+  // (provider_voices.language_id = locale the voice supports, e.g. en-IN for Anisha;
+  //  sentence may be generic "en" which maps to en-US and causes Murf locale mismatch)
+  const voiceId = (model as { voice_id?: string | null }).voice_id;
+  let languageIdForTts = sentence.language_id;
+
+  if (voiceId) {
+    const { data: voiceLang } = await supabase
+      .from("provider_voices")
+      .select("language_id")
+      .eq("provider_id", model.provider_id)
+      .eq("voice_id", voiceId)
+      .maybeSingle();
+
+    if (voiceLang?.language_id) {
+      languageIdForTts = voiceLang.language_id;
+    }
+  }
+
   const { data: language, error: langErr } = await supabase
     .from("languages")
     .select("code")
-    .eq("id", sentence.language_id)
+    .eq("id", languageIdForTts)
     .single();
 
   if (langErr || !language) {

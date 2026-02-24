@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { getSignedUrl } from "@/lib/r2/storage";
+import { generateLnLAudioForItem } from "@/lib/lnl/tts-generate";
 import type { Database } from "@/types/database";
 import {
   getDisplayOrder,
@@ -59,11 +60,42 @@ export async function getTaskItem(
 
   let audioUrl = item.audio_url;
   // R2 keys (lnl/..., murf-ai/..., etc.) need signed URLs; only skip for full http(s) URLs
-  if (!audioUrl.startsWith("http://") && !audioUrl.startsWith("https://")) {
+  if (audioUrl && !audioUrl.startsWith("http://") && !audioUrl.startsWith("https://")) {
     audioUrl = await getSignedUrl(audioUrl, 3600);
   }
 
   return { ...item, audio_url: audioUrl };
+}
+
+/**
+ * Generate TTS audio for an item if missing. For annotators/auditors assigned to the task.
+ */
+export async function generateAndGetAudioUrl(
+  taskId: string,
+  itemId: string,
+  userId: string
+): Promise<{ signedUrl?: string; error?: string }> {
+  const adminClient = getAdminClient();
+
+  const { data: assignment } = await adminClient
+    .from("lnl_task_assignments")
+    .select("id")
+    .eq("task_id", taskId)
+    .eq("user_id", userId)
+    .single();
+
+  if (!assignment) {
+    return { error: "Not assigned to this task" };
+  }
+
+  try {
+    const { signedUrl } = await generateLnLAudioForItem(taskId, itemId);
+    return { signedUrl };
+  } catch (err) {
+    return {
+      error: err instanceof Error ? err.message : "Failed to generate audio",
+    };
+  }
 }
 
 export async function getAnnotation(taskId: string, itemId: string, userId: string) {

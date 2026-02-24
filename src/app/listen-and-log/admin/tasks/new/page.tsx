@@ -2,8 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { isLnlAdmin } from "@/lib/lnl/roles";
 import { redirect } from "next/navigation";
 import { getLnlUsers } from "../../users/actions";
-import { TaskCreationWizard } from "@/components/lnl/admin/task-creation-wizard";
-import { CreateFromBlindTestsForm } from "@/components/lnl/admin/create-from-blind-tests-form";
+import { NewTaskClient } from "@/components/lnl/admin/new-task-client";
 import { LnlHeader } from "@/components/lnl/layout/lnl-header";
 
 export default async function NewTaskPage() {
@@ -28,19 +27,8 @@ export default async function NewTaskPage() {
           { label: "New Task" },
         ]}
       />
-      <div className="p-6 flex flex-col gap-8">
-        <CreateFromBlindTestsForm />
-        <div className="relative">
-          <div className="absolute inset-0 flex items-center" aria-hidden="true">
-            <div className="w-full border-t border-neutral-700" />
-          </div>
-          <div className="relative flex justify-center">
-            <span className="bg-neutral-950 px-3 text-sm text-neutral-500">
-              or create manually
-            </span>
-          </div>
-        </div>
-        <TaskCreationWizard
+      <div className="p-6 flex flex-col gap-8 max-w-4xl">
+        <NewTaskClient
           availableUsers={(users ?? []).map((u) => ({
             user_id: u.user_id,
             email: u.email,
