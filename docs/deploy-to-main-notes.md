@@ -944,3 +944,18 @@ Deployment history for the main branch, ordered from oldest to newest. Each push
 3. `src/lib/lnl/tts-generate.ts`
 
 ---
+
+## 70. Model pages (admin CRUD, public /models, compare); sitemap [High]
+
+**Date & Time (IST):** 24 Feb 2026, 8:01 PM
+
+**Deployment notes:**
+- New features: Model pages (admin CRUD, public /models, compare pages); sitemap
+- Feature enhancements: Leaderboard links to model pages; Models nav tab; idempotent L&L migration
+
+**3 files with largest changes:**
+1. `src/app/admin/model-pages/[id]/edit-form.tsx`
+2. `src/app/admin/model-pages/actions.ts`
+3. `src/app/admin/model-pages/compare/actions.ts`
+
+---
