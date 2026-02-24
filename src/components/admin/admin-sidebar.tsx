@@ -10,6 +10,7 @@ interface AdminSidebarProps {
 
 const TOP_LEVEL_ITEMS = [
   { href: "/admin", label: "Admin Dashboard" },
+  { href: "/admin/model-pages", label: "Model Pages" },
   { href: "/admin/user-management", label: "User Management" },
   { href: "/admin/languages", label: "Languages" },
   { href: "/admin/sentences", label: "Sentences" },

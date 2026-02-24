@@ -7,6 +7,7 @@ export type LeaderboardRow = {
   modelName: string;
   providerName: string;
   providerSlug: string;
+  modelPageSlug: string | null;
   rating: number;
   matchesPlayed: number;
   wins: number;
@@ -37,7 +38,7 @@ export async function getGlobalLeaderboard(
     });
 
     if (error) return [];
-    return mapModelRowsToLeaderboard(data ?? [], filters);
+    return mapModelRowsToLeaderboard(admin, data ?? [], filters);
   }
 
   const { data, error } = await admin.rpc("get_leaderboard_global_model", {
@@ -46,7 +47,23 @@ export async function getGlobalLeaderboard(
   });
 
   if (error) return [];
-  return mapModelRowsToLeaderboard(data ?? [], filters);
+  return mapModelRowsToLeaderboard(admin, data ?? [], filters);
+}
+
+async function getModelPageSlugs(
+  admin: ReturnType<typeof getAdminClient>,
+  keys: string[]
+): Promise<Map<string, string>> {
+  if (keys.length === 0) return new Map();
+  const { data } = await admin
+    .from("model_pages")
+    .select("provider_id, definition_name, slug");
+  const map = new Map<string, string>();
+  for (const row of data ?? []) {
+    const key = `${row.provider_id}:${row.definition_name}`;
+    map.set(key, row.slug);
+  }
+  return map;
 }
 
 type ModelLeaderboardRow = {
@@ -63,18 +80,24 @@ type ModelLeaderboardRow = {
   tags: string[] | null;
 };
 
-function mapModelRowsToLeaderboard(
+async function mapModelRowsToLeaderboard(
+  admin: ReturnType<typeof getAdminClient>,
   data: ModelLeaderboardRow[],
   filters?: LeaderboardFilters
-): LeaderboardRow[] {
+): Promise<LeaderboardRow[]> {
+  const keys = data.map((r) => `${r.provider_id}:${r.definition_name}`);
+  const slugMap = await getModelPageSlugs(admin, keys);
+
   let rows: LeaderboardRow[] = data.map((r) => {
     const winRate =
       r.matches_played > 0 ? (r.wins / r.matches_played) * 100 : 0;
+    const modelId = `${r.provider_id}:${r.definition_name}`;
     return {
-      modelId: `${r.provider_id}:${r.definition_name}`,
+      modelId,
       modelName: r.model_name ?? r.definition_name ?? "Unknown",
       providerName: r.provider_name,
       providerSlug: r.provider_slug,
+      modelPageSlug: slugMap.get(modelId) ?? null,
       rating: Math.round(r.rating),
       matchesPlayed: r.matches_played,
       wins: r.wins,

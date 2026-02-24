@@ -180,7 +180,16 @@ export function LeaderboardClient({
                   header: "Model",
                   render: (r) => (
                     <span className="flex items-center gap-2">
-                      {r.modelName}
+                      {r.modelPageSlug ? (
+                        <Link
+                          href={`/models/${r.modelPageSlug}`}
+                          className="text-accent-blue hover:underline"
+                        >
+                          {r.modelName}
+                        </Link>
+                      ) : (
+                        r.modelName
+                      )}
                       {r.isProvisional && (
                         <span title="This model has fewer than 30 matches. Its rating may change significantly.">
                           <GlassBadge color="orange">Provisional</GlassBadge>
@@ -224,7 +233,21 @@ export function LeaderboardClient({
           <div className="overflow-x-auto">
             <GlassTable<LeaderboardRow>
               columns={[
-                { key: "modelName", header: "Model" },
+                {
+                  key: "modelName",
+                  header: "Model",
+                  render: (r) =>
+                    r.modelPageSlug ? (
+                      <Link
+                        href={`/models/${r.modelPageSlug}`}
+                        className="text-accent-blue hover:underline"
+                      >
+                        {r.modelName}
+                      </Link>
+                    ) : (
+                      r.modelName
+                    ),
+                },
                 { key: "providerName", header: "Provider" },
               ]}
               data={notYetParticipated}
