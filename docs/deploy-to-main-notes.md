@@ -959,3 +959,18 @@ Deployment history for the main branch, ordered from oldest to newest. Each push
 3. `src/app/admin/model-pages/compare/actions.ts`
 
 ---
+
+## 71. Sitemap, robots.ts, @murf.ai nav; idempotent migration [Low]
+
+**Date & Time (IST):** 25 Feb 2026, 2:33 PM
+
+**Deployment notes:**
+- Feature enhancements: Sitemap (www.speecharena.org base URL, more routes); robots.ts; @murf.ai nav redirect
+- Bug fixes: Idempotent model_pages migration (CREATE IF NOT EXISTS, DROP POLICY IF EXISTS)
+
+**3 files with largest changes:**
+1. `src/app/robots.ts`
+2. `supabase/migrations/20260225000000_model_pages.sql`
+3. `src/components/layout/nav-bar.tsx`
+
+---
