@@ -974,3 +974,18 @@ Deployment history for the main branch, ordered from oldest to newest. Each push
 3. `src/components/layout/nav-bar.tsx`
 
 ---
+
+## 72. L&L voice selection; CSV export columns; mark-complete nav [Medium]
+
+**Date & Time (IST):** 25 Feb 2026, 4:18 PM
+
+**Deployment notes:**
+- New features: L&L voice selection in create-on-the-fly wizard; CSV export with per-label/boolean/scoring columns
+- Feature enhancements: Model deduplication; TTS voice_id from task config; mark-complete navigates to next item; side panel layout spacer
+
+**3 files with largest changes:**
+1. `src/components/lnl/admin/create-on-the-fly-wizard.tsx`
+2. `src/app/listen-and-log/admin/tasks/actions.ts`
+3. `src/lib/lnl/export.ts`
+
+---
