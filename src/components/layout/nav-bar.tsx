@@ -33,12 +33,15 @@ function getActiveTab(pathname: string): string {
 export function NavBar({ isAdmin = false, hasLnlAccess = false, user = null }: NavBarProps) {
   const pathname = usePathname();
   const activeTab = getActiveTab(pathname);
+  const isMurfUser = user?.email?.toLowerCase().endsWith("@murf.ai") ?? false;
 
-  const tabs = [
-    ...NAV_TABS,
-    ...(hasLnlAccess ? [{ id: "listen-and-log" as const, label: "Listen & Log", href: "/listen-and-log" }] : []),
-    ...(isAdmin ? [{ id: "admin" as const, label: "Admin", href: "/admin" }] : []),
-  ];
+  const tabs = isMurfUser
+    ? [{ id: "listen-and-log" as const, label: "Listen & Log", href: "/listen-and-log" }]
+    : [
+        ...NAV_TABS,
+        ...(hasLnlAccess ? [{ id: "listen-and-log" as const, label: "Listen & Log", href: "/listen-and-log" }] : []),
+        ...(isAdmin ? [{ id: "admin" as const, label: "Admin", href: "/admin" }] : []),
+      ];
 
   return (
     <header className="sticky top-0 z-40 border-b border-white/10 bg-[#0a0a0a]/80 backdrop-blur-xl">

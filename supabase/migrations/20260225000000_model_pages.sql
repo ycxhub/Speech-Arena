@@ -1,7 +1,8 @@
 -- Model pages: SEO/marketing pages for each TTS engine definition
 -- Links to provider_model_definitions via (provider_id, definition_name) where definition_name = provider_model_definitions.name
+-- Idempotent: safe to run when tables already exist
 
-CREATE TABLE public.model_pages (
+CREATE TABLE IF NOT EXISTS public.model_pages (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   provider_id uuid NOT NULL REFERENCES public.providers(id) ON DELETE CASCADE,
   definition_name text NOT NULL,
@@ -42,22 +43,22 @@ CREATE TABLE public.model_pages (
   UNIQUE(provider_id, definition_name)
 );
 
-CREATE INDEX idx_model_pages_slug ON public.model_pages(slug);
-CREATE INDEX idx_model_pages_provider_definition ON public.model_pages(provider_id, definition_name);
-CREATE INDEX idx_model_pages_is_featured ON public.model_pages(is_featured) WHERE is_featured = true;
+CREATE INDEX IF NOT EXISTS idx_model_pages_slug ON public.model_pages(slug);
+CREATE INDEX IF NOT EXISTS idx_model_pages_provider_definition ON public.model_pages(provider_id, definition_name);
+CREATE INDEX IF NOT EXISTS idx_model_pages_is_featured ON public.model_pages(is_featured) WHERE is_featured = true;
 
 ALTER TABLE public.model_pages ENABLE ROW LEVEL SECURITY;
 
--- Public read for model pages (no auth required)
+DROP POLICY IF EXISTS "Anyone can read model_pages" ON public.model_pages;
 CREATE POLICY "Anyone can read model_pages" ON public.model_pages FOR SELECT TO anon, authenticated USING (true);
 
--- Admin write
+DROP POLICY IF EXISTS "Admins can manage model_pages" ON public.model_pages;
 CREATE POLICY "Admins can manage model_pages" ON public.model_pages FOR ALL TO authenticated
   USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin'))
   WITH CHECK (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin'));
 
 -- Compare pages: admin-defined or dynamic model comparisons
-CREATE TABLE public.compare_pages (
+CREATE TABLE IF NOT EXISTS public.compare_pages (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   slug text NOT NULL UNIQUE,
   model_page_a_id uuid NOT NULL REFERENCES public.model_pages(id) ON DELETE CASCADE,
@@ -69,12 +70,14 @@ CREATE TABLE public.compare_pages (
   CHECK (model_page_a_id != model_page_b_id)
 );
 
-CREATE INDEX idx_compare_pages_slug ON public.compare_pages(slug);
+CREATE INDEX IF NOT EXISTS idx_compare_pages_slug ON public.compare_pages(slug);
 
 ALTER TABLE public.compare_pages ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Anyone can read compare_pages" ON public.compare_pages;
 CREATE POLICY "Anyone can read compare_pages" ON public.compare_pages FOR SELECT TO anon, authenticated USING (true);
 
+DROP POLICY IF EXISTS "Admins can manage compare_pages" ON public.compare_pages;
 CREATE POLICY "Admins can manage compare_pages" ON public.compare_pages FOR ALL TO authenticated
   USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin'))
   WITH CHECK (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin'));
