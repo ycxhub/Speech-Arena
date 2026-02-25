@@ -300,6 +300,8 @@ export function AnnotationSidePanel({
         </div>
       )}
 
+      <div className="min-h-[60vh]" aria-hidden />
+
       {/* Auto-save indicator */}
       <div className="mt-auto border-t border-neutral-800 pt-4">
         {saveError ? (

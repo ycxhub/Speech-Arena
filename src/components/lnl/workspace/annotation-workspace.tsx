@@ -365,6 +365,11 @@ function AnnotationWorkspaceInner(props: Props) {
               onMarkComplete={() => {
                 store.setStatus("completed");
                 flushNow();
+                if (props.displayIndex < totalItems) {
+                  router.push(
+                    `/listen-and-log/tasks/${taskConfig.id}/items/${props.displayIndex + 1}`
+                  );
+                }
               }}
               showMarkComplete={canEdit && !isViewingAsAuditor}
               status={store.status}

@@ -142,8 +142,15 @@ export async function getModelsForLanguageForLnL(
     });
   }
 
-  result.sort((a, b) => a.label.localeCompare(b.label));
-  return { data: result };
+  const seen = new Set<string>();
+  const deduped = result.filter((m) => {
+    if (seen.has(m.label)) return false;
+    seen.add(m.label);
+    return true;
+  });
+
+  deduped.sort((a, b) => a.label.localeCompare(b.label));
+  return { data: deduped };
 }
 
 export interface LanguageOption {
@@ -171,6 +178,41 @@ export async function getLanguagesForLnL(): Promise<{
       name: l.name ?? undefined,
     })),
   };
+}
+
+export interface VoiceOption {
+  id: string;
+  label: string;
+}
+
+export async function getVoicesForModelForLnL(
+  modelId: string,
+  languageId: string
+): Promise<{ data?: VoiceOption[]; error?: string }> {
+  const adminClient = getAdminClient();
+
+  const { data: model, error: modelErr } = await adminClient
+    .from("models")
+    .select("provider_id")
+    .eq("id", modelId)
+    .single();
+
+  if (modelErr || !model) return { error: modelErr?.message ?? "Model not found" };
+
+  const { data: voices, error: voicesErr } = await adminClient
+    .from("provider_voices")
+    .select("voice_id, display_name")
+    .eq("provider_id", model.provider_id)
+    .eq("language_id", languageId);
+
+  if (voicesErr) return { error: voicesErr.message };
+
+  const result: VoiceOption[] = (voices ?? []).map((v) => ({
+    id: v.voice_id,
+    label: v.display_name?.trim() ? v.display_name : v.voice_id,
+  }));
+
+  return { data: result };
 }
 
 export async function updateTask(taskId: string, data: Partial<TaskFormData>) {

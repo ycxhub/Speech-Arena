@@ -21,36 +21,22 @@ interface LabelEntry {
   [key: string]: unknown;
 }
 
-function formatLabelsForExport(
+function getSpanTextForLabel(
   labels: LabelEntry[] | null,
+  labelName: string,
   itemText: string
 ): string {
-  if (!labels?.length) return "";
-  const words = itemText.trim().split(/\s+/);
-  return labels
+  if (!labels?.length || !itemText) return "";
+  const words = itemText.trim().split(/\s+/).filter(Boolean);
+  const spans = labels
+    .filter((l) => l.label_name === labelName)
     .map((l) => {
       const start = Math.max(0, l.start_word_index);
       const end = Math.min(words.length - 1, l.end_word_index);
-      const selectedWords =
-        start <= end ? words.slice(start, end + 1).join(" ") : "";
-      return `${l.label_name}: ${selectedWords}`;
+      return start <= end ? words.slice(start, end + 1).join(" ") : "";
     })
-    .join("; ");
-}
-
-function formatBooleanAnswersForExport(
-  booleanAnswers: Record<string, boolean> | null,
-  booleanQuestions: string[]
-): string {
-  if (!booleanAnswers || Object.keys(booleanAnswers).length === 0) return "";
-  return Object.entries(booleanAnswers)
-    .map(([key, val]) => {
-      const q = booleanQuestions[parseInt(key, 10)];
-      const question = q ?? `Q${key}`;
-      const answer = val ? "Yes" : "No";
-      return `${question}: ${answer}`;
-    })
-    .join("; ");
+    .filter(Boolean);
+  return spans.join("; ");
 }
 
 export async function generateCsvExport(
@@ -61,14 +47,20 @@ export async function generateCsvExport(
 
   const { data: task } = await adminClient
     .from("lnl_tasks")
-    .select("task_options")
+    .select("label_config, task_options")
     .eq("id", taskId)
     .single();
 
+  const labelConfig = (task?.label_config ?? {}) as {
+    labels?: Array<{ name: string }>;
+  };
   const taskOptions = (task?.task_options ?? {}) as {
     boolean_questions?: string[];
+    scoring_fields?: Array<{ name: string }>;
   };
+  const labelNames = (labelConfig.labels ?? []).map((l) => l.name);
   const booleanQuestions = taskOptions.boolean_questions ?? [];
+  const scoringFieldNames = (taskOptions.scoring_fields ?? []).map((f) => f.name);
 
   let query = adminClient
     .from("lnl_annotations")
@@ -129,9 +121,9 @@ export async function generateCsvExport(
     "text",
     "annotator_email",
     "annotation_date",
-    "labels",
-    "boolean_answers",
-    "scores",
+    ...labelNames,
+    ...booleanQuestions,
+    ...scoringFieldNames,
     "overall_comment",
     "status",
     "time_spent_ms",
@@ -144,27 +136,35 @@ export async function generateCsvExport(
       | { item_index: number; audio_url: string; text: string }
       | null;
     const email = emailMap.get(row.user_id) ?? "Unknown";
+    const labels = row.labels as LabelEntry[] | null;
+    const booleanAnswers = row.boolean_answers as Record<string, boolean> | null;
+    const scores = row.scores as Record<string, number> | null;
+    const itemText = item?.text ?? "";
 
-    const labelsFormatted = formatLabelsForExport(
-      row.labels as LabelEntry[] | null,
-      item?.text ?? ""
+    const labelValues = labelNames.map((name) =>
+      getSpanTextForLabel(labels, name, itemText)
     );
-    const booleanFormatted = formatBooleanAnswersForExport(
-      row.boolean_answers as Record<string, boolean> | null,
-      booleanQuestions
-    );
+    const booleanValues = booleanQuestions.map((_, i) => {
+      const val = booleanAnswers?.[String(i)];
+      if (val === undefined) return "";
+      return val ? "Yes" : "No";
+    });
+    const scoreValues = scoringFieldNames.map((name) => {
+      const val = scores?.[name];
+      return val !== undefined && val !== null ? String(val) : "";
+    });
 
     lines.push(
       [
         row.item_id,
         item?.item_index ?? "",
         escapeCsv(extractAudioFilename(item?.audio_url ?? "")),
-        escapeCsv(item?.text ?? ""),
+        escapeCsv(itemText),
         escapeCsv(email),
         row.updated_at ?? row.created_at ?? "",
-        escapeCsv(labelsFormatted),
-        escapeCsv(booleanFormatted),
-        escapeCsv(JSON.stringify(row.scores ?? {})),
+        ...labelValues.map((v) => escapeCsv(v)),
+        ...booleanValues.map((v) => escapeCsv(v)),
+        ...scoreValues.map((v) => escapeCsv(v)),
         escapeCsv(row.overall_comment ?? ""),
         row.status ?? "",
         row.time_spent_ms ?? "",

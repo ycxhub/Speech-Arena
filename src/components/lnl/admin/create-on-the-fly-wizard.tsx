@@ -15,6 +15,7 @@ import {
   assignUsersToTask,
   getModelsForLanguageForLnL,
   getLanguagesForLnL,
+  getVoicesForModelForLnL,
 } from "@/app/listen-and-log/admin/tasks/actions";
 import { LabelConfigEditor, type LabelConfig } from "./label-config-editor";
 import {
@@ -65,6 +66,9 @@ export function CreateOnTheFlyWizard({ availableUsers }: Props) {
 
   const [languageId, setLanguageId] = useState("");
   const [modelId, setModelId] = useState("");
+  const [voices, setVoices] = useState<Array<{ id: string; label: string }>>([]);
+  const [voiceId, setVoiceId] = useState("");
+  const [loadingVoices, setLoadingVoices] = useState(false);
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -101,6 +105,28 @@ export function CreateOnTheFlyWizard({ availableUsers }: Props) {
     });
   }, [languageId]);
 
+  useEffect(() => {
+    if (!modelId || !languageId) {
+      setVoices([]);
+      setVoiceId("");
+      return;
+    }
+    setLoadingVoices(true);
+    getVoicesForModelForLnL(modelId, languageId).then((res) => {
+      setLoadingVoices(false);
+      if (res.data) {
+        setVoices(res.data);
+        setVoiceId((prev) => {
+          const stillValid = res.data!.some((v) => v.id === prev);
+          return stillValid ? prev : res.data![0]?.id ?? "";
+        });
+      } else {
+        setVoices([]);
+        setVoiceId("");
+      }
+    });
+  }, [modelId, languageId]);
+
   const handleFileChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const f = e.target.files?.[0];
@@ -119,7 +145,11 @@ export function CreateOnTheFlyWizard({ availableUsers }: Props) {
       case 0:
         return !!parseResult?.valid && (parseResult?.items.length ?? 0) > 0;
       case 1:
-        return !!modelId && !!languageId;
+        return (
+          !!modelId &&
+          !!languageId &&
+          (voices.length === 0 || !!voiceId)
+        );
       case 2:
         return name.trim().length > 0;
       case 3:
@@ -141,7 +171,11 @@ export function CreateOnTheFlyWizard({ availableUsers }: Props) {
 
     const baseTaskOptions = {
       ...taskOptions,
-      tts_generation: { model_id: modelId, language_id: languageId },
+      tts_generation: {
+        model_id: modelId,
+        language_id: languageId,
+        ...(voiceId && { voice_id: voiceId }),
+      },
     };
 
     const createResult = await createTask({
@@ -251,6 +285,18 @@ export function CreateOnTheFlyWizard({ availableUsers }: Props) {
             onChange={(e) => setModelId(e.target.value)}
             disabled={!languageId || loadingModels}
           />
+          {modelId && (
+            <LnlSelect
+              label="Voice"
+              options={voices.map((v) => ({ value: v.id, label: v.label }))}
+              value={voiceId}
+              onChange={(e) => setVoiceId(e.target.value)}
+              disabled={!modelId || loadingVoices}
+            />
+          )}
+          {loadingVoices && modelId && (
+            <p className="text-sm text-neutral-500">Loading voices…</p>
+          )}
           {languageId && !loadingModels && models.length === 0 && (
             <p className="text-sm text-amber-500">
               No models support this language. Add models with API keys in Admin → Providers.
@@ -311,6 +357,14 @@ export function CreateOnTheFlyWizard({ availableUsers }: Props) {
                 {models.find((m) => m.id === modelId)?.label ?? modelId}
               </span>
             </div>
+            {voiceId && (
+              <div className="flex justify-between border-b border-neutral-800 pb-2">
+                <span className="text-neutral-400">Voice</span>
+                <span className="text-neutral-100">
+                  {voices.find((v) => v.id === voiceId)?.label ?? voiceId}
+                </span>
+              </div>
+            )}
             <div className="flex justify-between border-b border-neutral-800 pb-2">
               <span className="text-neutral-400">Task Name</span>
               <span className="text-neutral-100">{name}</span>

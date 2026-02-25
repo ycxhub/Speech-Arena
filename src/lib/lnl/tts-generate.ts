@@ -19,6 +19,7 @@ const MAX_TEXT_LENGTH = 5000;
 interface TtsGenerationConfig {
   model_id: string;
   language_id: string;
+  voice_id?: string;
 }
 
 /**
@@ -146,11 +147,14 @@ export async function generateLnLAudioForItem(
   const startTime = Date.now();
   let result;
   try {
+    const effectiveVoiceId =
+      ttsConfig.voice_id ?? (model as { voice_id?: string | null }).voice_id ?? undefined;
+
     result = await withRetry((signal) =>
       adapter.generateAudio({
         text: item.text,
         modelId: model.model_id,
-        voiceId: (model as { voice_id?: string | null }).voice_id ?? undefined,
+        voiceId: effectiveVoiceId,
         language: language.code,
         gender: model.gender,
         apiKey,
