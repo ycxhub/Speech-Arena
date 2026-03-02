@@ -210,7 +210,7 @@ export function BlindTestClient({
     <div className="relative mx-auto max-w-6xl space-y-6 px-4 py-6">
       <h1 className="text-page-title">Blind Test</h1>
 
-      <div className="absolute right-4 top-6 text-sm text-white/60">
+      <div className="absolute right-4 top-6 text-sm text-accent-yellow">
         Round {completedRoundsCount + 1}
       </div>
 
