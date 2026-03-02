@@ -989,3 +989,15 @@ Deployment history for the main branch, ordered from oldest to newest. Each push
 3. `src/lib/lnl/export.ts`
 
 ---
+
+## 73. Blind test round indicator accent-yellow [Low]
+
+**Date & Time (IST):** 2 Mar 2026, 8:57 PM
+
+**Deployment notes:**
+- Feature enhancements: Blind test round indicator uses accent-yellow
+
+**3 files with largest changes:**
+1. `src/app/blind-test/blind-test-client.tsx`
+
+---
