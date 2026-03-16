@@ -31,7 +31,7 @@ export function PlaygroundListClient({ pages }: Props) {
 
   const handleCreate = async () => {
     setCreating(true);
-    const { error, id } = await createPlaygroundPage(form);
+    const { error, id: _id } = await createPlaygroundPage(form);
     setCreating(false);
     if (error) {
       toast.error(error);

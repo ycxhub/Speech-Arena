@@ -11,6 +11,7 @@ import {
   deleteSentence,
   type SampleSentenceRow,
 } from "../actions";
+import { PlaygroundCsvUploadModal } from "./csv-upload-modal";
 import { toast } from "sonner";
 
 interface Props {
@@ -53,6 +54,7 @@ export function PlaygroundEditClient({ page, sentences, languages }: Props) {
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState("");
+  const [csvModalOpen, setCsvModalOpen] = useState(false);
 
   const handleSave = async () => {
     setSaving(true);
@@ -110,7 +112,7 @@ export function PlaygroundEditClient({ page, sentences, languages }: Props) {
 
       {/* Page settings */}
       <GlassCard>
-        <h2 className="mb-4 text-section-heading">Page Settings</h2>
+        <h2 className="mb-4 text-section-heading text-white">Page Settings</h2>
         <div className="grid gap-3 sm:grid-cols-2">
           <div>
             <label className="mb-1 block text-xs text-white/60">Slug</label>
@@ -203,7 +205,7 @@ export function PlaygroundEditClient({ page, sentences, languages }: Props) {
 
       {/* Sample sentences */}
       <GlassCard>
-        <h2 className="mb-4 text-section-heading">Sample Sentences</h2>
+        <h2 className="mb-4 text-section-heading text-white">Sample Sentences</h2>
 
         {/* Add sentence */}
         <div className="mb-4 flex flex-wrap gap-2">
@@ -231,7 +233,22 @@ export function PlaygroundEditClient({ page, sentences, languages }: Props) {
           >
             {addingSentence ? "Adding..." : "Add"}
           </GlassButton>
+          <GlassButton
+            variant="secondary"
+            size="sm"
+            onClick={() => setCsvModalOpen(true)}
+          >
+            Upload CSV
+          </GlassButton>
         </div>
+
+        <PlaygroundCsvUploadModal
+          open={csvModalOpen}
+          onClose={() => setCsvModalOpen(false)}
+          pageId={page.id}
+          languages={languages}
+          onSuccess={() => window.location.reload()}
+        />
 
         {/* Language filter */}
         <div className="mb-3">
@@ -258,6 +275,8 @@ export function PlaygroundEditClient({ page, sentences, languages }: Props) {
               <tr className="border-b border-white/10 text-white/60">
                 <th className="pb-2 font-medium">Text</th>
                 <th className="pb-2 font-medium">Language</th>
+                <th className="pb-2 font-medium">Usecase</th>
+                <th className="pb-2 font-medium">Industry</th>
                 <th className="pb-2 font-medium">Order</th>
                 <th className="pb-2 font-medium">Actions</th>
               </tr>
@@ -277,6 +296,8 @@ export function PlaygroundEditClient({ page, sentences, languages }: Props) {
                     )}
                   </td>
                   <td className="py-2 text-white/60">{s.language_code}</td>
+                  <td className="py-2 text-white/60">{s.usecase ?? "—"}</td>
+                  <td className="py-2 text-white/60">{s.industry ?? "—"}</td>
                   <td className="py-2 text-white/60">{s.sort_order}</td>
                   <td className="flex gap-1 py-2">
                     {editingId === s.id ? (

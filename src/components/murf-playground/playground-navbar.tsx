@@ -72,20 +72,23 @@ export function PlaygroundNavbar({ pages }: Props) {
 
             {open && (
               <div className="murf-navbar-dropdown" role="menu">
-                {pages.map((page) => (
-                  <Link
-                    key={page.slug}
-                    href={`/pg/${page.slug}`}
-                    role="menuitem"
-                    className={`murf-navbar-dropdown-item ${
-                      page.slug === currentSlug
-                        ? "murf-navbar-dropdown-item-active"
-                        : ""
-                    }`}
-                  >
-                    {page.title}
-                  </Link>
-                ))}
+                {pages.map((page) => {
+                  const displayTitle = page.title.replace(/^Compare\s+/i, "");
+                  return (
+                    <Link
+                      key={page.slug}
+                      href={`/pg/${page.slug}`}
+                      role="menuitem"
+                      className={`murf-navbar-dropdown-item ${
+                        page.slug === currentSlug
+                          ? "murf-navbar-dropdown-item-active"
+                          : ""
+                      }`}
+                    >
+                      {displayTitle}
+                    </Link>
+                  );
+                })}
               </div>
             )}
           </div>

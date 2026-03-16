@@ -40,6 +40,7 @@ export interface SampleSentence {
   id: string;
   text: string;
   sortOrder: number;
+  industry?: string | null;
 }
 
 export interface PlaygroundPageLink {
@@ -158,12 +159,24 @@ export async function getLanguagesForPlayground(
   }));
 }
 
+function shuffleArray<T>(arr: T[]): T[] {
+  const out = [...arr];
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
 /**
  * Get voices for a specific provider + language.
+ * When modelId is provided, only returns voices paired with that model (e.g. Falcon).
+ * Deduplicates by voice_id. Returns voices in randomized order.
  */
 export async function getVoicesForProvider(
   providerSlug: string,
-  languageId: string
+  languageId: string,
+  modelId?: string | null
 ): Promise<VoiceOption[]> {
   const supabase = getAdminClient();
 
@@ -175,40 +188,91 @@ export async function getVoicesForProvider(
 
   if (!provider) return [];
 
-  const { data: voices } = await supabase
+  let query = supabase
     .from("provider_voices")
     .select("voice_id, display_name, gender")
     .eq("provider_id", provider.id)
-    .eq("language_id", languageId)
-    .order("display_name");
+    .eq("language_id", languageId);
 
-  return (voices ?? []).map((v) => ({
-    voiceId: v.voice_id,
-    displayName: v.display_name?.trim() || v.voice_id,
-    gender: v.gender,
-  }));
+  if (modelId != null && modelId !== "") {
+    query = query.eq("model_id", modelId);
+  }
+
+  const { data: voices } = await query.order("display_name");
+
+  const seen = new Set<string>();
+  const deduped = (voices ?? [])
+    .filter((v) => {
+      if (seen.has(v.voice_id)) return false;
+      seen.add(v.voice_id);
+      return true;
+    })
+    .map((v) => ({
+      voiceId: v.voice_id,
+      displayName: v.display_name?.trim() || v.voice_id,
+      gender: v.gender,
+    }));
+  return shuffleArray(deduped);
 }
+
+const EN_LANGUAGE_CODE_PREFIX = "en-";
 
 /**
  * Get sample sentences for a playground page and language.
+ * Sentences uploaded for any en-* language (en-us, en-in, en-uk, en-au, en-gb) are
+ * applicable to all en-* variants when the selected language is also en-*.
+ * en-UK and en-GB are equivalent (British English); DB stores en-GB.
  */
 export async function getSampleSentences(
   playgroundPageId: string,
-  languageId: string
+  languageId: string,
+  industry?: string | null
 ): Promise<SampleSentence[]> {
   const supabase = getAdminClient();
 
-  const { data } = await (supabase.from("playground_sample_sentences" as AnyTable) as AnyTable)
-    .select("id, text, sort_order")
+  const { data: selectedLang } = await supabase
+    .from("languages")
+    .select("code")
+    .eq("id", languageId)
+    .single();
+
+  const selectedCode = (selectedLang?.code ?? "").toLowerCase().replace("_", "-");
+  const isEnVariant = selectedCode.startsWith(EN_LANGUAGE_CODE_PREFIX) || selectedCode === "en";
+
+  let languageIds: string[];
+
+  if (isEnVariant) {
+    const { data: enLangs } = await supabase
+      .from("languages")
+      .select("id")
+      .eq("is_active", true)
+      .ilike("code", "en-%");
+    languageIds = (enLangs ?? []).map((l) => l.id);
+    if (languageIds.length === 0) {
+      languageIds = [languageId];
+    }
+  } else {
+    languageIds = [languageId];
+  }
+
+  let query = (supabase.from("playground_sample_sentences" as AnyTable) as AnyTable)
+    .select("id, text, sort_order, industry")
     .eq("playground_page_id", playgroundPageId)
-    .eq("language_id", languageId)
+    .in("language_id", languageIds)
     .order("sort_order");
+
+  if (industry?.trim()) {
+    query = query.eq("industry", industry.trim());
+  }
+
+  const { data } = await query;
 
   if (!data) return [];
 
-  return (data as Array<{ id: string; text: string; sort_order: number }>).map((s) => ({
+  return (data as Array<{ id: string; text: string; sort_order: number; industry?: string | null }>).map((s) => ({
     id: s.id,
     text: s.text,
     sortOrder: s.sort_order,
+    industry: s.industry ?? null,
   }));
 }

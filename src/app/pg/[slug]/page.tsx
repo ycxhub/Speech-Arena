@@ -32,16 +32,27 @@ export default async function PlaygroundPage({ params }: Props) {
     config.modelBProviderSlug
   );
 
-  const defaultLanguageId = languages[0]?.id ?? "";
+  const enUsLang = languages.find(
+    (l) => l.code.toLowerCase().replace("_", "-") === "en-us"
+  );
+  const defaultLanguageId = enUsLang?.id ?? languages[0]?.id ?? "";
 
   const initialVoicesA = defaultLanguageId
-    ? await getVoicesForProvider(config.modelAProviderSlug, defaultLanguageId)
+    ? await getVoicesForProvider(
+        config.modelAProviderSlug,
+        defaultLanguageId,
+        config.modelAModelId
+      )
     : [];
   const initialVoicesB = defaultLanguageId
-    ? await getVoicesForProvider(config.modelBProviderSlug, defaultLanguageId)
+    ? await getVoicesForProvider(
+        config.modelBProviderSlug,
+        defaultLanguageId,
+        config.modelBModelId
+      )
     : [];
   const initialSentences = defaultLanguageId
-    ? await getSampleSentences(config.id, defaultLanguageId)
+    ? await getSampleSentences(config.id, defaultLanguageId, "Retail")
     : [];
 
   return (

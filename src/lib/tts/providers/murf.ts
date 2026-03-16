@@ -12,10 +12,16 @@ import { TTSError } from "../errors";
 const GENERATE_URL = "https://api.murf.ai/v1/speech/generate";
 const STREAM_URL = "https://global.api.murf.ai/v1/speech/stream";
 
-/** Map short language codes to Murf multiNativeLocale (e.g. en -> en-US) */
+/**
+ * Map language codes to Murf multiNativeLocale.
+ * Murf uses en-UK for British English; Amazon Polly uses en-GB.
+ * We treat en-UK and en-GB as equivalent and always send en-UK to Murf.
+ */
 function toMultiNativeLocale(language: string): string {
   const code = language?.trim().toLowerCase();
   if (!code) return "en-US";
+  // en-UK and en-GB are equivalent (British English); Murf expects en-UK
+  if (code === "en-gb" || code === "en-uk") return "en-UK";
   if (code.includes("-")) return code; // Already locale (en-US, es-ES, etc.)
   const map: Record<string, string> = {
     en: "en-US",

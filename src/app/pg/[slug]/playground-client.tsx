@@ -9,6 +9,21 @@ import {
   type VoiceOption,
   type SampleSentence,
 } from "./actions";
+
+export const PLAYGROUND_INDUSTRIES = [
+  { value: "Banking", label: "Banking" },
+  { value: "Concierge", label: "Concierge" },
+  { value: "Customer Support", label: "Customer Support" },
+  { value: "Digital/Apps", label: "Digital/Apps" },
+  { value: "Ecommerce", label: "Ecommerce" },
+  { value: "F&B", label: "F&B" },
+  { value: "Healthcare", label: "Healthcare" },
+  { value: "Insurance", label: "Insurance" },
+  { value: "Retail", label: "Retail" },
+  { value: "Telecom", label: "Telecom" },
+  { value: "Travel", label: "Travel" },
+] as const;
+
 import { MurfAudioPlayer } from "@/components/murf-playground/murf-audio-player";
 import { VoicePicker } from "@/components/murf-playground/voice-picker";
 import { SentenceBucket } from "@/components/murf-playground/sentence-bucket";
@@ -32,6 +47,7 @@ export function PlaygroundClient({
   initialSentences,
 }: Props) {
   const [languageId, setLanguageId] = useState(initialLanguageId);
+  const [industry, setIndustry] = useState<string>("Retail");
   const [voicesA, setVoicesA] = useState<VoiceOption[]>(initialVoicesA);
   const [voicesB, setVoicesB] = useState<VoiceOption[]>(initialVoicesB);
   const [voiceIdA, setVoiceIdA] = useState(initialVoicesA[0]?.voiceId ?? "");
@@ -67,19 +83,52 @@ export function PlaygroundClient({
 
       startTransition(async () => {
         const [newVoicesA, newVoicesB, newSentences] = await Promise.all([
-          getVoicesForProvider(config.modelAProviderSlug, newLangId),
-          getVoicesForProvider(config.modelBProviderSlug, newLangId),
-          getSampleSentences(config.id, newLangId),
+          getVoicesForProvider(
+            config.modelAProviderSlug,
+            newLangId,
+            config.modelAModelId
+          ),
+          getVoicesForProvider(
+            config.modelBProviderSlug,
+            newLangId,
+            config.modelBModelId
+          ),
+          getSampleSentences(config.id, newLangId, industry),
         ]);
         setVoicesA(newVoicesA);
         setVoicesB(newVoicesB);
         setVoiceIdA(newVoicesA[0]?.voiceId ?? "");
         setVoiceIdB(newVoicesB[0]?.voiceId ?? "");
         setSentences(newSentences);
+        if (newSentences.length > 0) setText(newSentences[0].text);
       });
     },
-    [config]
+    [config, industry]
   );
+
+  const handleIndustryChange = useCallback(
+    (newIndustry: string) => {
+      setIndustry(newIndustry);
+      setError(null);
+      startTransition(async () => {
+        const newSentences = await getSampleSentences(
+          config.id,
+          languageId,
+          newIndustry || undefined
+        );
+        setSentences(newSentences);
+        if (newSentences.length > 0) setText(newSentences[0].text);
+      });
+    },
+    [config, languageId]
+  );
+
+  useEffect(() => {
+    if (initialSentences.length > 0 && !text) {
+      setText(initialSentences[0].text);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only preload on mount
+  }, []);
 
   const handleGenerate = useCallback(async () => {
     if (!text.trim() || !voiceIdA || !voiceIdB || !selectedLanguage) return;
@@ -152,6 +201,13 @@ export function PlaygroundClient({
     setText(sentenceText);
   }, []);
 
+  const handleTryAnotherSentence = useCallback(() => {
+    if (sentences.length === 0) return;
+    const randomSentence =
+      sentences[Math.floor(Math.random() * sentences.length)];
+    setText(randomSentence.text);
+  }, [sentences]);
+
   const canGenerate =
     text.trim().length > 0 && voiceIdA && voiceIdB && !generating;
 
@@ -172,25 +228,42 @@ export function PlaygroundClient({
 
       {/* Controls */}
       <div className="murf-card mb-6 space-y-5 p-6">
-        {/* Language picker */}
-        <div className="max-w-xs">
-          <label className="murf-label">Language</label>
-          <select
-            className="murf-select"
-            value={languageId}
-            onChange={(e) => handleLanguageChange(e.target.value)}
-            disabled={isPending || languages.length === 0}
-          >
-            {languages.length === 0 ? (
-              <option value="">No languages available</option>
-            ) : (
-              languages.map((l) => (
-                <option key={l.id} value={l.id}>
-                  {l.name} ({l.code})
+        {/* Language and Industry filters */}
+        <div className="flex flex-wrap gap-5">
+          <div className="max-w-xs">
+            <label className="murf-label">Language</label>
+            <select
+              className="murf-select"
+              value={languageId}
+              onChange={(e) => handleLanguageChange(e.target.value)}
+              disabled={isPending || languages.length === 0}
+            >
+              {languages.length === 0 ? (
+                <option value="">No languages available</option>
+              ) : (
+                languages.map((l) => (
+                  <option key={l.id} value={l.id}>
+                    {l.name} ({l.code})
+                  </option>
+                ))
+              )}
+            </select>
+          </div>
+          <div className="max-w-xs">
+            <label className="murf-label">Industry</label>
+            <select
+              className="murf-select"
+              value={industry}
+              onChange={(e) => handleIndustryChange(e.target.value)}
+              disabled={isPending}
+            >
+              {PLAYGROUND_INDUSTRIES.map((ind) => (
+                <option key={ind.value} value={ind.value}>
+                  {ind.label}
                 </option>
-              ))
-            )}
-          </select>
+              ))}
+            </select>
+          </div>
         </div>
 
         {/* Voice pickers */}
@@ -201,6 +274,7 @@ export function PlaygroundClient({
             value={voiceIdA}
             onChange={setVoiceIdA}
             disabled={isPending}
+            voiceCount={voicesA.length}
           />
           <VoicePicker
             label={`${config.modelBLabel} Voice`}
@@ -208,16 +282,27 @@ export function PlaygroundClient({
             value={voiceIdB}
             onChange={setVoiceIdB}
             disabled={isPending}
+            voiceCount={voicesB.length}
           />
         </div>
 
         {/* Text input */}
-        <TextInput
-          value={text}
-          onChange={setText}
-          maxLength={1000}
-          disabled={generating}
-        />
+        <div className="space-y-2">
+          <TextInput
+            value={text}
+            onChange={setText}
+            maxLength={1000}
+            disabled={generating}
+          />
+          <button
+            type="button"
+            className="murf-btn murf-btn-secondary murf-btn-sm"
+            disabled={sentences.length === 0}
+            onClick={handleTryAnotherSentence}
+          >
+            Try another sentence
+          </button>
+        </div>
 
         {/* Generate button + error */}
         <div className="flex flex-col items-start gap-3">
@@ -306,9 +391,13 @@ export function PlaygroundClient({
           Sample Sentences
         </h2>
         <p className="mb-4 text-sm" style={{ color: "var(--murf-text-muted)" }}>
-          Click a sentence to use it as input above.
+          Choose industry and language above to filter. Click a sentence to use
+          it as input, or copy all.
         </p>
-        <SentenceBucket sentences={sentences} onSelect={handleSentenceSelect} />
+        <SentenceBucket
+          sentences={sentences}
+          onSelect={handleSentenceSelect}
+        />
       </div>
     </div>
   );
