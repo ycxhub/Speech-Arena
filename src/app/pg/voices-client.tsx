@@ -16,9 +16,6 @@ import { VoicePicker } from "@/components/murf-playground/voice-picker";
 import { SentenceBucket } from "@/components/murf-playground/sentence-bucket";
 import { TextInput } from "@/components/murf-playground/text-input";
 
-const PROVIDER_SLUG = "murf";
-const MODEL_ID = "FALCON";
-
 const PLAYGROUND_INDUSTRIES = [
   { value: "Banking", label: "Banking" },
   { value: "Concierge", label: "Concierge" },
@@ -43,6 +40,8 @@ interface Props {
   initialVoices: VoiceOption[];
   initialSentences: SampleSentence[];
   sentencePageId: string;
+  providerSlug: string;
+  modelId: string;
   comparePages: PlaygroundPageLink[];
 }
 
@@ -52,6 +51,8 @@ export function VoicesClient({
   initialVoices,
   initialSentences,
   sentencePageId,
+  providerSlug,
+  modelId,
   comparePages,
 }: Props) {
   const [languageId, setLanguageId] = useState(initialLanguageId);
@@ -84,7 +85,7 @@ export function VoicesClient({
 
       startTransition(async () => {
         const [newVoices, newSentences] = await Promise.all([
-          getVoicesForProvider(PROVIDER_SLUG, newLangId, MODEL_ID),
+          getVoicesForProvider(providerSlug, newLangId, modelId),
           getSampleSentences(sentencePageId, newLangId, industry),
         ]);
         setVoices(newVoices);
@@ -93,7 +94,7 @@ export function VoicesClient({
         if (newSentences.length > 0) setText(newSentences[0].text);
       });
     },
-    [sentencePageId, industry]
+    [sentencePageId, industry, providerSlug, modelId]
   );
 
   const handleIndustryChange = useCallback(
@@ -135,8 +136,8 @@ export function VoicesClient({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          providerSlug: PROVIDER_SLUG,
-          modelId: MODEL_ID,
+          providerSlug,
+          modelId,
           voiceId,
           text: text.trim(),
           languageCode: selectedLanguage.code,

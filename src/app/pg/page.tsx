@@ -4,18 +4,25 @@ import {
   getVoicesForProvider,
   getSampleSentences,
 } from "./[slug]/actions";
-import { getMurfFalconLanguages } from "./actions";
+import { getProviderModelLanguages } from "./actions";
 import { VoicesClient } from "./voices-client";
 
 const SENTENCE_SOURCE_SLUG = "falcon-vs-polly-neural";
 const DEFAULT_INDUSTRY = "Retail";
 
 export default async function MurfVoicesPage() {
-  const [languages, sentencePageConfig, comparePages] = await Promise.all([
-    getMurfFalconLanguages(),
+  const [sentencePageConfig, comparePages] = await Promise.all([
     getPlaygroundConfig(SENTENCE_SOURCE_SLUG),
     getActivePlaygroundPages(),
   ]);
+
+  const providerSlug = sentencePageConfig?.modelAProviderSlug ?? "";
+  const modelId = sentencePageConfig?.modelAModelId ?? "";
+
+  const languages =
+    providerSlug && modelId
+      ? await getProviderModelLanguages(providerSlug, modelId)
+      : [];
 
   const defaultLang =
     languages.find((l) => l.code.toLowerCase() === "en-us") ?? languages[0];
@@ -23,7 +30,7 @@ export default async function MurfVoicesPage() {
 
   const [initialVoices, initialSentences] = await Promise.all([
     defaultLangId
-      ? getVoicesForProvider("murf", defaultLangId, "FALCON")
+      ? getVoicesForProvider(providerSlug, defaultLangId, modelId)
       : Promise.resolve([]),
     defaultLangId && sentencePageConfig
       ? getSampleSentences(sentencePageConfig.id, defaultLangId, DEFAULT_INDUSTRY)
@@ -37,6 +44,8 @@ export default async function MurfVoicesPage() {
       initialVoices={initialVoices}
       initialSentences={initialSentences}
       sentencePageId={sentencePageConfig?.id ?? ""}
+      providerSlug={providerSlug}
+      modelId={modelId}
       comparePages={comparePages}
     />
   );

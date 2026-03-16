@@ -3,21 +3,21 @@
 import { getAdminClient } from "@/lib/supabase/admin";
 import type { LanguageOption } from "./[slug]/actions";
 
-const MURF_PROVIDER_SLUG = "murf";
-const FALCON_MODEL_ID = "FALCON";
-
 /**
- * Get all languages where Murf Falcon has at least one voice.
+ * Get all languages where a given provider+model has at least one voice.
  * Unlike getLanguagesForPlayground() which intersects two providers,
- * this returns every language with Falcon voices.
+ * this returns every language with voices for the specified provider/model.
  */
-export async function getMurfFalconLanguages(): Promise<LanguageOption[]> {
+export async function getProviderModelLanguages(
+  providerSlug: string,
+  modelId: string
+): Promise<LanguageOption[]> {
   const supabase = getAdminClient();
 
   const { data: provider } = await supabase
     .from("providers")
     .select("id")
-    .eq("slug", MURF_PROVIDER_SLUG)
+    .eq("slug", providerSlug)
     .maybeSingle();
 
   if (!provider) return [];
@@ -26,7 +26,7 @@ export async function getMurfFalconLanguages(): Promise<LanguageOption[]> {
     .from("provider_voices")
     .select("language_id")
     .eq("provider_id", provider.id)
-    .eq("model_id", FALCON_MODEL_ID);
+    .eq("model_id", modelId);
 
   if (!voices || voices.length === 0) return [];
 
