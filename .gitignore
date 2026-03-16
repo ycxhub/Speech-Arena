@@ -46,3 +46,4 @@ next-env.d.ts
 # lighthouse
 lighthouse-report.json
 lighthouse-a11y.json
+.env*.local
