@@ -22,7 +22,8 @@ function getClientIp(request: NextRequest): string {
     const ip = xff.split(",")[0]?.trim();
     if (ip) return ip;
   }
-  if (request.ip) return request.ip;
+  const xRealIp = request.headers.get("x-real-ip");
+  if (xRealIp) return xRealIp;
   return "unknown";
 }
 
