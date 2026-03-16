@@ -55,11 +55,51 @@ function toEngine(modelId: string): Engine {
   }
 }
 
-/** Map short language codes to Polly LanguageCode (e.g. en -> en-US). */
+/** Map short and full language codes to Polly LanguageCode (e.g. en -> en-US, en-us -> en-US). */
 function toPollyLanguageCode(language: string): string {
   const code = language?.trim().toLowerCase();
   if (!code) return "en-US";
-  if (code.includes("-")) return code;
+  const fullMap: Record<string, string> = {
+    "en-us": "en-US",
+    "en-in": "en-IN",
+    "en-gb": "en-GB",
+    "en-ie": "en-IE",
+    "en-za": "en-ZA",
+    "en-au": "en-AU",
+    "en-nz": "en-NZ",
+    "en-gb-wls": "en-GB-WLS",
+    "es-es": "es-ES",
+    "es-us": "es-US",
+    "es-mx": "es-MX",
+    "fr-fr": "fr-FR",
+    "fr-be": "fr-BE",
+    "fr-ca": "fr-CA",
+    "pt-br": "pt-BR",
+    "pt-pt": "pt-PT",
+    "de-de": "de-DE",
+    "de-at": "de-AT",
+    "de-ch": "de-CH",
+    "it-it": "it-IT",
+    "ja-jp": "ja-JP",
+    "ko-kr": "ko-KR",
+    "cmn-cn": "cmn-CN",
+    "yue-cn": "yue-CN",
+    "nl-nl": "nl-NL",
+    "nl-be": "nl-BE",
+    "pl-pl": "pl-PL",
+    "ru-ru": "ru-RU",
+    "tr-tr": "tr-TR",
+    "hi-in": "hi-IN",
+    "da-dk": "da-DK",
+    "nb-no": "nb-NO",
+    "sv-se": "sv-SE",
+    "ro-ro": "ro-RO",
+    "ca-es": "ca-ES",
+    "cy-gb": "cy-GB",
+    "is-is": "is-IS",
+    "arb": "arb",
+  };
+  if (fullMap[code]) return fullMap[code];
   const map: Record<string, string> = {
     en: "en-US",
     es: "es-ES",

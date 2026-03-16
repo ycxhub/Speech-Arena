@@ -69,15 +69,19 @@
 }
 
 .murf-btn-primary {
-  background: var(--murf-accent);
-  color: var(--murf-text-inverse);
+  background: linear-gradient(135deg, var(--murf-accent-dark), var(--murf-pink));
+  color: #fff;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(200, 19, 149, 0.25);
 }
 .murf-btn-primary:hover:not(:disabled) {
-  background: var(--murf-accent-hover);
+  background: linear-gradient(135deg, #361A73, #A30F7A);
+  box-shadow: 0 4px 14px rgba(200, 19, 149, 0.35);
 }
 .murf-btn-primary:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  box-shadow: none;
 }
 
 .murf-btn-secondary {
@@ -140,4 +144,102 @@
   font-weight: 500;
   color: var(--murf-text-secondary);
   margin-bottom: 6px;
+}
+
+/* ── Navbar ────────────────────────────────────── */
+.murf-navbar {
+  flex-shrink: 0;
+  background: var(--murf-bg);
+  border-bottom: 1px solid var(--murf-border);
+  padding: 0 24px;
+}
+
+.murf-navbar-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1280px;
+  margin: 0 auto;
+  height: 56px;
+}
+
+.murf-navbar-logo {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+.murf-navbar-menu {
+  position: relative;
+}
+
+.murf-navbar-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--murf-text);
+  background: none;
+  border: none;
+  padding: 8px 14px;
+  border-radius: var(--murf-radius-sm);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.murf-navbar-trigger:hover {
+  background: var(--murf-bg-secondary);
+  color: var(--murf-accent);
+}
+
+.murf-navbar-chevron {
+  transition: transform 0.2s ease;
+}
+.murf-navbar-chevron-open {
+  transform: rotate(180deg);
+}
+
+.murf-navbar-dropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  min-width: 220px;
+  background: var(--murf-bg);
+  border: 1px solid var(--murf-border);
+  border-radius: var(--murf-radius-md);
+  box-shadow: var(--murf-shadow-lg);
+  padding: 6px;
+  z-index: 100;
+  animation: murf-dropdown-in 0.15s ease;
+}
+
+@keyframes murf-dropdown-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.murf-navbar-dropdown-item {
+  display: block;
+  padding: 10px 14px;
+  font-size: 14px;
+  color: var(--murf-text);
+  text-decoration: none;
+  border-radius: var(--murf-radius-sm);
+  transition: background 0.12s ease, color 0.12s ease;
+}
+.murf-navbar-dropdown-item:hover {
+  background: var(--murf-bg-secondary);
+  color: var(--murf-accent);
+}
+.murf-navbar-dropdown-item-active {
+  background: var(--murf-bg-secondary);
+  color: var(--murf-accent);
+  font-weight: 600;
 }

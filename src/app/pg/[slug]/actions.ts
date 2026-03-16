@@ -42,6 +42,28 @@ export interface SampleSentence {
   sortOrder: number;
 }
 
+export interface PlaygroundPageLink {
+  slug: string;
+  title: string;
+}
+
+export async function getActivePlaygroundPages(): Promise<PlaygroundPageLink[]> {
+  const supabase = getAdminClient();
+  const { data, error } = await (
+    supabase.from("playground_pages" as AnyTable) as AnyTable
+  )
+    .select("slug, title")
+    .eq("is_active", true)
+    .order("title");
+
+  if (error || !data) return [];
+
+  return (data as Array<{ slug: string; title: string }>).map((row) => ({
+    slug: row.slug,
+    title: row.title,
+  }));
+}
+
 export async function getPlaygroundConfig(
   slug: string
 ): Promise<PlaygroundConfig | null> {
