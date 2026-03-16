@@ -10,6 +10,16 @@ interface Props {
 
 export function SentenceBucket({ sentences, onSelect }: Props) {
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [copyAllDone, setCopyAllDone] = useState(false);
+
+  const handleCopyAll = () => {
+    if (sentences.length === 0) return;
+    const text = sentences.map((s) => s.text).join("\n");
+    navigator.clipboard.writeText(text).then(() => {
+      setCopyAllDone(true);
+      setTimeout(() => setCopyAllDone(false), 2000);
+    });
+  };
 
   if (sentences.length === 0) {
     return (
@@ -31,7 +41,17 @@ export function SentenceBucket({ sentences, onSelect }: Props) {
   };
 
   return (
-    <div className="grid gap-3 sm:grid-cols-2">
+    <div className="space-y-3">
+      <div className="flex justify-end">
+        <button
+          type="button"
+          className="murf-btn murf-btn-ghost murf-btn-sm"
+          onClick={handleCopyAll}
+        >
+          {copyAllDone ? "Copied!" : "Copy all"}
+        </button>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2">
       {sentences.map((s) => (
         <button
           key={s.id}
@@ -60,6 +80,7 @@ export function SentenceBucket({ sentences, onSelect }: Props) {
           </span>
         </button>
       ))}
+      </div>
     </div>
   );
 }

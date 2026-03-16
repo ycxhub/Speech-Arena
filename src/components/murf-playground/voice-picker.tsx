@@ -8,12 +8,18 @@ interface Props {
   value: string;
   onChange: (voiceId: string) => void;
   disabled?: boolean;
+  voiceCount?: number;
 }
 
-export function VoicePicker({ label, voices, value, onChange, disabled }: Props) {
+export function VoicePicker({ label, voices, value, onChange, disabled, voiceCount }: Props) {
+  const displayLabel =
+    voiceCount !== undefined
+      ? `${label} (${voiceCount} voice${voiceCount !== 1 ? "s" : ""} available)`
+      : label;
+
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="murf-label">{label}</label>
+      <label className="murf-label">{displayLabel}</label>
       <select
         className="murf-select"
         value={value}

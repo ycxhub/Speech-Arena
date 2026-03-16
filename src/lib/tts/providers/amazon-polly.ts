@@ -55,7 +55,11 @@ function toEngine(modelId: string): Engine {
   }
 }
 
-/** Map short and full language codes to Polly LanguageCode (e.g. en -> en-US, en-us -> en-US). */
+/**
+ * Map short and full language codes to Polly LanguageCode.
+ * Polly uses en-GB for British English; Murf uses en-UK.
+ * We treat en-UK and en-GB as equivalent and always send en-GB to Polly.
+ */
 function toPollyLanguageCode(language: string): string {
   const code = language?.trim().toLowerCase();
   if (!code) return "en-US";
@@ -63,6 +67,7 @@ function toPollyLanguageCode(language: string): string {
     "en-us": "en-US",
     "en-in": "en-IN",
     "en-gb": "en-GB",
+    "en-uk": "en-GB", // en-UK and en-GB are equivalent; Polly uses en-GB
     "en-ie": "en-IE",
     "en-za": "en-ZA",
     "en-au": "en-AU",

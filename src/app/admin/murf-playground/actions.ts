@@ -257,6 +257,8 @@ export type SampleSentenceRow = {
   language_name: string;
   sort_order: number;
   created_at: string;
+  usecase: string | null;
+  industry: string | null;
 };
 
 export async function listSentencesForPage(
@@ -266,7 +268,7 @@ export async function listSentencesForPage(
   const admin = getAdminClient();
 
   let query = (admin.from("playground_sample_sentences" as AnyTable) as AnyTable)
-    .select("id, text, language_id, sort_order, created_at")
+    .select("id, text, language_id, sort_order, created_at, usecase, industry")
     .eq("playground_page_id", pageId)
     .order("sort_order");
 
@@ -281,6 +283,8 @@ export async function listSentencesForPage(
     language_id: string;
     sort_order: number;
     created_at: string;
+    usecase?: string | null;
+    industry?: string | null;
   }>;
 
   const langIds = [...new Set(rows.map((s) => s.language_id))];
@@ -302,6 +306,8 @@ export async function listSentencesForPage(
       language_name: lang?.name ?? "",
       sort_order: s.sort_order,
       created_at: s.created_at,
+      usecase: s.usecase ?? null,
+      industry: s.industry ?? null,
     };
   });
 }
@@ -309,7 +315,9 @@ export async function listSentencesForPage(
 export async function addSentence(
   pageId: string,
   languageId: string,
-  text: string
+  text: string,
+  usecase?: string | null,
+  industry?: string | null
 ): Promise<{ error?: string }> {
   const { userId, admin } = await requireAdmin();
 
@@ -328,6 +336,8 @@ export async function addSentence(
     language_id: languageId,
     text: text.trim(),
     sort_order: nextOrder,
+    usecase: usecase?.trim() || null,
+    industry: industry?.trim() || null,
   });
 
   if (error) return { error: error.message };
@@ -337,6 +347,114 @@ export async function addSentence(
   });
   revalidatePath(`/admin/murf-playground/${pageId}`);
   return {};
+}
+
+// en-UK and en-GB are equivalent (British English); DB stores en-GB; Murf expects en-UK, Polly expects en-GB
+const EN_LANGUAGE_CODES = ["en-us", "en-in", "en-uk", "en-au", "en-gb"];
+
+function normalizeLanguageCode(code: string): string {
+  return code.trim().toLowerCase().replace("_", "-");
+}
+
+function resolveLanguageId(
+  code: string,
+  langMap: Map<string, { id: string; code: string }[]>
+): string | null {
+  const normalized = normalizeLanguageCode(code);
+  const exact = langMap.get(normalized);
+  if (exact?.length) return exact[0].id;
+  if (
+    normalized === "en" ||
+    EN_LANGUAGE_CODES.some((c) => normalized === c || normalized.startsWith("en-"))
+  ) {
+    for (const enCode of EN_LANGUAGE_CODES) {
+      const match = langMap.get(enCode);
+      if (match?.length) return match[0].id;
+    }
+  }
+  return null;
+}
+
+export async function bulkAddSentencesFromCsv(
+  pageId: string,
+  rows: { text: string; language: string; usecase?: string; industry?: string }[]
+): Promise<{ error?: string; inserted?: number; skipped?: number; errors?: string[] }> {
+  const { userId, admin } = await requireAdmin();
+
+  const { data: languages } = await admin
+    .from("languages")
+    .select("id, code")
+    .eq("is_active", true);
+
+  const codeToIds = new Map<string, { id: string; code: string }[]>();
+  for (const l of languages ?? []) {
+    const norm = normalizeLanguageCode(l.code);
+    if (!codeToIds.has(norm)) codeToIds.set(norm, []);
+    codeToIds.get(norm)!.push({ id: l.id, code: l.code });
+  }
+  for (const enCode of EN_LANGUAGE_CODES) {
+    if (!codeToIds.has(enCode)) {
+      const anyEn = [...codeToIds.entries()].find(([k]) => k.startsWith("en-"));
+      if (anyEn?.length) codeToIds.set(enCode, anyEn[1]);
+    }
+  }
+
+  let inserted = 0;
+  const errors: string[] = [];
+
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
+    const text = row.text?.trim();
+    const langCode = row.language?.trim();
+    if (!text) {
+      errors.push(`Row ${i + 1}: Missing text`);
+      continue;
+    }
+    if (!langCode) {
+      errors.push(`Row ${i + 1}: Missing language`);
+      continue;
+    }
+
+    const languageId = resolveLanguageId(langCode, codeToIds);
+    if (!languageId) {
+      errors.push(`Row ${i + 1}: Unknown language "${langCode}"`);
+      continue;
+    }
+
+    const { data: maxRow } = await (admin.from("playground_sample_sentences" as AnyTable) as AnyTable)
+      .select("sort_order")
+      .eq("playground_page_id", pageId)
+      .eq("language_id", languageId)
+      .order("sort_order", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const nextOrder = ((maxRow as { sort_order: number } | null)?.sort_order ?? -1) + 1;
+
+    const { error } = await (admin.from("playground_sample_sentences" as AnyTable) as AnyTable).insert({
+      playground_page_id: pageId,
+      language_id: languageId,
+      text,
+      sort_order: nextOrder,
+      usecase: row.usecase?.trim() || null,
+      industry: row.industry?.trim() || null,
+    });
+
+    if (error) {
+      errors.push(`Row ${i + 1}: ${error.message}`);
+      continue;
+    }
+    inserted++;
+  }
+
+  await logAudit(admin, userId, "bulk_add_playground_sentences", "playground_sample_sentences", null, {
+    pageId,
+    inserted,
+    errors: errors.length,
+  });
+  revalidatePath(`/admin/murf-playground`);
+  revalidatePath(`/admin/murf-playground/${pageId}`);
+  return { inserted, skipped: rows.length - inserted - errors.length, errors };
 }
 
 export async function updateSentence(
