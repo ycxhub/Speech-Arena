@@ -1,0 +1,143 @@
+.murf-playground {
+  --murf-bg: #FFFFFF;
+  --murf-bg-secondary: #F5F3F9;
+  --murf-bg-dark: #1D1136;
+  --murf-bg-darker: #190D25;
+
+  --murf-text: #1D1136;
+  --murf-text-secondary: #42208A;
+  --murf-text-muted: #6B6380;
+  --murf-text-inverse: #FFFFFF;
+
+  --murf-accent: #6642B3;
+  --murf-accent-dark: #42208A;
+  --murf-accent-light: #A089FF;
+  --murf-accent-hover: #5535A0;
+
+  --murf-border: #E7E4F2;
+  --murf-border-focus: #6642B3;
+
+  --murf-success: #3DCC91;
+  --murf-pink: #C81395;
+
+  --murf-radius-sm: 8px;
+  --murf-radius-md: 12px;
+  --murf-radius-lg: 16px;
+  --murf-radius-xl: 24px;
+  --murf-radius-pill: 100px;
+
+  --murf-shadow-sm: 0 1px 3px rgba(29, 17, 54, 0.06);
+  --murf-shadow-md: 0 4px 12px rgba(29, 17, 54, 0.08);
+  --murf-shadow-lg: 0 8px 24px rgba(29, 17, 54, 0.12);
+}
+
+.murf-playground {
+  background: var(--murf-bg);
+  color: var(--murf-text);
+  font-family: var(--font-inter), "Inter", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Card */
+.murf-card {
+  background: var(--murf-bg);
+  border: 1px solid var(--murf-border);
+  border-radius: var(--murf-radius-md);
+  box-shadow: var(--murf-shadow-sm);
+}
+
+.murf-card-secondary {
+  background: var(--murf-bg-secondary);
+  border: 1px solid var(--murf-border);
+  border-radius: var(--murf-radius-md);
+}
+
+/* Button – Primary */
+.murf-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-weight: 500;
+  font-size: 14px;
+  border-radius: var(--murf-radius-pill);
+  padding: 10px 24px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: none;
+}
+
+.murf-btn-primary {
+  background: var(--murf-accent);
+  color: var(--murf-text-inverse);
+}
+.murf-btn-primary:hover:not(:disabled) {
+  background: var(--murf-accent-hover);
+}
+.murf-btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.murf-btn-secondary {
+  background: var(--murf-bg-secondary);
+  color: var(--murf-text);
+  border: 1px solid var(--murf-border);
+}
+.murf-btn-secondary:hover:not(:disabled) {
+  background: var(--murf-border);
+}
+
+.murf-btn-ghost {
+  background: transparent;
+  color: var(--murf-text-secondary);
+}
+.murf-btn-ghost:hover:not(:disabled) {
+  background: var(--murf-bg-secondary);
+}
+
+.murf-btn-sm {
+  padding: 6px 14px;
+  font-size: 13px;
+}
+.murf-btn-lg {
+  padding: 14px 32px;
+  font-size: 16px;
+}
+
+/* Select / Input */
+.murf-select,
+.murf-input,
+.murf-textarea {
+  width: 100%;
+  font-size: 14px;
+  font-family: inherit;
+  color: var(--murf-text);
+  background: var(--murf-bg);
+  border: 1px solid var(--murf-border);
+  border-radius: var(--murf-radius-sm);
+  padding: 10px 14px;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.murf-select:focus,
+.murf-input:focus,
+.murf-textarea:focus {
+  border-color: var(--murf-border-focus);
+  box-shadow: 0 0 0 3px rgba(102, 66, 179, 0.12);
+}
+
+.murf-textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+/* Label */
+.murf-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--murf-text-secondary);
+  margin-bottom: 6px;
+}
