@@ -1001,3 +1001,19 @@ Deployment history for the main branch, ordered from oldest to newest. Each push
 1. `src/app/blind-test/blind-test-client.tsx`
 
 ---
+
+## 74. Murf Playground enhancements: defaults, industries, voice shuffle, en-UK/GB parity [High]
+
+**Date & Time (IST):** 16 Mar 2026, 6:45 PM
+
+**Deployment notes:**
+- New features: CSV bulk upload for sample sentences (text, language, usecase, industry); industry filter with preloaded sentences; one-click Try another sentence and Copy all; en-* language sharing (sentences apply to all en variants)
+- Feature enhancements: Default language en-US, default industry Retail; new industries list (Banking, Concierge, Digital/Apps, Ecommerce, F&B, etc.); randomized voice order; voice count next to model label; en-UK and en-GB treated as equivalent for Polly/Murf APIs; increased contrast for Page Settings and Sample Sentences headings
+- Migration: playground_sample_sentences usecase and industry columns
+
+**3 files with largest changes:**
+1. `src/app/admin/murf-playground/[id]/csv-upload-modal.tsx`
+2. `src/app/admin/murf-playground/actions.ts`
+3. `src/app/pg/[slug]/playground-client.tsx`
+
+---
