@@ -11,7 +11,7 @@ export async function AppShell({ children }: AppShellProps) {
   const h = await headers();
   const pathname = h.get("x-pathname") ?? "";
 
-  if (pathname.startsWith("/murf-playground")) {
+  if (pathname.startsWith("/pg")) {
     return <>{children}</>;
   }
 

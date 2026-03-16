@@ -96,7 +96,7 @@ export function PlaygroundClient({
 
     try {
       const [resA, resB] = await Promise.all([
-        fetch("/api/murf-playground/generate", {
+        fetch("/api/pg/generate", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -107,7 +107,7 @@ export function PlaygroundClient({
             languageCode: selectedLanguage.code,
           }),
         }),
-        fetch("/api/murf-playground/generate", {
+        fetch("/api/pg/generate", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({

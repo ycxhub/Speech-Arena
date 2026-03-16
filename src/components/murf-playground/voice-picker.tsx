@@ -1,6 +1,6 @@
 "use client";
 
-import type { VoiceOption } from "@/app/murf-playground/[slug]/actions";
+import type { VoiceOption } from "@/app/pg/[slug]/actions";
 
 interface Props {
   label: string;

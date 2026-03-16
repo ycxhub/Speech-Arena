@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { SampleSentence } from "@/app/murf-playground/[slug]/actions";
+import type { SampleSentence } from "@/app/pg/[slug]/actions";
 
 interface Props {
   sentences: SampleSentence[];
