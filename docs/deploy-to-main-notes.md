@@ -1017,3 +1017,20 @@ Deployment history for the main branch, ordered from oldest to newest. Each push
 3. `src/app/pg/[slug]/playground-client.tsx`
 
 ---
+
+## 75. Revert route restriction: restore all routes [Low]
+
+**Date & Time (IST):** 16 Mar 2026, 7:39 PM
+
+**Branch:** `Murf-PlayGround` (not merged to main)
+
+**Deployment notes:**
+- Bug fix: Reverted 404 enforcement on non-playground routes, restoring /blind-test, /leaderboard, /models/*, /listen-and-log/* and all other pages
+- Bug fix: Auth redirect reverted from /pg back to /blind-test
+- Chore: Added .env*.local to .gitignore
+
+**3 files with largest changes:**
+1. `src/middleware.ts` (30 lines)
+2. `.gitignore` (1 line)
+
+---
