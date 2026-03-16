@@ -1,66 +1,43 @@
-import Link from "next/link";
-import { getActivePlaygroundPages } from "./[slug]/actions";
+import {
+  getActivePlaygroundPages,
+  getPlaygroundConfig,
+  getVoicesForProvider,
+  getSampleSentences,
+} from "./[slug]/actions";
+import { getMurfFalconLanguages } from "./actions";
+import { VoicesClient } from "./voices-client";
 
-function simplifyTitle(title: string): string {
-  return title
-    .replace(/^Compare\s+/i, "")
-    .replace(/\s+vs\s+/i, " & ");
-}
+const SENTENCE_SOURCE_SLUG = "falcon-vs-polly-neural";
+const DEFAULT_INDUSTRY = "Retail";
 
-export default async function PlaygroundCatalogPage() {
-  const pages = await getActivePlaygroundPages();
+export default async function MurfVoicesPage() {
+  const [languages, sentencePageConfig, comparePages] = await Promise.all([
+    getMurfFalconLanguages(),
+    getPlaygroundConfig(SENTENCE_SOURCE_SLUG),
+    getActivePlaygroundPages(),
+  ]);
+
+  const defaultLang =
+    languages.find((l) => l.code.toLowerCase() === "en-us") ?? languages[0];
+  const defaultLangId = defaultLang?.id ?? "";
+
+  const [initialVoices, initialSentences] = await Promise.all([
+    defaultLangId
+      ? getVoicesForProvider("murf", defaultLangId, "FALCON")
+      : Promise.resolve([]),
+    defaultLangId && sentencePageConfig
+      ? getSampleSentences(sentencePageConfig.id, defaultLangId, DEFAULT_INDUSTRY)
+      : Promise.resolve([]),
+  ]);
 
   return (
-    <main className="murf-catalog">
-      <div className="murf-catalog-inner">
-        <header className="murf-catalog-header">
-          <h1 className="murf-catalog-title">Compare TTS Models</h1>
-          <p className="murf-catalog-subtitle">
-            Listen side-by-side and pick your favorite voice. Choose a
-            comparison below to start.
-          </p>
-        </header>
-
-        {pages.length > 0 ? (
-          <div className="murf-catalog-grid">
-            {pages.map((page) => (
-              <Link
-                key={page.slug}
-                href={`/pg/${page.slug}`}
-                className="murf-catalog-card"
-              >
-                <span className="murf-catalog-card-title">
-                  {simplifyTitle(page.title)}
-                </span>
-                <span className="murf-catalog-card-cta">
-                  Listen & compare
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 16 16"
-                    fill="none"
-                    aria-hidden
-                  >
-                    <path
-                      d="M6 4L10 8L6 12"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                </span>
-              </Link>
-            ))}
-          </div>
-        ) : (
-          <div className="murf-catalog-empty">
-            <p className="murf-catalog-empty-text">
-              No comparisons available yet. Check back soon.
-            </p>
-          </div>
-        )}
-      </div>
-    </main>
+    <VoicesClient
+      languages={languages}
+      initialLanguageId={defaultLangId}
+      initialVoices={initialVoices}
+      initialSentences={initialSentences}
+      sentencePageId={sentencePageConfig?.id ?? ""}
+      comparePages={comparePages}
+    />
   );
 }
