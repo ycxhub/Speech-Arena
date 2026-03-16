@@ -1034,3 +1034,22 @@ Deployment history for the main branch, ordered from oldest to newest. Each push
 2. `.gitignore` (1 line)
 
 ---
+
+## 76. New feature: Murf Falcon voices page at /pg [High]
+
+**Date & Time (IST):** 16 Mar 2026, 7:58 PM
+
+**Branch:** `Murf-PlayGround` (not merged to main)
+
+**Deployment notes:**
+- New feature: Standalone Murf Falcon voice exploration page at /pg replacing the catalog-only listing
+- Users can select a language, pick a Falcon voice, enter text, and generate audio -- same controls structure as compare pages but single-voice listening
+- Voices filtered by selected language; sentences sourced from the falcon-vs-polly-neural page
+- Compare module moved to footer section with links to existing comparison pages
+
+**3 files with largest changes:**
+1. `src/app/pg/voices-client.tsx` (409 lines added)
+2. `src/app/pg/page.tsx` (97 lines changed)
+3. `src/app/pg/actions.ts` (47 lines added)
+
+---
