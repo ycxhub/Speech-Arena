@@ -204,7 +204,7 @@
   position: absolute;
   right: 0;
   top: calc(100% + 6px);
-  min-width: 220px;
+  min-width: 260px;
   background: var(--murf-bg);
   border: 1px solid var(--murf-border);
   border-radius: var(--murf-radius-md);
@@ -233,6 +233,7 @@
   text-decoration: none;
   border-radius: var(--murf-radius-sm);
   transition: background 0.12s ease, color 0.12s ease;
+  white-space: nowrap;
 }
 .murf-navbar-dropdown-item:hover {
   background: var(--murf-bg-secondary);
@@ -242,4 +243,103 @@
   background: var(--murf-bg-secondary);
   color: var(--murf-accent);
   font-weight: 600;
+}
+
+/* ── Catalog ────────────────────────────────────── */
+.murf-catalog {
+  flex: 1;
+  overflow-y: auto;
+  background: linear-gradient(
+    180deg,
+    var(--murf-bg-secondary) 0%,
+    var(--murf-bg) 120px
+  );
+}
+
+.murf-catalog-inner {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 48px 24px 64px;
+}
+
+.murf-catalog-header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.murf-catalog-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--murf-text);
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  margin: 0 0 12px;
+}
+
+.murf-catalog-subtitle {
+  font-size: 16px;
+  color: var(--murf-text-muted);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.murf-catalog-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.murf-catalog-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px 24px;
+  background: var(--murf-bg);
+  border: 1px solid var(--murf-border);
+  border-radius: var(--murf-radius-md);
+  box-shadow: var(--murf-shadow-sm);
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.murf-catalog-card:hover {
+  border-color: var(--murf-accent-light);
+  box-shadow: var(--murf-shadow-md);
+  transform: translateY(-2px);
+}
+
+.murf-catalog-card-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--murf-text);
+  line-height: 1.4;
+}
+
+.murf-catalog-card-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--murf-accent);
+  transition: gap 0.2s ease;
+}
+
+.murf-catalog-card:hover .murf-catalog-card-cta {
+  gap: 10px;
+}
+
+.murf-catalog-empty {
+  text-align: center;
+  padding: 64px 24px;
+  background: var(--murf-bg);
+  border: 1px dashed var(--murf-border);
+  border-radius: var(--murf-radius-md);
+}
+
+.murf-catalog-empty-text {
+  font-size: 15px;
+  color: var(--murf-text-muted);
+  margin: 0;
 }

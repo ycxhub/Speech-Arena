@@ -35,10 +35,18 @@ export default async function PlaygroundPage({ params }: Props) {
   const defaultLanguageId = languages[0]?.id ?? "";
 
   const initialVoicesA = defaultLanguageId
-    ? await getVoicesForProvider(config.modelAProviderSlug, defaultLanguageId)
+    ? await getVoicesForProvider(
+        config.modelAProviderSlug,
+        defaultLanguageId,
+        config.modelAModelId
+      )
     : [];
   const initialVoicesB = defaultLanguageId
-    ? await getVoicesForProvider(config.modelBProviderSlug, defaultLanguageId)
+    ? await getVoicesForProvider(
+        config.modelBProviderSlug,
+        defaultLanguageId,
+        config.modelBModelId
+      )
     : [];
   const initialSentences = defaultLanguageId
     ? await getSampleSentences(config.id, defaultLanguageId)

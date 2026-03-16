@@ -160,10 +160,13 @@ export async function getLanguagesForPlayground(
 
 /**
  * Get voices for a specific provider + language.
+ * When modelId is provided, only returns voices paired with that model (e.g. Falcon).
+ * Deduplicates by voice_id.
  */
 export async function getVoicesForProvider(
   providerSlug: string,
-  languageId: string
+  languageId: string,
+  modelId?: string | null
 ): Promise<VoiceOption[]> {
   const supabase = getAdminClient();
 
@@ -175,18 +178,30 @@ export async function getVoicesForProvider(
 
   if (!provider) return [];
 
-  const { data: voices } = await supabase
+  let query = supabase
     .from("provider_voices")
     .select("voice_id, display_name, gender")
     .eq("provider_id", provider.id)
-    .eq("language_id", languageId)
-    .order("display_name");
+    .eq("language_id", languageId);
 
-  return (voices ?? []).map((v) => ({
-    voiceId: v.voice_id,
-    displayName: v.display_name?.trim() || v.voice_id,
-    gender: v.gender,
-  }));
+  if (modelId != null && modelId !== "") {
+    query = query.eq("model_id", modelId);
+  }
+
+  const { data: voices } = await query.order("display_name");
+
+  const seen = new Set<string>();
+  return (voices ?? [])
+    .filter((v) => {
+      if (seen.has(v.voice_id)) return false;
+      seen.add(v.voice_id);
+      return true;
+    })
+    .map((v) => ({
+      voiceId: v.voice_id,
+      displayName: v.display_name?.trim() || v.voice_id,
+      gender: v.gender,
+    }));
 }
 
 /**

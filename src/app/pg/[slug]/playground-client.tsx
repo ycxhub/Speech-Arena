@@ -67,8 +67,16 @@ export function PlaygroundClient({
 
       startTransition(async () => {
         const [newVoicesA, newVoicesB, newSentences] = await Promise.all([
-          getVoicesForProvider(config.modelAProviderSlug, newLangId),
-          getVoicesForProvider(config.modelBProviderSlug, newLangId),
+          getVoicesForProvider(
+            config.modelAProviderSlug,
+            newLangId,
+            config.modelAModelId
+          ),
+          getVoicesForProvider(
+            config.modelBProviderSlug,
+            newLangId,
+            config.modelBModelId
+          ),
           getSampleSentences(config.id, newLangId),
         ]);
         setVoicesA(newVoicesA);
