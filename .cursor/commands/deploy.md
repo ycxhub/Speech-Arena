@@ -1,6 +1,14 @@
-Commit and merge all the branches onto the main branch and deploy on github and vercel.
+## ⛔ Branch Protection
 
-Write a crisp description by classifying changes into New features, Feature enhancements or Bug Fixes of what's being committed on Github.
+The `Murf-PlayGround` branch is deployment-isolated. **NEVER merge it onto `main`**, and **NEVER merge `main` onto it**. These branches must remain completely independent. If a conflict or ambiguity arises, stop and ask for explicit permission before proceeding.
+
+---
+
+## Deploy to Main
+
+Commit and merge all branches **except `Murf-PlayGround`** onto the `main` branch and deploy on GitHub and Vercel.
+
+Write a crisp description by classifying changes into New Features, Feature Enhancements, or Bug Fixes of what's being committed on GitHub.
 
 Do not commit .env.local to git.
 
@@ -22,4 +30,3 @@ Add the new deployment to [docs/deploy-to-main-notes.md](docs/deploy-to-main-not
    - Low: < 50 lines
    - Medium: 50–200 lines AND < 10 files
    - High: > 200 lines, OR (50–200 lines AND ≥ 10 files)
-

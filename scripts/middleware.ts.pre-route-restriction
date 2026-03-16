@@ -15,10 +15,6 @@ const CLAUDE_USER_RE = /Claude-User/i;
 const CLAUDE_WEB_RE = /Claude-Web/i;
 const CLAUDE_BOT_RE = /ClaudeBot/i;
 
-const NOT_FOUND_HTML = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>404 – Not Found</title><style>body{font-family:system-ui,-apple-system,sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#000;color:#fff}div{text-align:center}h1{font-size:48px;font-weight:700;margin:0 0 8px}p{color:#888;margin:0}</style></head><body><div><h1>404</h1><p>This page could not be found.</p></div></body></html>`;
-
-const ALLOWED_ROUTE_PREFIXES = ["/pg", "/admin", "/auth", "/api/pg", "/api/health", "/api/cron"];
-
 function isAIVisitor(ua: string, qsAgent?: string | null) {
   const isChatGPT = CHATGPT_UA_RE.test(ua) || qsAgent === "chatgpt";
   return (
@@ -41,26 +37,6 @@ function isAIVisitor(ua: string, qsAgent?: string | null) {
 export async function middleware(request: NextRequest) {
   const ua = request.headers.get("user-agent") || "";
   const qsAgent = request.nextUrl.searchParams.get("user-agent")?.toLowerCase() ?? null;
-
-  // --- Route restriction: only /pg, /admin, /auth, and essential API routes ---
-  const currentPath = request.nextUrl.pathname;
-  const isAllowedRoute =
-    currentPath === "/" ||
-    ALLOWED_ROUTE_PREFIXES.some((prefix) => currentPath.startsWith(prefix));
-
-  if (!isAllowedRoute) {
-    if (currentPath.startsWith("/api/")) {
-      return NextResponse.json({ error: "Not Found" }, { status: 404 });
-    }
-    return new NextResponse(NOT_FOUND_HTML, {
-      status: 404,
-      headers: { "content-type": "text/html" },
-    });
-  }
-
-  if (currentPath === "/") {
-    return NextResponse.redirect(new URL("/pg", request.url));
-  }
 
   // Bypass Salespeak if requested (prevents loops from ai-proxy)
   if (
@@ -158,7 +134,7 @@ export async function middleware(request: NextRequest) {
     !pathname.startsWith("/auth/sign-out");
 
   if (isAuthRoute && isAuthenticated) {
-    const redirectUrl = new URL("/pg", request.url);
+    const redirectUrl = new URL("/blind-test", request.url);
     const redirectResponse = NextResponse.redirect(redirectUrl);
     supabaseResponse.cookies.getAll().forEach((cookie) => {
       redirectResponse.cookies.set(cookie);
@@ -166,9 +142,9 @@ export async function middleware(request: NextRequest) {
     return redirectResponse;
   }
 
-  // Home: redirect authenticated users to playground
+  // Home: redirect authenticated users to blind-test
   if (pathname === "/" && isAuthenticated) {
-    const redirectUrl = new URL("/pg", request.url);
+    const redirectUrl = new URL("/blind-test", request.url);
     const redirectResponse = NextResponse.redirect(redirectUrl);
     supabaseResponse.cookies.getAll().forEach((cookie) => {
       redirectResponse.cookies.set(cookie);
