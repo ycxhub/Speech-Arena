@@ -1,0 +1,205 @@
+{
+  "$schema": "https://design-tokens.github.io/community-group/format/",
+  "meta": {
+    "source": "https://murf.ai/",
+    "title": "Free AI Voice Generator & Text to Speech Online | Murf AI",
+    "generatedAt": "2026-03-16T04:10:25.184Z",
+    "generator": "DesignAssets"
+  },
+  "colors": {
+    "background": {
+      "primary": {
+        "value": "#FFFFFF",
+        "type": "color"
+      },
+      "secondary": {
+        "value": "#C5C0D1",
+        "type": "color"
+      },
+      "bg3": {
+        "value": "#190D25",
+        "type": "color"
+      },
+      "bg4": {
+        "value": "#1D1136",
+        "type": "color"
+      },
+      "bg5": {
+        "value": "#42208A",
+        "type": "color"
+      }
+    },
+    "text": {
+      "primary": {
+        "value": "#1D1136",
+        "type": "color"
+      },
+      "secondary": {
+        "value": "#FFFFFF",
+        "type": "color"
+      },
+      "text3": {
+        "value": "#0000EE",
+        "type": "color"
+      },
+      "text4": {
+        "value": "#3DCC91",
+        "type": "color"
+      },
+      "text5": {
+        "value": "#000000",
+        "type": "color"
+      }
+    },
+    "palette": {
+      "dark-gray": {
+        "value": "#1A1A2E",
+        "type": "color"
+      },
+      "white": {
+        "value": "#F5F3F9",
+        "type": "color"
+      },
+      "blue": {
+        "value": "#6642B3",
+        "type": "color"
+      },
+      "green": {
+        "value": "#3DCC91",
+        "type": "color"
+      },
+      "black": {
+        "value": "#000000",
+        "type": "color"
+      },
+      "light-gray": {
+        "value": "#E7E4F2",
+        "type": "color"
+      },
+      "purple": {
+        "value": "#A089FF",
+        "type": "color"
+      },
+      "red": {
+        "value": "#C81395",
+        "type": "color"
+      }
+    }
+  },
+  "typography": {
+    "fontFamilies": {
+      "inter": {
+        "value": "Inter",
+        "type": "fontFamily"
+      },
+      "sans-serif": {
+        "value": "sans-serif",
+        "type": "fontFamily"
+      },
+      "robotoflex": {
+        "value": "Robotoflex Custom",
+        "type": "fontFamily"
+      },
+      "roboto": {
+        "value": "Roboto Flex",
+        "type": "fontFamily"
+      },
+      "system-ui": {
+        "value": "system-ui",
+        "type": "fontFamily"
+      }
+    },
+    "fontSizes": {
+      "size1": {
+        "value": "10px",
+        "type": "fontSize"
+      },
+      "size2": {
+        "value": "12px",
+        "type": "fontSize"
+      },
+      "size3": {
+        "value": "14px",
+        "type": "fontSize"
+      },
+      "size4": {
+        "value": "16px",
+        "type": "fontSize"
+      },
+      "size5": {
+        "value": "18px",
+        "type": "fontSize"
+      },
+      "size6": {
+        "value": "20px",
+        "type": "fontSize"
+      },
+      "size7": {
+        "value": "24px",
+        "type": "fontSize"
+      },
+      "size8": {
+        "value": "26px",
+        "type": "fontSize"
+      },
+      "size9": {
+        "value": "28px",
+        "type": "fontSize"
+      },
+      "size10": {
+        "value": "32px",
+        "type": "fontSize"
+      }
+    },
+    "fontWeights": {}
+  },
+  "spacing": {},
+  "borderRadius": {
+    "sm": {
+      "value": "16px",
+      "type": "borderRadius"
+    },
+    "md": {
+      "value": "100px",
+      "type": "borderRadius"
+    },
+    "lg": {
+      "value": "2px",
+      "type": "borderRadius"
+    },
+    "xl": {
+      "value": "12px",
+      "type": "borderRadius"
+    },
+    "2xl": {
+      "value": "10.165px",
+      "type": "borderRadius"
+    },
+    "full": {
+      "value": "24px",
+      "type": "borderRadius"
+    }
+  },
+  "shadows": {
+    "sm": {
+      "value": "rgba(238, 33, 122, 0.4) 0px 2px 5px -5px, rgba(238, 33, 122, 0.4) 0px 4px 8px 0px",
+      "type": "boxShadow"
+    },
+    "md": {
+      "value": "rgba(0, 0, 0, 0.16) 0px 2px 52px 0px inset",
+      "type": "boxShadow"
+    },
+    "lg": {
+      "value": "rgba(0, 0, 0, 0.16) 0px 10px 32px -4px",
+      "type": "boxShadow"
+    },
+    "xl": {
+      "value": "rgba(238, 33, 122, 0.4) 0px 6px 20px 0px",
+      "type": "boxShadow"
+    },
+    "2xl": {
+      "value": "rgba(227, 55, 255, 0.12) 0px 4px 14px 0px",
+      "type": "boxShadow"
+    }
+  }
+}

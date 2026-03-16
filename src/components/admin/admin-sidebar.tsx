@@ -18,6 +18,7 @@ const TOP_LEVEL_ITEMS = [
   { href: "/admin/analytics", label: "Analytics" },
   { href: "/admin/audit-log", label: "Audit Logs" },
   { href: "/admin/api-playground", label: "API Playground" },
+  { href: "/admin/murf-playground", label: "Murf Playground" },
 ] as const;
 
 export function AdminSidebar({ providers }: AdminSidebarProps) {

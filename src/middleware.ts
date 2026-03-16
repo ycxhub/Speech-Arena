@@ -155,6 +155,7 @@ export async function middleware(request: NextRequest) {
   // Admin role check is handled by the page itself (using the service-role client
   // to bypass RLS). Middleware only enforces authentication for /admin routes (above).
 
+  supabaseResponse.headers.set("x-pathname", pathname);
   return supabaseResponse;
 }
 

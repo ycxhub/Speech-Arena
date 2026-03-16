@@ -144,6 +144,54 @@ export type Database = {
           },
         ]
       }
+      compare_pages: {
+        Row: {
+          created_at: string
+          id: string
+          meta_description: string | null
+          meta_title: string | null
+          model_page_a_id: string
+          model_page_b_id: string
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          meta_description?: string | null
+          meta_title?: string | null
+          model_page_a_id: string
+          model_page_b_id: string
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          meta_description?: string | null
+          meta_title?: string | null
+          model_page_a_id?: string
+          model_page_b_id?: string
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compare_pages_model_page_a_id_fkey"
+            columns: ["model_page_a_id"]
+            isOneToOne: false
+            referencedRelation: "model_pages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compare_pages_model_page_b_id_fkey"
+            columns: ["model_page_b_id"]
+            isOneToOne: false
+            referencedRelation: "model_pages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       elo_ratings_by_language: {
         Row: {
           id: string
@@ -571,68 +619,6 @@ export type Database = {
           },
         ]
       }
-      lnl_tts_generations: {
-        Row: {
-          id: string
-          task_id: string
-          item_id: string
-          model_id: string
-          provider_id: string
-          characters_generated: number
-          estimated_cost_usd: number | null
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          task_id: string
-          item_id: string
-          model_id: string
-          provider_id: string
-          characters_generated?: number
-          estimated_cost_usd?: number | null
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          task_id?: string
-          item_id?: string
-          model_id?: string
-          provider_id?: string
-          characters_generated?: number
-          estimated_cost_usd?: number | null
-          created_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "lnl_tts_generations_task_id_fkey"
-            columns: ["task_id"]
-            isOneToOne: false
-            referencedRelation: "lnl_tasks"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "lnl_tts_generations_item_id_fkey"
-            columns: ["item_id"]
-            isOneToOne: false
-            referencedRelation: "lnl_task_items"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "lnl_tts_generations_model_id_fkey"
-            columns: ["model_id"]
-            isOneToOne: false
-            referencedRelation: "models"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "lnl_tts_generations_provider_id_fkey"
-            columns: ["provider_id"]
-            isOneToOne: false
-            referencedRelation: "providers"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       lnl_tasks: {
         Row: {
           created_at: string
@@ -671,6 +657,68 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      lnl_tts_generations: {
+        Row: {
+          characters_generated: number
+          created_at: string
+          estimated_cost_usd: number | null
+          id: string
+          item_id: string
+          model_id: string
+          provider_id: string
+          task_id: string
+        }
+        Insert: {
+          characters_generated?: number
+          created_at?: string
+          estimated_cost_usd?: number | null
+          id?: string
+          item_id: string
+          model_id: string
+          provider_id: string
+          task_id: string
+        }
+        Update: {
+          characters_generated?: number
+          created_at?: string
+          estimated_cost_usd?: number | null
+          id?: string
+          item_id?: string
+          model_id?: string
+          provider_id?: string
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lnl_tts_generations_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "lnl_task_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lnl_tts_generations_model_id_fkey"
+            columns: ["model_id"]
+            isOneToOne: false
+            referencedRelation: "models"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lnl_tts_generations_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "providers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lnl_tts_generations_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "lnl_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       lnl_user_roles: {
         Row: {
@@ -725,6 +773,134 @@ export type Database = {
             columns: ["model_id"]
             isOneToOne: false
             referencedRelation: "models"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      model_pages: {
+        Row: {
+          created_at: string
+          data_residency: string | null
+          definition_name: string
+          endpoint_non_streaming: boolean
+          endpoint_streaming: boolean
+          endpoint_websocket: boolean
+          feature_open_source: boolean | null
+          feature_voice_cloning: boolean | null
+          feature_voice_design: boolean | null
+          id: string
+          is_featured: boolean
+          latency_ms: number | null
+          launched_at: string | null
+          launched_at_text: string | null
+          logo_url: string | null
+          meta_description: string | null
+          meta_title: string | null
+          multilingual: boolean | null
+          multilingual_count: number | null
+          on_prem: boolean | null
+          one_liner: string
+          overview_md: string | null
+          price_input_per_million_chars: number | null
+          price_output_per_million_chars: number | null
+          pricing_description: string | null
+          provider_id: string
+          rank_override: number | null
+          slug: string
+          strengths: string[] | null
+          updated_at: string
+          use_case_conversational: boolean | null
+          use_case_expressive: boolean | null
+          use_case_flat_content: boolean | null
+          use_case_multilingual: boolean | null
+          use_case_voice_agents: boolean | null
+          use_elo_rank: boolean
+          weaknesses: string[] | null
+        }
+        Insert: {
+          created_at?: string
+          data_residency?: string | null
+          definition_name: string
+          endpoint_non_streaming?: boolean
+          endpoint_streaming?: boolean
+          endpoint_websocket?: boolean
+          feature_open_source?: boolean | null
+          feature_voice_cloning?: boolean | null
+          feature_voice_design?: boolean | null
+          id?: string
+          is_featured?: boolean
+          latency_ms?: number | null
+          launched_at?: string | null
+          launched_at_text?: string | null
+          logo_url?: string | null
+          meta_description?: string | null
+          meta_title?: string | null
+          multilingual?: boolean | null
+          multilingual_count?: number | null
+          on_prem?: boolean | null
+          one_liner: string
+          overview_md?: string | null
+          price_input_per_million_chars?: number | null
+          price_output_per_million_chars?: number | null
+          pricing_description?: string | null
+          provider_id: string
+          rank_override?: number | null
+          slug: string
+          strengths?: string[] | null
+          updated_at?: string
+          use_case_conversational?: boolean | null
+          use_case_expressive?: boolean | null
+          use_case_flat_content?: boolean | null
+          use_case_multilingual?: boolean | null
+          use_case_voice_agents?: boolean | null
+          use_elo_rank?: boolean
+          weaknesses?: string[] | null
+        }
+        Update: {
+          created_at?: string
+          data_residency?: string | null
+          definition_name?: string
+          endpoint_non_streaming?: boolean
+          endpoint_streaming?: boolean
+          endpoint_websocket?: boolean
+          feature_open_source?: boolean | null
+          feature_voice_cloning?: boolean | null
+          feature_voice_design?: boolean | null
+          id?: string
+          is_featured?: boolean
+          latency_ms?: number | null
+          launched_at?: string | null
+          launched_at_text?: string | null
+          logo_url?: string | null
+          meta_description?: string | null
+          meta_title?: string | null
+          multilingual?: boolean | null
+          multilingual_count?: number | null
+          on_prem?: boolean | null
+          one_liner?: string
+          overview_md?: string | null
+          price_input_per_million_chars?: number | null
+          price_output_per_million_chars?: number | null
+          pricing_description?: string | null
+          provider_id?: string
+          rank_override?: number | null
+          slug?: string
+          strengths?: string[] | null
+          updated_at?: string
+          use_case_conversational?: boolean | null
+          use_case_expressive?: boolean | null
+          use_case_flat_content?: boolean | null
+          use_case_multilingual?: boolean | null
+          use_case_voice_agents?: boolean | null
+          use_elo_rank?: boolean
+          weaknesses?: string[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "model_pages_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "providers"
             referencedColumns: ["id"]
           },
         ]
@@ -786,178 +962,92 @@ export type Database = {
           },
         ]
       }
-      model_pages: {
+      playground_pages: {
         Row: {
-          id: string
-          provider_id: string
-          definition_name: string
-          slug: string
-          logo_url: string | null
-          one_liner: string
-          overview_md: string | null
-          rank_override: number | null
-          use_elo_rank: boolean
-          latency_ms: number | null
-          price_input_per_million_chars: number | null
-          price_output_per_million_chars: number | null
-          data_residency: string | null
-          on_prem: boolean | null
-          launched_at: string | null
-          launched_at_text: string | null
-          multilingual: boolean | null
-          multilingual_count: number | null
-          endpoint_streaming: boolean
-          endpoint_websocket: boolean
-          endpoint_non_streaming: boolean
-          feature_voice_cloning: boolean | null
-          feature_voice_design: boolean | null
-          feature_open_source: boolean | null
-          use_case_conversational: boolean | null
-          use_case_voice_agents: boolean | null
-          use_case_expressive: boolean | null
-          use_case_flat_content: boolean | null
-          use_case_multilingual: boolean | null
-          strengths: string[]
-          weaknesses: string[]
-          pricing_description: string | null
-          meta_title: string | null
-          meta_description: string | null
-          is_featured: boolean
           created_at: string
+          headline: string
+          id: string
+          is_active: boolean
+          model_a_label: string
+          model_a_model_id: string
+          model_a_provider_slug: string
+          model_b_label: string
+          model_b_model_id: string
+          model_b_provider_slug: string
+          slug: string
+          title: string
           updated_at: string
         }
         Insert: {
-          id?: string
-          provider_id: string
-          definition_name: string
-          slug: string
-          logo_url?: string | null
-          one_liner: string
-          overview_md?: string | null
-          rank_override?: number | null
-          use_elo_rank?: boolean
-          latency_ms?: number | null
-          price_input_per_million_chars?: number | null
-          price_output_per_million_chars?: number | null
-          data_residency?: string | null
-          on_prem?: boolean | null
-          launched_at?: string | null
-          launched_at_text?: string | null
-          multilingual?: boolean | null
-          multilingual_count?: number | null
-          endpoint_streaming?: boolean
-          endpoint_websocket?: boolean
-          endpoint_non_streaming?: boolean
-          feature_voice_cloning?: boolean | null
-          feature_voice_design?: boolean | null
-          feature_open_source?: boolean | null
-          use_case_conversational?: boolean | null
-          use_case_voice_agents?: boolean | null
-          use_case_expressive?: boolean | null
-          use_case_flat_content?: boolean | null
-          use_case_multilingual?: boolean | null
-          strengths?: string[]
-          weaknesses?: string[]
-          pricing_description?: string | null
-          meta_title?: string | null
-          meta_description?: string | null
-          is_featured?: boolean
           created_at?: string
+          headline: string
+          id?: string
+          is_active?: boolean
+          model_a_label: string
+          model_a_model_id: string
+          model_a_provider_slug: string
+          model_b_label: string
+          model_b_model_id: string
+          model_b_provider_slug: string
+          slug: string
+          title: string
           updated_at?: string
         }
         Update: {
-          id?: string
-          provider_id?: string
-          definition_name?: string
-          slug?: string
-          logo_url?: string | null
-          one_liner?: string
-          overview_md?: string | null
-          rank_override?: number | null
-          use_elo_rank?: boolean
-          latency_ms?: number | null
-          price_input_per_million_chars?: number | null
-          price_output_per_million_chars?: number | null
-          data_residency?: string | null
-          on_prem?: boolean | null
-          launched_at?: string | null
-          launched_at_text?: string | null
-          multilingual?: boolean | null
-          multilingual_count?: number | null
-          endpoint_streaming?: boolean
-          endpoint_websocket?: boolean
-          endpoint_non_streaming?: boolean
-          feature_voice_cloning?: boolean | null
-          feature_voice_design?: boolean | null
-          feature_open_source?: boolean | null
-          use_case_conversational?: boolean | null
-          use_case_voice_agents?: boolean | null
-          use_case_expressive?: boolean | null
-          use_case_flat_content?: boolean | null
-          use_case_multilingual?: boolean | null
-          strengths?: string[]
-          weaknesses?: string[]
-          pricing_description?: string | null
-          meta_title?: string | null
-          meta_description?: string | null
-          is_featured?: boolean
           created_at?: string
+          headline?: string
+          id?: string
+          is_active?: boolean
+          model_a_label?: string
+          model_a_model_id?: string
+          model_a_provider_slug?: string
+          model_b_label?: string
+          model_b_model_id?: string
+          model_b_provider_slug?: string
+          slug?: string
+          title?: string
           updated_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "model_pages_provider_id_fkey"
-            columns: ["provider_id"]
-            isOneToOne: false
-            referencedRelation: "providers"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
-      compare_pages: {
+      playground_sample_sentences: {
         Row: {
-          id: string
-          slug: string
-          model_page_a_id: string
-          model_page_b_id: string
-          meta_title: string | null
-          meta_description: string | null
           created_at: string
-          updated_at: string
+          id: string
+          language_id: string
+          playground_page_id: string
+          sort_order: number
+          text: string
         }
         Insert: {
-          id?: string
-          slug: string
-          model_page_a_id: string
-          model_page_b_id: string
-          meta_title?: string | null
-          meta_description?: string | null
           created_at?: string
-          updated_at?: string
+          id?: string
+          language_id: string
+          playground_page_id: string
+          sort_order?: number
+          text: string
         }
         Update: {
-          id?: string
-          slug?: string
-          model_page_a_id?: string
-          model_page_b_id?: string
-          meta_title?: string | null
-          meta_description?: string | null
           created_at?: string
-          updated_at?: string
+          id?: string
+          language_id?: string
+          playground_page_id?: string
+          sort_order?: number
+          text?: string
         }
         Relationships: [
           {
-            foreignKeyName: "compare_pages_model_page_a_id_fkey"
-            columns: ["model_page_a_id"]
+            foreignKeyName: "playground_sample_sentences_language_id_fkey"
+            columns: ["language_id"]
             isOneToOne: false
-            referencedRelation: "model_pages"
+            referencedRelation: "languages"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "compare_pages_model_page_b_id_fkey"
-            columns: ["model_page_b_id"]
+            foreignKeyName: "playground_sample_sentences_playground_page_id_fkey"
+            columns: ["playground_page_id"]
             isOneToOne: false
-            referencedRelation: "model_pages"
+            referencedRelation: "playground_pages"
             referencedColumns: ["id"]
           },
         ]
