@@ -144,6 +144,98 @@ export type Database = {
           },
         ]
       }
+      bradley_terry_ratings_by_language_model: {
+        Row: {
+          beta: number
+          definition_name: string
+          language_id: string
+          last_updated: string
+          losses: number
+          matches_played: number
+          provider_id: string
+          rating: number
+          wins: number
+        }
+        Insert: {
+          beta?: number
+          definition_name: string
+          language_id: string
+          last_updated?: string
+          losses?: number
+          matches_played?: number
+          provider_id: string
+          rating?: number
+          wins?: number
+        }
+        Update: {
+          beta?: number
+          definition_name?: string
+          language_id?: string
+          last_updated?: string
+          losses?: number
+          matches_played?: number
+          provider_id?: string
+          rating?: number
+          wins?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bradley_terry_ratings_by_language_model_language_id_fkey"
+            columns: ["language_id"]
+            isOneToOne: false
+            referencedRelation: "languages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bradley_terry_ratings_by_language_model_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "providers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bradley_terry_ratings_global_model: {
+        Row: {
+          beta: number
+          definition_name: string
+          last_updated: string
+          losses: number
+          matches_played: number
+          provider_id: string
+          rating: number
+          wins: number
+        }
+        Insert: {
+          beta?: number
+          definition_name: string
+          last_updated?: string
+          losses?: number
+          matches_played?: number
+          provider_id: string
+          rating?: number
+          wins?: number
+        }
+        Update: {
+          beta?: number
+          definition_name?: string
+          last_updated?: string
+          losses?: number
+          matches_played?: number
+          provider_id?: string
+          rating?: number
+          wins?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bradley_terry_ratings_global_model_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "providers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       compare_pages: {
         Row: {
           created_at: string
@@ -1014,26 +1106,32 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          industry: string | null
           language_id: string
           playground_page_id: string
           sort_order: number
           text: string
+          usecase: string | null
         }
         Insert: {
           created_at?: string
           id?: string
+          industry?: string | null
           language_id: string
           playground_page_id: string
           sort_order?: number
           text: string
+          usecase?: string | null
         }
         Update: {
           created_at?: string
           id?: string
+          industry?: string | null
           language_id?: string
           playground_page_id?: string
           sort_order?: number
           text?: string
+          usecase?: string | null
         }
         Relationships: [
           {
@@ -1464,6 +1562,42 @@ export type Database = {
           code: string
           id: string
           name: string
+        }[]
+      }
+      get_bradley_terry_leaderboard_by_language_model: {
+        Args: {
+          p_language_id: string
+          p_min_matches?: number
+          p_provider_id?: string
+        }
+        Returns: {
+          definition_name: string
+          last_updated: string
+          losses: number
+          matches_played: number
+          model_name: string
+          provider_id: string
+          provider_name: string
+          provider_slug: string
+          rating: number
+          tags: string[]
+          wins: number
+        }[]
+      }
+      get_bradley_terry_leaderboard_global_model: {
+        Args: { p_min_matches?: number; p_provider_id?: string }
+        Returns: {
+          definition_name: string
+          last_updated: string
+          losses: number
+          matches_played: number
+          model_name: string
+          provider_id: string
+          provider_name: string
+          provider_slug: string
+          rating: number
+          tags: string[]
+          wins: number
         }[]
       }
       get_leaderboard_by_language_model: {

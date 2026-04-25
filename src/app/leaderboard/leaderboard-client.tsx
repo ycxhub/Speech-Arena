@@ -9,7 +9,7 @@ import { GlassTable } from "@/components/ui/glass-table";
 import { GlassSelect } from "@/components/ui/glass-select";
 import { GlassInput } from "@/components/ui/glass-input";
 import { GlassBadge } from "@/components/ui/glass-badge";
-import type { LeaderboardRow, PairwiseMatrixResult } from "./actions";
+import type { LeaderboardBoard, LeaderboardRow, PairwiseMatrixResult } from "./actions";
 
 type Props = {
   initialData: LeaderboardRow[];
@@ -17,6 +17,7 @@ type Props = {
   languages: { id: string; code: string }[];
   providers: { id: string; name: string }[];
   pairwiseMatrix: PairwiseMatrixResult;
+  board: LeaderboardBoard;
 };
 
 function formatRelativeTime(iso: string): string {
@@ -40,6 +41,7 @@ export function LeaderboardClient({
   languages,
   providers,
   pairwiseMatrix,
+  board,
 }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -48,6 +50,7 @@ export function LeaderboardClient({
   const languageId = searchParams.get("language") ?? "";
   const providerId = searchParams.get("provider") ?? "";
   const minMatches = searchParams.get("min_matches") ?? "";
+  const ratingLabel = board === "bradley-terry" ? "Bradley-Terry" : "ELO";
 
   const { participated, notYetParticipated } = useMemo(() => {
     let data = initialData;
@@ -116,6 +119,16 @@ export function LeaderboardClient({
 
       <GlassCard>
         <div className="mb-4 flex flex-nowrap items-end gap-3 overflow-x-auto pb-2">
+          <GlassSelect
+            label="Leaderboard"
+            options={[
+              { value: "elo", label: "ELO" },
+              { value: "bradley-terry", label: "Bradley-Terry" },
+            ]}
+            value={board}
+            onChange={(e) => updateUrl({ board: e.target.value })}
+            className="w-44 shrink-0"
+          />
           <GlassSelect
             label="Language"
             options={[
@@ -201,7 +214,7 @@ export function LeaderboardClient({
                 { key: "providerName", header: "Provider" },
                 {
                   key: "rating",
-                  header: "ELO",
+                  header: ratingLabel,
                   render: (r) => r.rating.toString(),
                 },
                 { key: "matchesPlayed", header: "Matches" },

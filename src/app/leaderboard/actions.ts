@@ -18,7 +18,10 @@ export type LeaderboardRow = {
   isProvisional: boolean;
 };
 
+export type LeaderboardBoard = "elo" | "bradley-terry";
+
 export type LeaderboardFilters = {
+  board?: LeaderboardBoard;
   languageId?: string;
   providerId?: string;
   tags?: string[];
@@ -29,22 +32,36 @@ export async function getGlobalLeaderboard(
   filters?: LeaderboardFilters
 ): Promise<LeaderboardRow[]> {
   const admin = getAdminClient();
+  const board = filters?.board ?? "elo";
 
   if (filters?.languageId) {
-    const { data, error } = await admin.rpc("get_leaderboard_by_language_model", {
-      p_language_id: filters.languageId,
-      p_provider_id: filters.providerId ?? undefined,
-      p_min_matches: filters.minMatches ?? undefined,
-    });
+    const { data, error } =
+      board === "bradley-terry"
+        ? await admin.rpc("get_bradley_terry_leaderboard_by_language_model", {
+            p_language_id: filters.languageId,
+            p_provider_id: filters.providerId ?? undefined,
+            p_min_matches: filters.minMatches ?? undefined,
+          })
+        : await admin.rpc("get_leaderboard_by_language_model", {
+            p_language_id: filters.languageId,
+            p_provider_id: filters.providerId ?? undefined,
+            p_min_matches: filters.minMatches ?? undefined,
+          });
 
     if (error) return [];
     return mapModelRowsToLeaderboard(admin, data ?? [], filters);
   }
 
-  const { data, error } = await admin.rpc("get_leaderboard_global_model", {
-    p_provider_id: filters?.providerId ?? undefined,
-    p_min_matches: filters?.minMatches ?? undefined,
-  });
+  const { data, error } =
+    board === "bradley-terry"
+      ? await admin.rpc("get_bradley_terry_leaderboard_global_model", {
+          p_provider_id: filters?.providerId ?? undefined,
+          p_min_matches: filters?.minMatches ?? undefined,
+        })
+      : await admin.rpc("get_leaderboard_global_model", {
+          p_provider_id: filters?.providerId ?? undefined,
+          p_min_matches: filters?.minMatches ?? undefined,
+        });
 
   if (error) return [];
   return mapModelRowsToLeaderboard(admin, data ?? [], filters);
@@ -298,15 +315,24 @@ export async function getPairwiseWinRateMatrix(
   return { models, matrix };
 }
 
-export async function getLeaderboardSummary(): Promise<{
+export async function getLeaderboardSummary(filters?: Pick<LeaderboardFilters, "board">): Promise<{
   totalModels: number;
   totalMatches: number;
   activeLanguages: number;
 }> {
   const admin = getAdminClient();
+  const board = filters?.board ?? "elo";
+  const globalTable =
+    board === "bradley-terry"
+      ? "bradley_terry_ratings_global_model"
+      : "elo_ratings_global_model";
+  const languageTable =
+    board === "bradley-terry"
+      ? "bradley_terry_ratings_by_language_model"
+      : "elo_ratings_by_language_model";
 
   const { data: global } = await admin
-    .from("elo_ratings_global_model")
+    .from(globalTable)
     .select("matches_played");
 
   const totalModels = global?.length ?? 0;
@@ -315,7 +341,7 @@ export async function getLeaderboardSummary(): Promise<{
   );
 
   const { data: langIds } = await admin
-    .from("elo_ratings_by_language_model")
+    .from(languageTable)
     .select("language_id");
   const distinctLangs = new Set((langIds ?? []).map((r) => r.language_id));
 
