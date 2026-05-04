@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 
 export const dynamic = "force-dynamic";
 import { GoogleAnalytics } from "@next/third-parties/google";
+import { Analytics } from "@vercel/analytics/next";
 import { Toaster } from "sonner";
 import { AppShell } from "@/components/layout/app-shell";
 import "./globals.css";
@@ -51,6 +52,7 @@ export default function RootLayout({
               gaId={process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS}
             />
           )}
+        <Analytics />
       </body>
     </html>
   );
